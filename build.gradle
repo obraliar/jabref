@@ -1,59 +1,18 @@
 import org.gradle.internal.os.OperatingSystem
 
-buildscript {
-    repositories {
-        maven {
-            url 'http://maven.ej-technologies.com/repository'
-        }
-    }
-    dependencies {
-        classpath group: 'com.install4j', name: 'gradle-plugin', version: '6.0'
-    }
-}
-
 plugins {
     id 'com.github.johnrengelman.shadow' version '1.2.2'
-    id "com.github.kt3k.coveralls" version "2.4.0x"
-    id "com.github.youribonnaffe.gradle.format" version "1.2"
-    id "com.coverity.ondemand" version "1.4.742"
 }
 
 apply plugin: "java"
 apply plugin: "application"
-apply plugin: "project-report"
-apply plugin: 'jacoco'
-apply plugin: 'com.github.kt3k.coveralls'
-apply plugin: 'install4j'
-
-apply from: 'eclipse.gradle'
-
-// HACK to disable coverityCheck task when not on CI server
-// necessary as coverity automatically adds check.dependsOn coverityCheck
-gradle.taskGraph.whenReady { taskGraph ->
-    def tasks = taskGraph.getAllTasks()
-    if (System.env.CI == null) {
-        tasks.findAll {it.name.startsWith('coverityCheck')}.each { task ->
-                task.enabled = false
-        }
-    }
-}
 
 group = "net.sf.jabref"
 version = "3.0"
 project.ext.threeDotVersion = "3.0.0.0"
-project.ext.install4jDir = hasProperty("install4jDir") ? getProperty("install4jDir") : (OperatingSystem.current().isWindows() ? 'C:/Program Files/install4j6' : 'install4j6')
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 mainClassName = "net.sf.jabref.JabRefMain"
-
-install4j {
-    installDir = file(project.ext.install4jDir)
-}
-
-task wrapper(type: Wrapper) {
-    gradleVersion = '2.9'
-}
-
 
 repositories {
     jcenter()
@@ -253,20 +212,6 @@ test {
     }
 }
 
-jacocoTestReport {
-    reports {
-        xml.enabled = true // coveralls plugin depends on xml format report
-        html.enabled = true
-    }
-}
-
-// enables `gradlew format`. Currently `LabelPatternUtil.java` is destroyed. Use with care!
-format {
-    configurationFile = file('ide-settings/formatter_settings.xml')
-    // default: reformat main and test
-    //files = sourceSets.main.java
-}
-
 shadowJar {
     classifier 'fat'
 }
@@ -304,29 +249,7 @@ if (hasProperty('dev')) {
     project.version += "--snapshot--" + infoString
 }
 
-// has to be defined AFTER 'dev' things to have the correct project.version
-task media(type: com.install4j.gradle.Install4jTask, dependsOn: "releaseJar") {
-    projectFile = file('jabref.install4j')
-    variables = [
-        versionFourDots: project.ext.threeDotVersion,
-        buildFileName: jar.archiveName,
-        version: project.version
-    ]
-
-    doLast {
-        copy {
-            from "build/install4j"
-            into "build/releases"
-        }
-    }
-}
-
-task release(dependsOn: ["media", "releaseJar"]) {
-    group = 'JabRef - Release'
-    description 'Creates a release for all target platforms.'
-}
-
-task releaseJar(dependsOn: "shadowJar") {
+task release(dependsOn: "shadowJar") {
     group = 'JabRef - Release'
     description "Creates a Jar release."
 
@@ -341,15 +264,3 @@ task releaseJar(dependsOn: "shadowJar") {
         }
     }
 }
-
-// fetch all dependencies to speedup CircleCI build
-// this is necessary until https://discuss.circleci.com/t/effective-caching-for-gradle/540 is resolved
-// see http://stackoverflow.com/a/27455099/873282 for an inspiration of this task
-// better solution: https://discuss.gradle.org/t/how-to-download-maven-dependencies-into-project-local-directory-and-set-eclipse-classpath/9851
-task getdeps(type: Copy) {
-    from (configurations.compile+configurations.testCompile) {
-        include "*.jar"
-    }
-    into 'build/tmp/alldeps/'
-}
-
