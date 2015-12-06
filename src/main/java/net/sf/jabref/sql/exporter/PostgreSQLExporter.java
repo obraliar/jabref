@@ -73,11 +73,10 @@ public class PostgreSQLExporter extends DBExporter {
             conn.close();
         }
 
-        try (Connection conn = DriverManager.getConnection(url, dbstrings.getUsername(), dbstrings.getPassword())) {
-            createPLPGSQLFunction(conn);
+        Connection conn = DriverManager.getConnection(url, dbstrings.getUsername(), dbstrings.getPassword());
+        createPLPGSQLFunction(conn);
 
-            return conn;
-        }
+        return conn;
     }
 
     private void createPLPGSQLFunction(Connection conn) throws SQLException {
