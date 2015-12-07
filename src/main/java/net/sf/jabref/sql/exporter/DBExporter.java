@@ -186,7 +186,6 @@ public abstract class DBExporter extends DBImporterExporter {
      */
 
     private void populateEntryTypesTable(Object out) throws SQLException {
-        StringBuilder querySB = new StringBuilder();
         ArrayList<String> fieldRequirement = new ArrayList<>();
 
         ArrayList<String> existentTypes = new ArrayList<>();
@@ -199,6 +198,8 @@ public abstract class DBExporter extends DBImporterExporter {
             }
         }
         for (EntryType val : EntryTypes.getAllValues()) {
+            StringBuilder querySB = new StringBuilder();
+
             fieldRequirement.clear();
             for (int i = 0; i < SQLUtil.getAllFields().size(); i++) {
                 fieldRequirement.add(i, "gen");
