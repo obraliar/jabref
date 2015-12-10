@@ -22,7 +22,7 @@ import net.sf.jabref.Globals;
 import net.sf.jabref.JabRefPreferences;
 import net.sf.jabref.exporter.LatexFieldFormatter;
 import net.sf.jabref.logic.util.strings.StringUtil;
-import net.sf.jabref.model.entry.BibtexEntry;
+import net.sf.jabref.model.entry.BibEntry;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -95,7 +95,7 @@ public class BibtexEntryWriter {
         this.write = write;
     }
 
-    public void write(BibtexEntry entry, Writer out) throws IOException {
+    public void write(BibEntry entry, Writer out) throws IOException {
         // if the entry has not been modified, write it as it was
         if(!entry.hasChanged()){
             out.write(entry.getParsedSerialization());
@@ -123,14 +123,14 @@ public class BibtexEntryWriter {
      * @param out
      * @throws IOException
      */
-    private void writeRequiredFieldsFirstOptionalFieldsSecondRemainingFieldsThird(BibtexEntry entry, Writer out) throws IOException {
+    private void writeRequiredFieldsFirstOptionalFieldsSecondRemainingFieldsThird(BibEntry entry, Writer out) throws IOException {
         // Write header with type and bibtex-key.
         out.write('@' + entry.getType().getName() + '{');
 
         HashSet<String> writtenFields = new HashSet<>();
 
         writeKeyField(entry, out);
-        writtenFields.add(BibtexEntry.KEY_FIELD);
+        writtenFields.add(BibEntry.KEY_FIELD);
 
         // Write required fields first.
         // Thereby, write the title field first.
@@ -176,7 +176,7 @@ public class BibtexEntryWriter {
         out.write((hasWritten ? Globals.NEWLINE : "") + '}');
     }
 
-    private List<String> getRequiredFieldsSorted(BibtexEntry entry) {
+    private List<String> getRequiredFieldsSorted(BibEntry entry) {
         String entryTypeName = entry.getType().getName();
         List<String> sortedFields = requiredFieldsSorted.get(entryTypeName);
 
@@ -190,7 +190,7 @@ public class BibtexEntryWriter {
         return sortedFields;
     }
 
-    private List<String> getOptionalFieldsSorted(BibtexEntry entry) {
+    private List<String> getOptionalFieldsSorted(BibEntry entry) {
         String entryTypeName = entry.getType().getName();
         List<String> sortedFields = optionalFieldsSorted.get(entryTypeName);
 
@@ -211,14 +211,14 @@ public class BibtexEntryWriter {
      * @param out
      * @throws IOException
      */
-    private void writeRequiredFieldsFirstRemainingFieldsSecond(BibtexEntry entry, Writer out) throws IOException {
+    private void writeRequiredFieldsFirstRemainingFieldsSecond(BibEntry entry, Writer out) throws IOException {
         // Write header with type and bibtex-key.
         out.write('@' + entry.getType().getName().toUpperCase(Locale.US) + '{');
 
         writeKeyField(entry, out);
 
         HashSet<String> written = new HashSet<>();
-        written.add(BibtexEntry.KEY_FIELD);
+        written.add(BibEntry.KEY_FIELD);
         boolean hasWritten = false;
         // Write required fields first.
         List<String> fields = entry.getRequiredFieldsFlat();
@@ -255,13 +255,13 @@ public class BibtexEntryWriter {
         out.write((hasWritten ? Globals.NEWLINE : "") + '}');
     }
 
-    private void writeUserDefinedOrder(BibtexEntry entry, Writer out) throws IOException {
+    private void writeUserDefinedOrder(BibEntry entry, Writer out) throws IOException {
         // Write header with type and bibtex-key.
         out.write('@' + entry.getType().getName() + '{');
 
         writeKeyField(entry, out);
         HashMap<String, String> written = new HashMap<>();
-        written.put(BibtexEntry.KEY_FIELD, null);
+        written.put(BibEntry.KEY_FIELD, null);
         boolean hasWritten = false;
 
         // Write user defined fields first.
@@ -301,7 +301,7 @@ public class BibtexEntryWriter {
 
     }
 
-    private void writeKeyField(BibtexEntry entry, Writer out) throws IOException {
+    private void writeKeyField(BibEntry entry, Writer out) throws IOException {
         String keyField = StringUtil.shaveString(entry.getCiteKey());
         out.write((keyField == null ? "" : keyField) + ',' + Globals.NEWLINE);
     }
@@ -317,7 +317,7 @@ public class BibtexEntryWriter {
      *                          it was not set
      * @throws IOException In case of an IO error
      */
-    private boolean writeField(BibtexEntry entry, Writer out, String name, boolean prependWhiteSpace) throws IOException {
+    private boolean writeField(BibEntry entry, Writer out, String name, boolean prependWhiteSpace) throws IOException {
         String field = entry.getField(name);
         // only write field if is is not empty or if empty fields should be included
         // the first condition mirrors mirror behavior of com.jgoodies.common.base.Strings.isNotBlank(str)

@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.Vector;
 
 import net.sf.jabref.model.entry.AuthorList;
-import net.sf.jabref.model.entry.BibtexEntry;
+import net.sf.jabref.model.entry.BibEntry;
 import net.sf.jabref.Globals;
 import net.sf.jabref.JabRefPreferences;
 import net.sf.jabref.model.entry.EntryUtil;
@@ -35,7 +35,7 @@ import javax.swing.JLabel;
 /**
  * Class defining the contents and column headers of the main table.
  */
-public class MainTableFormat implements TableFormat<BibtexEntry> {
+public class MainTableFormat implements TableFormat<BibEntry> {
     // Character separating field names that are to be used in sequence as
     // fallbacks for a single column (e.g. "author/editor" to use editor where
     // author is not set):
@@ -182,7 +182,7 @@ public class MainTableFormat implements TableFormat<BibtexEntry> {
     }
 
     @Override
-    public Object getColumnValue(BibtexEntry be, int col) {
+    public Object getColumnValue(BibEntry be, int col) {
         Object o = null;
         String[] iconType = getIconTypeForColumn(col); // If non-null, indicates an icon column's type.
 
@@ -240,7 +240,7 @@ public class MainTableFormat implements TableFormat<BibtexEntry> {
             // Go through the fields until we find one with content:
             int j = 0;
             for (int i = 0; i < fld.length; i++) {
-                if (fld[i].equals(BibtexEntry.TYPE_HEADER)) {
+                if (fld[i].equals(BibEntry.TYPE_HEADER)) {
                     o = be.getType().getName();
                 } else {
                     o = be.getFieldOrAlias(fld[i]);
@@ -290,13 +290,13 @@ public class MainTableFormat implements TableFormat<BibtexEntry> {
         return o;
     }
 
-    private boolean hasField(BibtexEntry be, String field) {
+    private boolean hasField(BibEntry be, String field) {
         // Returns true iff the entry has a nonzero value in its
         // 'search' field.
         return ((be != null) && (be.getFieldOrAlias(field) != null));
     }
 
-    private int[] hasField(BibtexEntry be, String[] field) {
+    private int[] hasField(BibEntry be, String[] field) {
         // If the entry has a nonzero value in any of the
         // 'search' fields, returns the smallest index for which it does.
         // Otherwise returns -1. When field indicates one or more file types,
