@@ -60,6 +60,7 @@ import net.sf.jabref.JabRefPreferences;
 import net.sf.jabref.collab.ChangeScanner;
 import net.sf.jabref.collab.FileUpdateListener;
 import net.sf.jabref.collab.FileUpdatePanel;
+import net.sf.jabref.event.AddOrChangeEntryEvent;
 import net.sf.jabref.exporter.BibDatabaseWriter;
 import net.sf.jabref.exporter.ExportToClipboardAction;
 import net.sf.jabref.exporter.SaveDatabaseAction;
@@ -147,6 +148,7 @@ import net.sf.jabref.sql.SQLUtil;
 import net.sf.jabref.sql.exporter.DatabaseExporter;
 
 import ca.odell.glazedlists.event.ListEventListener;
+import com.google.common.eventbus.Subscribe;
 import com.jgoodies.forms.builder.FormBuilder;
 import com.jgoodies.forms.layout.FormLayout;
 import org.apache.commons.logging.Log;
@@ -1279,13 +1281,11 @@ public class BasePanel extends JPanel implements ClipboardOwner, FileUpdateListe
      * Ensures that the search auto completer is up to date when entries are changed AKA Let the auto completer, if any,
      * harvest words from the entry
      */
-    private class SearchAutoCompleterUpdater implements DatabaseChangeListener {
+    private class SearchAutoCompleteListener {
 
-        @Override
-        public void databaseChanged(DatabaseChangeEvent e) {
-            if ((e.getType() == ChangeType.CHANGED_ENTRY) || (e.getType() == ChangeType.ADDED_ENTRY)) {
-                searchAutoCompleter.addBibtexEntry(e.getEntry());
-            }
+        @Subscribe
+        public void listen(AddOrChangeEntryEvent aocee) {
+            searchAutoCompleter.addBibtexEntry(aocee.getEntry());
         }
     }
 
@@ -1293,13 +1293,11 @@ public class BasePanel extends JPanel implements ClipboardOwner, FileUpdateListe
      * Ensures that auto completers are up to date when entries are changed AKA Let the auto completer, if any, harvest
      * words from the entry
      */
-    private class AutoCompletersUpdater implements DatabaseChangeListener {
+    private class AutoCompleteListener {
 
-        @Override
-        public void databaseChanged(DatabaseChangeEvent e) {
-            if ((e.getType() == ChangeType.CHANGED_ENTRY) || (e.getType() == ChangeType.ADDED_ENTRY)) {
-                BasePanel.this.autoCompleters.addEntry(e.getEntry());
-            }
+        @Subscribe
+        public void listen(AddOrChangeEntryEvent aocee) {
+            BasePanel.this.autoCompleters.addEntry(aocee.getEntry());
         }
     }
 
@@ -1348,8 +1346,8 @@ public class BasePanel extends JPanel implements ClipboardOwner, FileUpdateListe
     }
 
     private void createMainTable() {
-        database.addDatabaseChangeListener(tableModel.getEventList());
-        database.addDatabaseChangeListener(SpecialFieldDatabaseChangeListener.getInstance());
+        database.getEventBus().register(tableModel.getListSynchronizer());
+        database.getEventBus().register(SpecialFieldDatabaseChangeListener.getInstance());
 
         tableFormat = new MainTableFormat(database);
         tableFormat.updateTableFormat();
@@ -1512,7 +1510,7 @@ public class BasePanel extends JPanel implements ClipboardOwner, FileUpdateListe
 
         // Set up name autocompleter for search:
         instantiateSearchAutoCompleter();
-        this.getDatabase().addDatabaseChangeListener(new SearchAutoCompleterUpdater());
+        this.getDatabase().getEventBus().register(new SearchAutoCompleteListener());
 
         AutoCompletePreferences autoCompletePreferences = new AutoCompletePreferences(Globals.prefs);
         // Set up AutoCompleters for this panel:
@@ -1520,7 +1518,7 @@ public class BasePanel extends JPanel implements ClipboardOwner, FileUpdateListe
             autoCompleters = new ContentAutoCompleters(getDatabase(), bibDatabaseContext.getMetaData(),
                     autoCompletePreferences, Globals.journalAbbreviationLoader);
             // ensure that the autocompleters are in sync with entries
-            this.getDatabase().addDatabaseChangeListener(new AutoCompletersUpdater());
+            this.getDatabase().getEventBus().register(new AutoCompleteListener());
         } else {
             // create empty ContentAutoCompleters() if autoCompletion is deactivated
             autoCompleters = new ContentAutoCompleters(Globals.journalAbbreviationLoader);
