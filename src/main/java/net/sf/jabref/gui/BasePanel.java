@@ -60,6 +60,7 @@ import net.sf.jabref.JabRefPreferences;
 import net.sf.jabref.collab.ChangeScanner;
 import net.sf.jabref.collab.FileUpdateListener;
 import net.sf.jabref.collab.FileUpdatePanel;
+import net.sf.jabref.event.AddEntryEvent;
 import net.sf.jabref.event.AddOrChangeEntryEvent;
 import net.sf.jabref.exporter.BibDatabaseWriter;
 import net.sf.jabref.exporter.ExportToClipboardAction;
@@ -124,9 +125,6 @@ import net.sf.jabref.logic.util.UpdateField;
 import net.sf.jabref.logic.util.io.FileBasedLock;
 import net.sf.jabref.logic.util.io.FileUtil;
 import net.sf.jabref.model.database.BibDatabase;
-import net.sf.jabref.model.database.DatabaseChangeEvent;
-import net.sf.jabref.model.database.DatabaseChangeEvent.ChangeType;
-import net.sf.jabref.model.database.DatabaseChangeListener;
 import net.sf.jabref.model.database.KeyCollisionException;
 import net.sf.jabref.model.entry.BibEntry;
 import net.sf.jabref.model.entry.EntryType;
@@ -243,7 +241,7 @@ public class BasePanel extends JPanel implements ClipboardOwner, FileUpdateListe
         File file = bibDatabaseContext.getDatabaseFile();
 
         // ensure that at each addition of a new entry, the entry is added to the groups interface
-        this.database.addDatabaseChangeListener(new GroupTreeUpdater());
+        this.database.getEventBus().register(new GroupTreeListener());
 
         if (file == null) {
             if (database.hasEntries()) {
@@ -1258,13 +1256,12 @@ public class BasePanel extends JPanel implements ClipboardOwner, FileUpdateListe
      * This listener is used to add a new entry to a group (or a set of groups) in case the Group View is selected and
      * one or more groups are marked
      */
-    private class GroupTreeUpdater implements DatabaseChangeListener {
+    private class GroupTreeListener {
 
-        @Override
-        public void databaseChanged(final DatabaseChangeEvent e) {
-            if ((e.getType() == ChangeType.ADDED_ENTRY) && Globals.prefs.getBoolean(JabRefPreferences.AUTO_ASSIGN_GROUP)
-                    && frame.groupToggle.isSelected()) {
-                final List<BibEntry> entries = Collections.singletonList(e.getEntry());
+        @Subscribe
+        public void listen(AddEntryEvent aee) {
+            if (Globals.prefs.getBoolean(JabRefPreferences.AUTO_ASSIGN_GROUP) && frame.groupToggle.isSelected()) {
+                final List<BibEntry> entries = Collections.singletonList(aee.getEntry());
                 final TreePath[] selection = frame.getGroupSelector().getGroupsTree().getSelectionPaths();
                 if (selection != null) {
                     // it is possible that the user selected nothing. Therefore, checked for "!= null"
