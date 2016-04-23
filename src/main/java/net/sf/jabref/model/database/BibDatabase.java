@@ -87,11 +87,6 @@ public class BibDatabase {
     private boolean followCrossrefs = true;
 
     /**
-     * Behavior
-     */
-    private final Set<DatabaseChangeListener> changeListeners = new HashSet<>();
-
-    /**
      * Returns the number of entries.
      */
     public int getEntryCount() {
@@ -495,14 +490,6 @@ public class BibDatabase {
             res = newRes.toString();
         }
         return res;
-    }
-
-    public void addDatabaseChangeListener(DatabaseChangeListener l) {
-        changeListeners.add(l);
-    }
-
-    public void removeDatabaseChangeListener(DatabaseChangeListener l) {
-        changeListeners.remove(l);
     }
 
     /**
