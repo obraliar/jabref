@@ -42,11 +42,14 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
+import net.sf.jabref.event.AddEntryEvent;
+import net.sf.jabref.event.RemoveEntryEvent;
 import net.sf.jabref.model.entry.BibEntry;
 import net.sf.jabref.model.entry.BibtexString;
 import net.sf.jabref.model.entry.EntryUtil;
 import net.sf.jabref.model.entry.MonthUtil;
 
+import com.google.common.eventbus.EventBus;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -84,11 +87,6 @@ public class BibDatabase {
     private boolean followCrossrefs = true;
 
     /**
-     * Behavior
-     */
-    private final Set<DatabaseChangeListener> changeListeners = new HashSet<>();
-
-    /**
      * Returns the number of entries.
      */
     public int getEntryCount() {
@@ -108,7 +106,7 @@ public class BibDatabase {
      */
     public synchronized EntrySorter getSorter(Comparator<BibEntry> comp) {
         EntrySorter sorter = new EntrySorter(entries, comp);
-        addDatabaseChangeListener(sorter);
+        eventBus.register(sorter);
         return sorter;
     }
 
@@ -117,6 +115,21 @@ public class BibDatabase {
      */
     public boolean containsEntryWithId(String id) {
         return internalIDs.contains(id);
+    }
+
+
+    /**
+     * Event bus
+     */
+    private final EventBus eventBus;
+
+
+    /**
+     * Constructor
+     * Creates an eventBus for each database.
+     */
+    public BibDatabase() {
+        this.eventBus = new EventBus();
     }
 
     public List<BibEntry> getEntries() {
@@ -184,7 +197,7 @@ public class BibDatabase {
 
         internalIDs.add(id);
         entries.add(entry);
-        fireDatabaseChanged(new DatabaseChangeEvent(this, DatabaseChangeEvent.ChangeType.ADDED_ENTRY, entry));
+        eventBus.post(new AddEntryEvent(entry));
         return duplicationChecker.checkForDuplicateKeyAndAdd(null, entry.getCiteKey());
     }
 
@@ -199,7 +212,7 @@ public class BibDatabase {
         if (anyRemoved) {
             internalIDs.remove(toBeDeleted.getId());
             duplicationChecker.removeKeyFromSet(toBeDeleted.getCiteKey());
-            fireDatabaseChanged(new DatabaseChangeEvent(this, DatabaseChangeEvent.ChangeType.REMOVED_ENTRY, toBeDeleted));
+            eventBus.post(new RemoveEntryEvent(toBeDeleted));
         }
     }
 
@@ -479,22 +492,6 @@ public class BibDatabase {
         return res;
     }
 
-
-
-    private void fireDatabaseChanged(DatabaseChangeEvent e) {
-        for (DatabaseChangeListener tmpListener : changeListeners) {
-            tmpListener.databaseChanged(e);
-        }
-    }
-
-    public void addDatabaseChangeListener(DatabaseChangeListener l) {
-        changeListeners.add(l);
-    }
-
-    public void removeDatabaseChangeListener(DatabaseChangeListener l) {
-        changeListeners.remove(l);
-    }
-
     /**
      * Returns the text stored in the given field of the given bibtex entry
      * which belongs to the given database.
@@ -561,5 +558,9 @@ public class BibDatabase {
 
     public String getEpilog() {
         return epilog;
+    }
+
+    public EventBus getEventBus() {
+        return this.eventBus;
     }
 }
