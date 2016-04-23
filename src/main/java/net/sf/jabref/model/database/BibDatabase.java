@@ -87,6 +87,12 @@ public class BibDatabase {
     private boolean followCrossrefs = true;
 
     /**
+     * Event bus
+     */
+    private final EventBus eventBus;
+
+
+    /**
      * Returns the number of entries.
      */
     public int getEntryCount() {
@@ -116,13 +122,6 @@ public class BibDatabase {
     public boolean containsEntryWithId(String id) {
         return internalIDs.contains(id);
     }
-
-
-    /**
-     * Event bus
-     */
-    private final EventBus eventBus;
-
 
     /**
      * Constructor
