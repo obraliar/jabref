@@ -214,7 +214,7 @@ public class FieldFormatterCleanups {
 
     public static FieldFormatterCleanups parse(List<String> formatterMetaList) {
 
-        if (formatterMetaList != null && formatterMetaList.size() >= 2) {
+        if ((formatterMetaList != null) && (formatterMetaList.size() >= 2)) {
             boolean enablementStatus = "enabled".equals(formatterMetaList.get(0));
             String formatterString = formatterMetaList.get(1);
             return new FieldFormatterCleanups(enablementStatus, formatterString);

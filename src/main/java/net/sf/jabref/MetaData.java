@@ -40,7 +40,6 @@ import net.sf.jabref.logic.labelpattern.AbstractLabelPattern;
 import net.sf.jabref.logic.labelpattern.DatabaseLabelPattern;
 import net.sf.jabref.logic.util.strings.StringUtil;
 import net.sf.jabref.model.database.BibDatabaseMode;
-import net.sf.jabref.sql.DBStrings;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -49,27 +48,24 @@ public class MetaData implements Iterable<String> {
 
     private static final Log LOGGER = LogFactory.getLog(MetaData.class);
     public static final String META_FLAG = "jabref-meta: ";
-    private static final String SAVE_ORDER_CONFIG = "saveOrderConfig";
+    public static final String SAVE_ORDER_CONFIG = "saveOrderConfig";
 
-    private static final String SAVE_ACTIONS = "saveActions";
-    private static final String PREFIX_KEYPATTERN = "keypattern_";
-    private static final String KEYPATTERNDEFAULT = "keypatterndefault";
-    private static final String DATABASE_TYPE = "databaseType";
+    public static final String SAVE_ACTIONS = "saveActions";
+    public static final String PREFIX_KEYPATTERN = "keypattern_";
+    public static final String KEYPATTERNDEFAULT = "keypatterndefault";
+    public static final String DATABASE_TYPE = "databaseType";
 
     private static final String GROUPSTREE = "groupstree";
-    private static final String FILE_DIRECTORY = Globals.FILE_FIELD + Globals.DIR_SUFFIX;
+    public static final String FILE_DIRECTORY = Globals.FILE_FIELD + Globals.DIR_SUFFIX;
     public static final String SELECTOR_META_PREFIX = "selector_";
-    private static final String PROTECTED_FLAG_META = "protectedFlag";
+    public static final String PROTECTED_FLAG_META = "protectedFlag";
 
-    private final Map<String, List<String>> metaData = new HashMap<>();
+    private Map<String, List<String>> metaData = new HashMap<>();
     private GroupTreeNode groupsRoot;
 
     private AbstractLabelPattern labelPattern;
 
-    private DBStrings dbStrings = new DBStrings();
-
     private Charset encoding = Globals.prefs.getDefaultEncoding();
-
 
     /**
      * The MetaData object stores all meta data sets in Vectors. To ensure that
@@ -220,14 +216,6 @@ public class MetaData implements Iterable<String> {
             return res.toString();
         }
         return null;
-    }
-
-    public DBStrings getDBStrings() {
-        return dbStrings;
-    }
-
-    public void setDBStrings(DBStrings dbStrings) {
-        this.dbStrings = dbStrings;
     }
 
     /**
@@ -454,5 +442,17 @@ public class MetaData implements Iterable<String> {
 
     public void setEncoding(Charset encoding) {
         this.encoding = Objects.requireNonNull(encoding);
+    }
+
+    public void clearMetaData() {
+        metaData.clear();
+    }
+
+    public Map<String, List<String>> getMetaData() {
+        return metaData;
+    }
+
+    public void setMetaData(Map<String, List<String>> metaData) {
+        this.metaData = metaData;
     }
 }
