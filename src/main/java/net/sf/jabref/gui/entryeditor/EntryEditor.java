@@ -64,6 +64,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.text.JTextComponent;
 
+import net.sf.jabref.BibDatabaseContext;
 import net.sf.jabref.Globals;
 import net.sf.jabref.JabRefPreferences;
 import net.sf.jabref.event.FieldChangedEvent;
@@ -106,6 +107,7 @@ import net.sf.jabref.logic.util.date.TimeStamp;
 import net.sf.jabref.model.EntryTypes;
 import net.sf.jabref.model.database.BibDatabase;
 import net.sf.jabref.model.database.BibDatabaseMode;
+import net.sf.jabref.model.database.DatabaseLocation;
 import net.sf.jabref.model.entry.BibEntry;
 import net.sf.jabref.model.entry.EntryConverter;
 import net.sf.jabref.model.entry.EntryType;
@@ -205,10 +207,14 @@ public class EntryEditor extends JPanel implements EntryContainer {
 
     private final TabListener tabListener = new TabListener();
 
+    private final BibDatabaseContext bibDatabaseContext;
+
+
     public EntryEditor(JabRefFrame frame, BasePanel panel, BibEntry entry) {
         this.frame = frame;
         this.panel = panel;
         this.entry = entry;
+        this.bibDatabaseContext = frame.getCurrentBasePanel().getBibDatabaseContext();
 
         entry.registerListener(this);
         entry.registerListener(SpecialFieldUpdateListener.getInstance());
@@ -752,13 +758,23 @@ public class EntryEditor extends JPanel implements EntryContainer {
     public synchronized void switchTo(BibEntry switchEntry) {
         storeCurrentEdit();
 
+        boolean isRemoteDatabase = bibDatabaseContext.getDatabase().getLocation() == DatabaseLocation.REMOTE;
+
         // Remove this instance as property listener for the entry:
         this.entry.unregisterListener(this);
+
+        if (isRemoteDatabase) {
+            this.entry.unregisterListener(bibDatabaseContext.getDBSynchronizer());
+        }
 
         this.entry = switchEntry;
 
         // Register as property listener for the new entry:
         this.entry.registerListener(this);
+
+        if (isRemoteDatabase) {
+            this.entry.registerListener(bibDatabaseContext.getDBSynchronizer());
+        }
 
         updateAllFields();
         validateAllFields();
