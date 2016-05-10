@@ -35,6 +35,7 @@ import java.util.TreeSet;
 import net.sf.jabref.Globals;
 import net.sf.jabref.JabRefPreferences;
 import net.sf.jabref.event.FieldChangedEvent;
+import net.sf.jabref.event.location.EntryEventLocation;
 import net.sf.jabref.model.FieldChange;
 import net.sf.jabref.model.database.BibDatabase;
 
@@ -53,6 +54,12 @@ public class BibEntry implements Cloneable {
     public static final String DEFAULT_TYPE = "misc";
 
     private String id;
+
+    // This id is set by the remote database system (DBS).
+    // It has to be unique on remote DBS for all connected JabRef instances.
+    // The old id above does not satisfy this requirement.
+    private int remote_id;
+
     private String type;
     private Map<String, String> fields = new HashMap<>();
 
@@ -101,6 +108,7 @@ public class BibEntry implements Cloneable {
 
         this.id = id;
         setType(type);
+        this.remote_id = -1;
     }
 
     /**
@@ -194,7 +202,6 @@ public class BibEntry implements Cloneable {
     /**
      * Returns the contents of the given field, or null if it is not set.
      */
-    @Deprecated //Use getFieldOptional instead
     public String getField(String name) {
         return fields.get(toLowerCase(name));
     }
@@ -340,8 +347,9 @@ public class BibEntry implements Cloneable {
      * Set a field, and notify listeners about the change.
      *  @param name  The field to set.
      * @param value The value to set.
+     * @param eventLocation Event location affected while setting the field
      */
-    public Optional<FieldChange> setField(String name, String value) {
+    public Optional<FieldChange>  setField(String name, String value, EntryEventLocation eventLocation) {
         Objects.requireNonNull(name, "field name must not be null");
         Objects.requireNonNull(value, "field value must not be null");
 
@@ -365,8 +373,18 @@ public class BibEntry implements Cloneable {
         fields.put(fieldName, value);
 
         FieldChange change = new FieldChange(this, fieldName, oldValue, value);
-        eventBus.post(new FieldChangedEvent(change));
+        eventBus.post(new FieldChangedEvent(change, eventLocation));
         return Optional.of(change);
+    }
+
+    /**
+     * Set a field, and notify listeners about the change.
+     *
+     * @param name  The field to set.
+     * @param value The value to set.
+     */
+    public Optional<FieldChange> setField(String name, String value) {
+        return setField(name, value, EntryEventLocation.ALL);
     }
 
     /**
@@ -590,6 +608,15 @@ public class BibEntry implements Cloneable {
     public Map<String, String> getFieldMap() {
         return fields;
     }
+
+    public int getRemoteId() {
+        return this.remote_id;
+    }
+
+    public void setRemoteId(int remote_id) {
+        this.remote_id = remote_id;
+    }
+
 
     @Override
     public boolean equals(Object o) {
