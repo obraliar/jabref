@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -249,6 +250,11 @@ public class BibDatabaseWriter {
 
         return changes;
     }
+
+    public static List<FieldChange> applySaveActions(BibEntry entry, MetaData metaData) {
+        return applySaveActions(Arrays.asList(entry), metaData);
+    }
+
 
     /**
      * Writes the file encoding information.
