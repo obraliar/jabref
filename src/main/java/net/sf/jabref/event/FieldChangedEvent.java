@@ -1,5 +1,6 @@
 package net.sf.jabref.event;
 
+import net.sf.jabref.event.location.EntryEventLocation;
 import net.sf.jabref.model.entry.BibEntry;
 
 /**
@@ -17,6 +18,18 @@ public class FieldChangedEvent extends EntryChangedEvent {
      */
     public FieldChangedEvent(BibEntry bibEntry, String fieldName, String newValue) {
         super(bibEntry);
+        this.fieldName = fieldName;
+        this.newValue = newValue;
+    }
+
+    /**
+     * @param bibEntry Affected BibEntry object
+     * @param fieldName Name of field which has been changed
+     * @param newValue new field value
+     * @param location location Location affected by this event
+     */
+    public FieldChangedEvent(BibEntry bibEntry, String fieldName, String newValue, EntryEventLocation location) {
+        super(bibEntry, location);
         this.fieldName = fieldName;
         this.newValue = newValue;
     }
