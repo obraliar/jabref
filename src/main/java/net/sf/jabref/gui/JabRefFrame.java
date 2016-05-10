@@ -142,7 +142,6 @@ import net.sf.jabref.specialfields.Rank;
 import net.sf.jabref.specialfields.ReadStatus;
 import net.sf.jabref.specialfields.Relevance;
 import net.sf.jabref.specialfields.SpecialFieldsUtils;
-import net.sf.jabref.sql.importer.DbImportAction;
 
 import com.jgoodies.looks.HeaderStyle;
 import com.jgoodies.looks.Options;
@@ -472,10 +471,6 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
             Localization.menuTitle("Connect to external SQL database"),
             Localization.lang("Connect to external SQL database"));
 
-    private final AbstractAction dbExport = new GeneralAction(Actions.DB_EXPORT,
-            Localization.menuTitle("Export to external SQL database"),
-            Localization.lang("Export to external SQL database"));
-
     private final AbstractAction cleanupEntries = new GeneralAction(Actions.CLEANUP,
             Localization.menuTitle("Cleanup entries") + ELLIPSES,
             Localization.lang("Cleanup entries"),
@@ -487,7 +482,6 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
             Localization.lang("Merge entries"),
             IconTheme.JabRefIcon.MERGE_ENTRIES.getIcon());
 
-    private final AbstractAction dbImport = new DbImportAction(this).getAction();
     private final AbstractAction downloadFullText = new GeneralAction(Actions.DOWNLOAD_FULL_TEXT,
             Localization.menuTitle("Look up full text document"),
             Localization.lang("Follow DOI or URL link and try to locate PDF full text document"));
@@ -1208,8 +1202,6 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
         file.add(exportSelected);
         file.addSeparator();
         file.add(dbConnect);
-        file.add(dbImport);
-        file.add(dbExport);
 
         file.addSeparator();
         file.add(databaseProperties);
@@ -1548,7 +1540,7 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
                 dupliCheck, autoSetFile, newEntryAction, plainTextImport, getMassSetField(), getManageKeywords(),
                 pushExternalButton.getMenuAction(), closeDatabaseAction, getSwitchPreviewAction(), checkIntegrity,
                 toggleHighlightAny, toggleHighlightAll, toggleHighlightDisable, databaseProperties, abbreviateIso, abbreviateMedline,
-                unabbreviate, exportAll, exportSelected, importCurrent, saveAll, dbConnect, dbExport, focusTable,
+                unabbreviate, exportAll, exportSelected, importCurrent, saveAll, dbConnect, focusTable,
                 toggleRelevance, toggleQualityAssured, togglePrinted, pushExternalButton.getComponent()));
 
         openDatabaseOnlyActions.addAll(newSpecificEntryAction);

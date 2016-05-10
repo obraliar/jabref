@@ -41,8 +41,6 @@ import net.sf.jabref.logic.labelpattern.AbstractLabelPattern;
 import net.sf.jabref.logic.labelpattern.DatabaseLabelPattern;
 import net.sf.jabref.logic.util.strings.StringUtil;
 import net.sf.jabref.model.database.BibDatabaseMode;
-import net.sf.jabref.sql.DBStrings;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -66,9 +64,6 @@ public class MetaData implements Iterable<String> {
     private GroupTreeNode groupsRoot;
 
     private AbstractLabelPattern labelPattern;
-
-    private DBStrings dbStrings = new DBStrings();
-
 
     /**
      * The MetaData object stores all meta data sets in Vectors. To ensure that
@@ -213,14 +208,6 @@ public class MetaData implements Iterable<String> {
             return res.toString();
         }
         return null;
-    }
-
-    public DBStrings getDBStrings() {
-        return dbStrings;
-    }
-
-    public void setDBStrings(DBStrings dbStrings) {
-        this.dbStrings = dbStrings;
     }
 
     /**
