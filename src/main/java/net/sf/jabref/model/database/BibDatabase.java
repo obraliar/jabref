@@ -88,6 +88,19 @@ public class BibDatabase {
 
     private final EventBus eventBus = new EventBus();
 
+    private DatabaseLocation location;
+
+    private String name;
+
+
+    public BibDatabase() {
+        this(DatabaseLocation.LOCAL);
+    }
+
+    public BibDatabase(DatabaseLocation location) {
+        this.location = location;
+    }
+
     /**
      * Returns the number of entries.
      */
@@ -563,4 +576,13 @@ public class BibDatabase {
     public void registerListener(Object object) {
         this.eventBus.register(object);
     }
+
+    public void setLocation(DatabaseLocation location) {
+        this.location = location;
+    }
+
+    public DatabaseLocation getLocation() {
+        return this.location;
+    }
+    
 }

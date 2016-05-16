@@ -138,7 +138,6 @@ import net.sf.jabref.specialfields.Relevance;
 import net.sf.jabref.specialfields.SpecialFieldAction;
 import net.sf.jabref.specialfields.SpecialFieldDatabaseChangeListener;
 import net.sf.jabref.specialfields.SpecialFieldValue;
-
 import ca.odell.glazedlists.event.ListEventListener;
 import com.google.common.eventbus.Subscribe;
 import com.jgoodies.forms.builder.FormBuilder;

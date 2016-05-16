@@ -88,6 +88,7 @@ import net.sf.jabref.external.push.PushToApplicationButton;
 import net.sf.jabref.external.push.PushToApplications;
 import net.sf.jabref.gui.actions.Actions;
 import net.sf.jabref.gui.actions.AutoLinkFilesAction;
+import net.sf.jabref.gui.actions.OpenRemoteDatabaseAction;
 import net.sf.jabref.gui.actions.ErrorConsoleAction;
 import net.sf.jabref.gui.actions.ManageKeywordsAction;
 import net.sf.jabref.gui.actions.MassSetFieldAction;
@@ -265,6 +266,7 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
     private final AbstractAction selectKeys = new SelectKeysAction();
     private final AbstractAction newBibtexDatabaseAction = new NewDatabaseAction(this, BibDatabaseMode.BIBTEX);
     private final AbstractAction newBiblatexDatabaseAction = new NewDatabaseAction(this, BibDatabaseMode.BIBLATEX);
+    private final AbstractAction openRemoteDatabaseAction = new OpenRemoteDatabaseAction(this);
     private final AbstractAction newSubDatabaseAction = new NewSubDatabaseAction(this);
     private final AbstractAction forkMeOnGitHubAction = new ForkMeOnGitHubAction();
     private final AbstractAction donationAction = new DonateAction();
@@ -466,10 +468,6 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
     private final AbstractAction databaseProperties = new DatabasePropertiesAction();
     private final AbstractAction bibtexKeyPattern = new BibtexKeyPatternAction();
     private final AbstractAction errorConsole = new ErrorConsoleAction(this, Globals.streamEavesdropper, GuiAppender.CACHE);
-
-    private final AbstractAction dbConnect = new GeneralAction(Actions.DB_CONNECT,
-            Localization.menuTitle("Connect to external SQL database"),
-            Localization.lang("Connect to external SQL database"));
 
     private final AbstractAction cleanupEntries = new GeneralAction(Actions.CLEANUP,
             Localization.menuTitle("Cleanup entries") + ELLIPSES,
@@ -1201,7 +1199,7 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
         file.add(exportAll);
         file.add(exportSelected);
         file.addSeparator();
-        file.add(dbConnect);
+        file.add(openRemoteDatabaseAction);
 
         file.addSeparator();
         file.add(databaseProperties);
@@ -1540,7 +1538,7 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
                 dupliCheck, autoSetFile, newEntryAction, plainTextImport, getMassSetField(), getManageKeywords(),
                 pushExternalButton.getMenuAction(), closeDatabaseAction, getSwitchPreviewAction(), checkIntegrity,
                 toggleHighlightAny, toggleHighlightAll, toggleHighlightDisable, databaseProperties, abbreviateIso, abbreviateMedline,
-                unabbreviate, exportAll, exportSelected, importCurrent, saveAll, dbConnect, focusTable,
+                unabbreviate, exportAll, exportSelected, importCurrent, saveAll, focusTable,
                 toggleRelevance, toggleQualityAssured, togglePrinted, pushExternalButton.getComponent()));
 
         openDatabaseOnlyActions.addAll(newSpecificEntryAction);
