@@ -766,7 +766,7 @@ public class EntryEditor extends JPanel implements EntryContainer {
         this.entry.unregisterListener(this);
 
         if (isRemoteDatabase) {
-            //this.entry.unregisterListener(bibDatabaseContext.getDBSynchronizer());
+            this.entry.unregisterListener(bibDatabaseContext.getDBSynchronizer());
         }
 
         this.entry = switchEntry;
