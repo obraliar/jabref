@@ -52,9 +52,14 @@ public class DBSynchronizer {
         dbHelper.removeEntry(event.getBibEntry());
     }
 
-    //TODO synchronizer: ignore fields jabref_database, type ...
+    // todo synchronizer: ignore fields jabref_database, type ...
     //TODO improve!!!
     public void synchronizeLocalDatabase(BibDatabase bibDatabase) {
+
+        if (!dbHelper.checkIntegrity(DBType.MYSQL)) {
+            System.out.println("checkIntegrity: NOT OK. Fixing...");
+            dbHelper.setUpRemoteDatabase();
+        }
 
         try {
             ArrayList<ArrayList<String>> matrix = dbHelper.getQueryResultMatrix("SELECT * FROM entry");
@@ -70,12 +75,13 @@ public class DBSynchronizer {
                         if (columns.get(j).equals("remote_id")) {
                             Integer remote_id = Integer.parseInt(value);
                             bibEntry.setRemoteId(remote_id);
+                        } else if (columns.get(j).equals("entrytype")) {
+                            bibEntry.setType(value);
                         } else {
                             bibEntry.setField(columns.get(j), value);
                         }
                     }
                 }
-                bibEntry.setType("article"); //TODO
                 bibDatabase.insertEntry(bibEntry);
             }
 

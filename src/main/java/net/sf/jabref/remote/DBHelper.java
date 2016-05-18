@@ -1,40 +1,87 @@
 package net.sf.jabref.remote;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
-import net.sf.jabref.model.entry.BibEntry;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import net.sf.jabref.model.entry.BibEntry;
 
 // TODO Locking
 // TODO Exceptions
 
 public class DBHelper {
 
-    private static final Log LOGGER = LogFactory.getLog(DBConnector.class);
+    // private static final Log LOGGER = LogFactory.getLog(DBConnector.class);
 
     private Connection connection;
 
 
     public boolean checkIntegrity(DBType dbType) {
-        if (dbType == DBType.MYSQL) {
-            try (ResultSet resultSet = query("SELECT * FROM entry")) {
-                ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
-                return resultSetMetaData.getColumnName(1).equals("remote_id")
-                        && resultSetMetaData.getColumnTypeName(1).equals("INT");
-            } catch (SQLException e) {
-                e.printStackTrace();
+
+        try {
+            DatabaseMetaData databaseMetaData = connection.getMetaData();
+            try (ResultSet databaseMetaDataResultSet = databaseMetaData.getTables(null, null, null, null)) {
+
+                Set<String> requiredTables = new HashSet<>();
+                requiredTables.add("entry");
+
+                while (databaseMetaDataResultSet.next()) {
+                    requiredTables.remove(databaseMetaDataResultSet.getString("TABLE_NAME"));
+                }
+                databaseMetaDataResultSet.close();
+
+                if (requiredTables.isEmpty()) {
+                    try (ResultSet resultSet = query("SELECT * FROM entry")) {
+                        ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+                        Map<String, String> requiredColumns = new HashMap<>();
+                        requiredColumns.put("remote_id", "INT");
+                        requiredColumns.put("entrytype", "VARCHAR");
+
+                        for (int i = 0; i < resultSetMetaData.getColumnCount(); i++) {
+                            requiredColumns.remove(resultSetMetaData.getColumnName(i + 1),
+                                        resultSetMetaData.getColumnTypeName(i + 1));
+                        }
+
+                        return requiredColumns.size() == 0;
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+
+                    if (dbType == DBType.MYSQL) {
+                        /*..*/
+                    }
+                }
+
+                return false;
             }
+        } catch (SQLException e1) {
+            e1.printStackTrace();
         }
+
+
         return false;
         /*... TODO ... also for other types*/
+    }
+
+    public void setUpRemoteDatabase() {
+        try {
+            connection.createStatement().executeUpdate(
+                      "CREATE TABLE IF NOT EXISTS entry ("
+                    + "remote_id int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,"
+                    + "entrytype varchar(255) DEFAULT NULL"
+                    + ") ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
     }
 
     public void insertEntry(BibEntry bibEntry) {
@@ -45,7 +92,6 @@ public class DBHelper {
         if (remote_id != -1) {
             try (ResultSet resultSet = query("SELECT * FROM entry WHERE remote_id = " + remote_id)) {
                 if (resultSet.next()) {
-                    System.out.println("/!\\ WARNING: already exists."); //TODO warning on gui (exclude case when entries are imported at the beginning)
                     return;
                 }
             } catch (SQLException e1) {
@@ -59,26 +105,24 @@ public class DBHelper {
         keyList.addAll(bibEntry.getFieldNames());
 
         for (int i = 0; i < keyList.size(); i++) {
-            query = query + keyList.get(i);
-            query = i == (keyList.size() - 1) ? query : query + ", ";
+            query = query + keyList.get(i) + ", ";
         }
-        query = query + ") VALUES(";
+        query = query + "entrytype) VALUES(";
         for (int i = 0; i < keyList.size(); i++) {
-            query = query + "\"" + bibEntry.getField(keyList.get(i)) + "\"";
-            query = i == (keyList.size() - 1) ? query : query + ", ";
+            query = query + "\"" + bibEntry.getField(keyList.get(i)) + "\", ";
         }
-        query = query + ")";
+        query = query + "\"" + bibEntry.getType() + "\")";
 
 
-        try {
-            Statement statement = connection.createStatement();
+        try (Statement statement = connection.createStatement()) {
             statement.executeUpdate(query, Statement.RETURN_GENERATED_KEYS);
-            ResultSet generatedKeys = statement.getGeneratedKeys();
-            if (generatedKeys.next()) {
-                bibEntry.setRemoteId(generatedKeys.getInt(1));
+            try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    bibEntry.setRemoteId(generatedKeys.getInt(1));
+                }
+                statement.close();
+                generatedKeys.close();
             }
-            statement.close();
-            generatedKeys.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -89,6 +133,7 @@ public class DBHelper {
     }
 
 
+    // TODO Case when bibEntry was not synchronized and remote_id is -1
     public void updateEntry(BibEntry bibEntry, String column, String newValue) {
         prepareEntryTableStructure(bibEntry);
         System.out.println(">>> SQL UPDATE: " + "UPDATE entry SET " + column + " = " + "\""+ newValue  +"\" WHERE remote_id = " + bibEntry.getRemoteId());
@@ -136,6 +181,7 @@ public class DBHelper {
     }
 
 
+    //TODO Parameterize
     public Set<String> getColumnNames() {
         try (ResultSet resultSet = query("SELECT * FROM entry")) {
             ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
@@ -194,33 +240,4 @@ public class DBHelper {
     public void setConnection(Connection connection) {
         this.connection = connection;
     }
-
-    /*public void updateEntry(BibEntry bibEntry) {
-    prepareEntryTableStructure(bibEntry);
-
-    // TODO Case when bibEntry was not synchronized and remote_id is -1
-    String query = "UPDATE entry SET ";
-    ArrayList<String> columnNameList = new ArrayList<>();
-    columnNameList.addAll(getColumnNames());
-    columnNameList.remove("remote_id");
-
-    for (int i = 0; i < columnNameList.size(); i++) {
-        String columnName = columnNameList.get(i);
-        if (bibEntry.getField(columnName) != null) {
-            query = query + columnName + " = \"" + bibEntry.getField(columnName) + "\"";
-        } else {
-            query = query + columnName + " = NULL";
-        }
-        query = i < (columnNameList.size() - 1) ? query + ", " : query;
-    }
-
-    query = query + " WHERE remote_id = " + bibEntry.getRemoteId();
-    System.out.println(">>> SQL UPDATE: " + query);
-
-    try {
-        connection.createStatement().executeUpdate(query);
-    } catch (SQLException e) {
-        e.printStackTrace();
-    }
-    }*/
 }
