@@ -49,6 +49,7 @@ public class BibEntry implements Cloneable {
     public static final String DEFAULT_TYPE = "misc";
 
     private String id;
+    private int remote_id;
     private String type;
     private Map<String, String> fields = new HashMap<>();
 
@@ -97,6 +98,7 @@ public class BibEntry implements Cloneable {
 
         this.id = id;
         setType(type);
+        this.remote_id = -1;
     }
 
     /**
@@ -585,6 +587,15 @@ public class BibEntry implements Cloneable {
     public Map<String, String> getFieldMap() {
         return fields;
     }
+
+    public int getRemoteId() {
+        return this.remote_id;
+    }
+
+    public void setRemoteId(int remote_id) {
+        this.remote_id = remote_id;
+    }
+
 
     @Override
     public boolean equals(Object o) {

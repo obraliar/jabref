@@ -584,5 +584,5 @@ public class BibDatabase {
     public DatabaseLocation getLocation() {
         return this.location;
     }
-    
+
 }
