@@ -133,6 +133,7 @@ import net.sf.jabref.logic.preferences.LastFocusedTabPreferences;
 import net.sf.jabref.logic.util.OS;
 import net.sf.jabref.logic.util.io.FileUtil;
 import net.sf.jabref.model.database.BibDatabaseMode;
+import net.sf.jabref.model.database.DatabaseLocation;
 import net.sf.jabref.model.entry.BibEntry;
 import net.sf.jabref.model.entry.BibtexEntryTypes;
 import net.sf.jabref.model.entry.EntryType;
@@ -724,11 +725,15 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
         String modeInfo = String.format(" (%s)", Localization.lang("%0 mode", mode));
         String changeFlag = panel.isModified() ? "*" : "";
 
-        if (panel.getBibDatabaseContext().getDatabaseFile() == null) {
-            setTitle(GUIGlobals.FRAME_TITLE + " - " + GUIGlobals.UNTITLED_TITLE + changeFlag + modeInfo);
+        if (panel.getBibDatabaseContext().getDatabase().getLocation() == DatabaseLocation.LOCAL) {
+            if (panel.getBibDatabaseContext().getDatabaseFile() == null) {
+                setTitle(GUIGlobals.FRAME_TITLE + " - " + GUIGlobals.UNTITLED_TITLE + changeFlag + modeInfo);
+            } else {
+                String databaseFile = panel.getBibDatabaseContext().getDatabaseFile().getPath();
+                setTitle(GUIGlobals.FRAME_TITLE + " - " + databaseFile + changeFlag + modeInfo);
+            }
         } else {
-            String databaseFile = panel.getBibDatabaseContext().getDatabaseFile().getPath();
-            setTitle(GUIGlobals.FRAME_TITLE + " - " + databaseFile + changeFlag + modeInfo);
+                setTitle(GUIGlobals.FRAME_TITLE + " - " + panel.getBibDatabaseContext().getDBSynchronizer().getRemoteDatabaseName() + " (remote)" + changeFlag + modeInfo);
         }
     }
 

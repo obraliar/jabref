@@ -13,7 +13,8 @@ import net.sf.jabref.model.entry.BibEntry;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-// TODO Locking.
+// TODO Locking
+// TODO Exceptions
 
 public class DBHelper {
 
@@ -36,15 +37,15 @@ public class DBHelper {
         /*... TODO ... also for other types*/
     }
 
-    public void insertNewEntry(BibEntry bibEntry) {
-        prepareTableForInsertion(bibEntry);
+    public void insertEntry(BibEntry bibEntry) {
+        prepareEntryTableStructure(bibEntry);
 
         // Check if exists
-        String remote_id = bibEntry.getField("remote_id");
-        if (remote_id != null) {
+        int remote_id = bibEntry.getRemoteId();
+        if (remote_id != -1) {
             try (ResultSet resultSet = query("SELECT * FROM entry WHERE remote_id = " + remote_id)) {
                 if (resultSet.next()) {
-                    System.out.println("/!\\ WARNING: already exists.");
+                    System.out.println("/!\\ WARNING: already exists."); //TODO warning on gui (exclude case when entries are imported at the beginning)
                     return;
                 }
             } catch (SQLException e1) {
@@ -74,7 +75,7 @@ public class DBHelper {
             statement.executeUpdate(query, Statement.RETURN_GENERATED_KEYS);
             ResultSet generatedKeys = statement.getGeneratedKeys();
             if (generatedKeys.next()) {
-                bibEntry.setField("remote_id", String.valueOf(generatedKeys.getInt(1)));
+                bibEntry.setRemoteId(generatedKeys.getInt(1));
             }
             statement.close();
             generatedKeys.close();
@@ -83,41 +84,38 @@ public class DBHelper {
         }
 
 
-        System.out.println("SQL INSERT: <<<<<<< " + query);
+        System.out.println(">>> SQL INSERT: " + query);
 
     }
 
-    public void updateEntry(BibEntry bibEntry) {
-        prepareTableForInsertion(bibEntry);
 
-
-        String query = "UPDATE entry SET ";
-        ArrayList<String> columnNameList = new ArrayList<>();
-        columnNameList.addAll(getColumnNames());
-
-        for (int i = 0; i < columnNameList.size(); i++) {
-            String columnName = columnNameList.get(i);
-            if (bibEntry.getField(columnName) != null) {
-                query = query + columnName + " = \"" + bibEntry.getField(columnName) + "\"";
-            } else {
-                query = query + columnName + " = NULL";
-            }
-            query = i < (columnNameList.size() - 1) ? query + ", " : query;
-        }
-
-        query = query + " WHERE remote_id = " + bibEntry.getField("remote_id");
-        System.out.println("SQL_UPDATE: <<<<<<< " + query);
-
+    public void updateEntry(BibEntry bibEntry, String column, String newValue) {
+        prepareEntryTableStructure(bibEntry);
+        System.out.println(">>> SQL UPDATE: " + "UPDATE entry SET " + column + " = " + "\""+ newValue  +"\" WHERE remote_id = " + bibEntry.getRemoteId());
         try {
-            connection.createStatement().executeUpdate(query);
+            connection.createStatement().executeUpdate("UPDATE entry SET " + column + " = " + "\""+ newValue  +"\" WHERE remote_id = " + bibEntry.getRemoteId());
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
-
     }
 
-    public void prepareTableForInsertion(BibEntry bibEntry) {
+    public void removeEntry(BibEntry bibEntry) {
+        System.out.println(">>> SQL DELETE: " + "DELETE FROM entry WHERE remote_id = " + bibEntry.getRemoteId());
+        try {
+            connection.createStatement().executeUpdate("DELETE FROM entry WHERE remote_id = " + bibEntry.getRemoteId());
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     *  Prepares the database table for a new bibEntry.
+     *  Learning table structure: Columns which are not available are going to be created.
+     *
+     *  @param bibEntry Entry which pretends which missing columns should be created.
+     *
+     */
+    public void prepareEntryTableStructure(BibEntry bibEntry) {
         Set<String> fieldNames = bibEntry.getFieldNames();
         fieldNames.removeAll(getColumnNames());
 
@@ -129,6 +127,14 @@ public class DBHelper {
             e.printStackTrace();
         }
     }
+
+    /**
+     *  Deletes all unused columns where every entry has a value NULL.
+     */
+    public void normalizeEntryTable() {
+        return;
+    }
+
 
     public Set<String> getColumnNames() {
         try (ResultSet resultSet = query("SELECT * FROM entry")) {
@@ -147,8 +153,6 @@ public class DBHelper {
         }
         return null;
     }
-
-    //TODO normalize: add method deleting unused columns
 
     public ArrayList<ArrayList<String>> getQueryResultMatrix(String query) throws Exception {
         try (ResultSet resultSet = query(query)) {
@@ -190,4 +194,33 @@ public class DBHelper {
     public void setConnection(Connection connection) {
         this.connection = connection;
     }
+
+    /*public void updateEntry(BibEntry bibEntry) {
+    prepareEntryTableStructure(bibEntry);
+
+    // TODO Case when bibEntry was not synchronized and remote_id is -1
+    String query = "UPDATE entry SET ";
+    ArrayList<String> columnNameList = new ArrayList<>();
+    columnNameList.addAll(getColumnNames());
+    columnNameList.remove("remote_id");
+
+    for (int i = 0; i < columnNameList.size(); i++) {
+        String columnName = columnNameList.get(i);
+        if (bibEntry.getField(columnName) != null) {
+            query = query + columnName + " = \"" + bibEntry.getField(columnName) + "\"";
+        } else {
+            query = query + columnName + " = NULL";
+        }
+        query = i < (columnNameList.size() - 1) ? query + ", " : query;
+    }
+
+    query = query + " WHERE remote_id = " + bibEntry.getRemoteId();
+    System.out.println(">>> SQL UPDATE: " + query);
+
+    try {
+        connection.createStatement().executeUpdate(query);
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+    }*/
 }

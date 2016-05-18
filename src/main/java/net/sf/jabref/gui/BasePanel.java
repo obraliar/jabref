@@ -125,6 +125,7 @@ import net.sf.jabref.logic.util.UpdateField;
 import net.sf.jabref.logic.util.io.FileBasedLock;
 import net.sf.jabref.logic.util.io.FileUtil;
 import net.sf.jabref.model.database.BibDatabase;
+import net.sf.jabref.model.database.DatabaseLocation;
 import net.sf.jabref.model.database.KeyCollisionException;
 import net.sf.jabref.model.entry.BibEntry;
 import net.sf.jabref.model.entry.EntryType;
@@ -276,6 +277,11 @@ public class BasePanel extends JPanel implements ClipboardOwner, FileUpdateListe
             String changeFlag = isModified() ? "*" : "";
             title.append(getBibDatabaseContext().getDatabaseFile().getName()).append(changeFlag);
         }
+
+        if (getBibDatabaseContext().getDatabase().getLocation() == DatabaseLocation.REMOTE) {
+            title.append(" (remote: " + getBibDatabaseContext().getDBSynchronizer().getRemoteDatabaseName() + ")");
+        }
+
         return title.toString();
     }
 
