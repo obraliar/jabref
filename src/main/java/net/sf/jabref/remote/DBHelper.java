@@ -23,11 +23,25 @@ public class DBHelper {
 
     private Connection connection;
 
+    private DBType dbType;
 
-    public boolean checkIntegrity(DBType dbType) {
+
+    public boolean checkIntegrity() {
+
+        Map<String, String> requiredColumns = new HashMap<>();
+        if (this.dbType == DBType.MYSQL) {
+            requiredColumns.put("remote_id", "INT");
+            requiredColumns.put("entrytype", "VARCHAR");
+        } else if (this.dbType == DBType.POSTGRESQL) {
+            requiredColumns.put("remote_id", "serial");
+            requiredColumns.put("entrytype", "varchar");
+        } else {
+            requiredColumns.put("unknown", "unknown");
+        }
 
         try {
             DatabaseMetaData databaseMetaData = connection.getMetaData();
+
             try (ResultSet databaseMetaDataResultSet = databaseMetaData.getTables(null, null, null, null)) {
 
                 Set<String> requiredTables = new HashSet<>();
@@ -41,9 +55,6 @@ public class DBHelper {
                 if (requiredTables.isEmpty()) {
                     try (ResultSet resultSet = query("SELECT * FROM entry")) {
                         ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
-                        Map<String, String> requiredColumns = new HashMap<>();
-                        requiredColumns.put("remote_id", "INT");
-                        requiredColumns.put("entrytype", "VARCHAR");
 
                         for (int i = 0; i < resultSetMetaData.getColumnCount(); i++) {
                             requiredColumns.remove(resultSetMetaData.getColumnName(i + 1),
@@ -55,7 +66,7 @@ public class DBHelper {
                         e.printStackTrace();
                     }
 
-                    if (dbType == DBType.MYSQL) {
+                    if (this.dbType == DBType.MYSQL) {
                         /*..*/
                     }
                 }
@@ -71,13 +82,20 @@ public class DBHelper {
         /*... TODO ... also for other types*/
     }
 
-    public void setUpRemoteDatabase() {
+    public void setUpRemoteDatabase(DBType dbType) {
         try {
-            connection.createStatement().executeUpdate(
+            if (dbType == DBType.MYSQL) {
+                connection.createStatement().executeUpdate(
                       "CREATE TABLE IF NOT EXISTS entry ("
                     + "remote_id int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,"
                     + "entrytype varchar(255) DEFAULT NULL"
                     + ") ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;");
+            } else if (dbType == DBType.POSTGRESQL) {
+                connection.createStatement().executeUpdate(
+                        "CREATE TABLE IF NOT EXISTS entry ("
+                      + "remote_id SERIAL PRIMARY KEY,"
+                      + "entrytype varchar);");
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -109,9 +127,9 @@ public class DBHelper {
         }
         query = query + "entrytype) VALUES(";
         for (int i = 0; i < keyList.size(); i++) {
-            query = query + "\"" + bibEntry.getField(keyList.get(i)) + "\", ";
+            query = query + "'" + bibEntry.getField(keyList.get(i)) + "', ";
         }
-        query = query + "\"" + bibEntry.getType() + "\")";
+        query = query + "'" + bibEntry.getType() + "')";
 
 
         try (Statement statement = connection.createStatement()) {
@@ -136,9 +154,9 @@ public class DBHelper {
     // TODO Case when bibEntry was not synchronized and remote_id is -1
     public void updateEntry(BibEntry bibEntry, String column, String newValue) {
         prepareEntryTableStructure(bibEntry);
-        System.out.println(">>> SQL UPDATE: " + "UPDATE entry SET " + column + " = " + "\""+ newValue  +"\" WHERE remote_id = " + bibEntry.getRemoteId());
+        System.out.println(">>> SQL UPDATE: " + "UPDATE entry SET " + column + " = " + "'"+ newValue  +"' WHERE remote_id = " + bibEntry.getRemoteId());
         try {
-            connection.createStatement().executeUpdate("UPDATE entry SET " + column + " = " + "\""+ newValue  +"\" WHERE remote_id = " + bibEntry.getRemoteId());
+            connection.createStatement().executeUpdate("UPDATE entry SET " + column + " = " + "'"+ newValue  +"' WHERE remote_id = " + bibEntry.getRemoteId());
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -239,5 +257,13 @@ public class DBHelper {
 
     public void setConnection(Connection connection) {
         this.connection = connection;
+    }
+
+    public void setDBType(DBType dbType) {
+        this.dbType = dbType;
+    }
+
+    public DBType getDBType() {
+        return this.dbType;
     }
 }

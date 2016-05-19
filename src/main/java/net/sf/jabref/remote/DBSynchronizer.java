@@ -15,6 +15,7 @@ public class DBSynchronizer {
 
     private Connection connection;
     private final DBHelper dbHelper = new DBHelper();
+    private DBType dbType;
 
 
     @Subscribe
@@ -56,9 +57,9 @@ public class DBSynchronizer {
     //TODO improve!!!
     public void synchronizeLocalDatabase(BibDatabase bibDatabase) {
 
-        if (!dbHelper.checkIntegrity(DBType.MYSQL)) {
+        if (!dbHelper.checkIntegrity()) {
             System.out.println("checkIntegrity: NOT OK. Fixing...");
-            dbHelper.setUpRemoteDatabase();
+            dbHelper.setUpRemoteDatabase(this.dbType);
         }
 
         try {
@@ -127,6 +128,15 @@ public class DBSynchronizer {
     // TODO getter: database name (probably not the right place)
     public String getRemoteDatabaseName() {
         return "test123";
+    }
+
+    public void setDBType(DBType dbType) {
+        this.dbType = dbType;
+        dbHelper.setDBType(dbType);
+    }
+
+    public DBType getDBType() {
+        return this.dbType;
     }
 
 }

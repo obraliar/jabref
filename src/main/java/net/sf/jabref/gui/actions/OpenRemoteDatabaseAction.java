@@ -44,7 +44,10 @@ public class OpenRemoteDatabaseAction extends MnemonicAwareAction {
          *  |_ output at frame
          */
 
-        bibDatabaseContext.getDBSynchronizer().setConnection(DBConnector.connect(DBType.MYSQL, "localhost", "jabref2", "root", "q1w2e3r4"));
+        DBType dbType = DBType.ORACLE;
+
+        bibDatabaseContext.getDBSynchronizer().setConnection(DBConnector.connect(dbType, "localhost", "mydb", "admir", "q1w2e3r4"));
+        bibDatabaseContext.getDBSynchronizer().setDBType(dbType);
         bibDatabaseContext.getDBSynchronizer().synchronizeLocalDatabase(bibDatabaseContext.getDatabase());
 
         //TODO bibDatabaseContext.setMode(mode);

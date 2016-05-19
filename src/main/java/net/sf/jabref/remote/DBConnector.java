@@ -22,7 +22,7 @@ public class DBConnector {
                 Class.forName("com.mysql.jdbc.Driver");
                 url = url + "mysql://" + host + "/" + database;
             } else if (dbType == DBType.ORACLE) {
-                Class.forName("org.postgresql.Driver");
+                Class.forName("oracle.jdbc.driver.OracleDriver");
                 url = url + "oracle:thin:@" + host + ":" + database;
             } else if (dbType == DBType.POSTGRESQL) {
                 Class.forName("org.postgresql.Driver");
