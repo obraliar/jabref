@@ -23,7 +23,7 @@ public class DBConnector {
                 url = url + "mysql://" + host + "/" + database;
             } else if (dbType == DBType.ORACLE) {
                 Class.forName("oracle.jdbc.driver.OracleDriver");
-                url = url + "oracle:thin:@" + host + ":" + database;
+                url = url + "oracle:thin:@" + host + ":1521:" + database;
             } else if (dbType == DBType.POSTGRESQL) {
                 Class.forName("org.postgresql.Driver");
                 url = url + "postgresql://" + host + "/" + database;
@@ -33,7 +33,7 @@ public class DBConnector {
             LOGGER.error("Could not load JDBC driver: " + e.getMessage());
         } catch (SQLException e) {
             LOGGER.error("Could not connect to database: " +
-                    e.getMessage() + "\nError code: " + e.getErrorCode());
+                    e.getMessage() + " - Error code: " + e.getErrorCode());
         }
         return null;
     }

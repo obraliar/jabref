@@ -64,7 +64,6 @@ public class DBSynchronizer {
 
         try {
             ArrayList<ArrayList<String>> matrix = dbHelper.getQueryResultMatrix("SELECT * FROM entry");
-
             ArrayList<String> columns = matrix.get(0);
 
             for (int i = 1; i < matrix.size(); i++) {

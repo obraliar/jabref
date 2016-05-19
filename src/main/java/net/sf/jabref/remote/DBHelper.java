@@ -95,6 +95,12 @@ public class DBHelper {
                         "CREATE TABLE IF NOT EXISTS entry ("
                       + "remote_id SERIAL PRIMARY KEY,"
                       + "entrytype varchar);");
+            } else if (dbType == DBType.ORACLE) {
+                connection.createStatement().executeUpdate(
+                        "CREATE table \"entry\" (    "
+                        + "\"REMOTE_ID\"  NUMBER NOT NULL,    "
+                        + "\"ENTRYTYPE\"  VARCHAR2(4000),    "
+                        + "constraint  \"entry_pk\" primary key (\"REMOTE_ID\"))");
             }
         } catch (SQLException e) {
             e.printStackTrace();
