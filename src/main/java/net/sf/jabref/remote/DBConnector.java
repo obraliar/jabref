@@ -11,8 +11,6 @@ public class DBConnector {
 
     private static final Log LOGGER = LogFactory.getLog(DBConnector.class);
 
-    private Connection connection;
-
     public static Connection getNewConnection(DBType dbType, String host, String database, String user, String password) {
 
         String url = "jdbc:";
@@ -40,9 +38,5 @@ public class DBConnector {
 
     public static boolean isNull(Connection connection) {
         return connection == null;
-    }
-
-    public Connection getConnection() {
-        return this.connection;
     }
 }

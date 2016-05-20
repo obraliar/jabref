@@ -27,6 +27,8 @@ public class DBProcessor {
 
     public static final String REMOTE_ID = "REMOTE_ID";
     public static final String ENTRYTYPE = "ENTRYTYPE";
+    public static final String ENTRY = "ENTRY";
+
 
 
     public DBProcessor(Connection connection, DBType dbType) {
@@ -44,7 +46,7 @@ public class DBProcessor {
             try (ResultSet databaseMetaDataResultSet = databaseMetaData.getTables(null, null, null, null)) {
 
                 Set<String> requiredTables = new HashSet<>();
-                requiredTables.add("ENTRY");
+                requiredTables.add(ENTRY);
 
                 while (databaseMetaDataResultSet.next()) {
                     String tableName = databaseMetaDataResultSet.getString("TABLE_NAME").toUpperCase();
@@ -53,7 +55,7 @@ public class DBProcessor {
                 databaseMetaDataResultSet.close();
 
                 if (requiredTables.isEmpty()) {
-                    try (ResultSet resultSet = dbHelper.query("SELECT * FROM " + escape("ENTRY", dbType))) {
+                    try (ResultSet resultSet = dbHelper.query("SELECT * FROM " + escape(ENTRY, dbType))) {
                         ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
 
                         for (int i = 0; i < resultSetMetaData.getColumnCount(); i++) {
@@ -84,26 +86,26 @@ public class DBProcessor {
         try {
             if (dbType == DBType.MYSQL) {
                 connection.createStatement().executeUpdate(
-                      "CREATE TABLE IF NOT EXISTS ENTRY ("
-                    + "REMOTE_ID int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,"
-                    + "ENTRYTYPE VARCHAR(255) DEFAULT NULL"
+                      "CREATE TABLE IF NOT EXISTS " + ENTRY +" ("
+                                + REMOTE_ID + " INT(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,"
+                                + ENTRYTYPE + " VARCHAR(255) DEFAULT NULL"
                     + ") ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;");
             } else if (dbType == DBType.POSTGRESQL) {
                 connection.createStatement().executeUpdate(
-                        "CREATE TABLE IF NOT EXISTS ENTRY ("
-                      + "REMOTE_ID SERIAL PRIMARY KEY,"
-                      + "ENTRYTYPE VARCHAR);");
+                        "CREATE TABLE IF NOT EXISTS " + ENTRY + " ("
+                      + REMOTE_ID + " SERIAL PRIMARY KEY,"
+                      + ENTRYTYPE + " VARCHAR);");
             } else if (dbType == DBType.ORACLE) {
                 connection.createStatement().executeUpdate(
-                        "CREATE TABLE \"ENTRY\" ("
-                        + "\"REMOTE_ID\"  NUMBER NOT NULL,"
-                        + "\"ENTRYTYPE\"  VARCHAR2(255) NULL,"
-                        + "CONSTRAINT  \"ENTRY_PK\" PRIMARY KEY (\"REMOTE_ID\"))");
-                connection.createStatement().executeUpdate("CREATE SEQUENCE \"ENTRY_SEQ\"");
+                        "CREATE TABLE \"" + ENTRY + "\" ("
+                        + "\"" + REMOTE_ID + "\"  NUMBER NOT NULL,"
+                        + "\"" + ENTRYTYPE + "\"  VARCHAR2(255) NULL,"
+                        + "CONSTRAINT  \"ENTRY_PK\" PRIMARY KEY (\"" + REMOTE_ID + "\"))");
+                connection.createStatement().executeUpdate("CREATE SEQUENCE \"" + ENTRY + "_SEQ\"");
                 connection.createStatement().executeUpdate(
-                        "CREATE TRIGGER \"BI_ENTRY\" BEFORE INSERT ON \"ENTRY\" "
+                        "CREATE TRIGGER \"BI_" + ENTRY + "\" BEFORE INSERT ON \"" + ENTRY + "\" "
                         + "FOR EACH ROW BEGIN "
-                        + "SELECT \"ENTRY_SEQ\".NEXTVAL INTO :NEW.\"REMOTE_ID\" FROM DUAL; "
+                        + "SELECT \"" + ENTRY + "_SEQ\".NEXTVAL INTO :NEW." + REMOTE_ID.toLowerCase() + " FROM DUAL; "
                         + "END;");
             }
         } catch (SQLException e) {
@@ -111,7 +113,7 @@ public class DBProcessor {
         }
 
         if (!checkIntegrity()) {
-            System.err.println("Corrupt tables. Please fix manully or use other.");
+            System.err.println("Corrupt tables. Please fix manully or use another.");
         }
 
     }
@@ -123,7 +125,7 @@ public class DBProcessor {
         // Check if exists
         int remote_id = bibEntry.getRemoteId();
         if (remote_id != -1) {
-            try (ResultSet resultSet = dbHelper.query("SELECT * FROM "+ escape("ENTRY", dbType) +" WHERE "+ escape("REMOTE_ID", dbType) +" = " + remote_id)) {
+            try (ResultSet resultSet = dbHelper.query("SELECT * FROM "+ escape(ENTRY, dbType) +" WHERE "+ escape(REMOTE_ID, dbType) +" = " + remote_id)) {
                 if (resultSet.next()) {
                     return;
                 }
@@ -133,24 +135,23 @@ public class DBProcessor {
         }
 
 
-        String query = "INSERT INTO " + escape("ENTRY", dbType) + "(";
+        String query = "INSERT INTO " + escape(ENTRY, dbType) + "(";
         ArrayList<String> keyList = new ArrayList<>(bibEntry.getFieldNames());
 
         for (int i = 0; i < keyList.size(); i++) {
             query = query + escape(keyList.get(i).toUpperCase(), dbType) + ", ";
         }
-        query = query + escape("ENTRYTYPE", dbType) + ") VALUES(";
+        query = query + escape(ENTRYTYPE, dbType) + ") VALUES(";
         for (int i = 0; i < keyList.size(); i++) {
             query = query + "'" + bibEntry.getField(keyList.get(i)) + "', ";
         }
         query = query + "'" + bibEntry.getType() + "')";
 
-        try (PreparedStatement preparedStatement = connection.prepareStatement(query, new String[] {"remote_id"})) { // lower case for postgresql // distinguish case
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query, new String[] {REMOTE_ID.toLowerCase()})) {
             preparedStatement.executeUpdate();
             try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
                     bibEntry.setRemoteId(generatedKeys.getInt(1));
-                    System.out.println("---->" + generatedKeys.getInt(1));
                 }
                 preparedStatement.close();
                 generatedKeys.close();
@@ -168,7 +169,10 @@ public class DBProcessor {
         prepareEntryTableStructure(bibEntry);
         System.out.println(">>> SQL UPDATE");
         try {
-            connection.createStatement().executeUpdate("UPDATE "+ escape("ENTRY", dbType) +" SET " + escape(column.toUpperCase(), dbType) + " = " + "'" + newValue + "' WHERE "+ escape("REMOTE_ID", dbType) +" = " + bibEntry.getRemoteId());
+            connection.createStatement()
+                    .executeUpdate("UPDATE " + escape(ENTRY, dbType) + " SET " + escape(column.toUpperCase(), dbType)
+                            + " = " + "'" + newValue + "' WHERE " + escape(REMOTE_ID, dbType) + " = "
+                            + bibEntry.getRemoteId());
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -177,8 +181,8 @@ public class DBProcessor {
     public void removeEntry(BibEntry bibEntry) {
         System.out.println(">>> SQL DELETE");
         try {
-            connection.createStatement().executeUpdate("DELETE FROM " + escape("ENTRY", dbType) + " WHERE "
-                    + escape("REMOTE_ID", dbType) + " = " + bibEntry.getRemoteId());
+            connection.createStatement().executeUpdate("DELETE FROM " + escape(ENTRY, dbType) + " WHERE "
+                    + escape(REMOTE_ID, dbType) + " = " + bibEntry.getRemoteId());
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -193,17 +197,14 @@ public class DBProcessor {
      */
     public void prepareEntryTableStructure(BibEntry bibEntry) {
         Set<String> fieldNames = dbHelper.allToUpperCase(bibEntry.getFieldNames());
-        fieldNames.removeAll(dbHelper.allToUpperCase(dbHelper.getColumnNames(escape("ENTRY", dbType))));
+        fieldNames.removeAll(dbHelper.allToUpperCase(dbHelper.getColumnNames(escape(ENTRY, dbType))));
+
+        String columnType = dbType == DBType.ORACLE ? " CLOB NULL" : " TEXT NULL DEFAULT NULL";
 
         try {
-            if (dbType == DBType.ORACLE) {
-                for (String fieldName : fieldNames) {
-                    connection.createStatement().executeUpdate("ALTER TABLE "+ escape("ENTRY", dbType) +" ADD ("+ escape(fieldName, dbType) +" CLOB NULL)");
-                }
-            } else {
-                for (String fieldName : fieldNames) {
-                    connection.createStatement().executeUpdate("ALTER TABLE "+ escape("ENTRY", dbType) +" ADD "+ escape(fieldName, dbType) +" TEXT NULL DEFAULT NULL");
-                }
+            for (String fieldName : fieldNames) {
+                connection.createStatement().executeUpdate(
+                        "ALTER TABLE " + escape(ENTRY, dbType) + " ADD " + escape(fieldName, dbType) + columnType);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -221,15 +222,15 @@ public class DBProcessor {
 
     public List<BibEntry> getRemoteEntries() {
         ArrayList<BibEntry> remoteEntries = new ArrayList<>();
-        try (ResultSet resultSet = dbHelper.query("SELECT * FROM " + escape("ENTRY", dbType))) {
-            Set<String> columns = dbHelper.allToUpperCase(dbHelper.getColumnNames(escape("ENTRY", dbType)));
+        try (ResultSet resultSet = dbHelper.query("SELECT * FROM " + escape(ENTRY, dbType))) {
+            Set<String> columns = dbHelper.allToUpperCase(dbHelper.getColumnNames(escape(ENTRY, dbType)));
 
             while (resultSet.next()) {
                 BibEntry bibEntry = new BibEntry();
                 for (String column : columns) {
-                    if (column.equals("REMOTE_ID")) {
+                    if (column.equals(REMOTE_ID)) {
                         bibEntry.setRemoteId(resultSet.getInt(column));
-                    } else if (column.equals("ENTRYTYPE")) {
+                    } else if (column.equals(ENTRYTYPE)) {
                         bibEntry.setType(resultSet.getString(column));
                     } else {
                         String value = resultSet.getString(column);

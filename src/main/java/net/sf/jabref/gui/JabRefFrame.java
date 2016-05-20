@@ -863,7 +863,7 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
         List<String> filenames = new ArrayList<>();
         if (tabbedPane.getTabCount() > 0) {
             for (int i = 0; i < tabbedPane.getTabCount(); i++) {
-                if (getBasePanelAt(i).isModified()) {
+                if (getBasePanelAt(i).isModified() && (getBasePanelAt(i).getBibDatabaseContext().getDatabase().getLocation() == DatabaseLocation.LOCAL)) {
                     tabbedPane.setSelectedIndex(i);
                     String filename;
 
@@ -2124,7 +2124,7 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
             return;
         }
 
-        if (panel.isModified()) {
+        if (panel.isModified() && (panel.getBibDatabaseContext().getDatabase().getLocation() == DatabaseLocation.LOCAL)) {
             if (confirmClose(panel)) {
                 removeTab(panel);
             }

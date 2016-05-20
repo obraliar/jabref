@@ -32,7 +32,7 @@ public class OpenRemoteDatabaseAction extends MnemonicAwareAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        // Create a new, empty, database.
+
         BibDatabaseContext bibDatabaseContext = new BibDatabaseContext(DatabaseLocation.REMOTE,
                 new Defaults(BibDatabaseMode.BIBTEX));
 
@@ -52,6 +52,7 @@ public class OpenRemoteDatabaseAction extends MnemonicAwareAction {
         dbSynchronizer.initializeLocalDatabase(bibDatabaseContext.getDatabase());
 
         //TODO bibDatabaseContext.setMode(mode);
+
         jabRefFrame.addTab(bibDatabaseContext, Globals.prefs.getDefaultEncoding(), true);
 
         //TODO jabRefFrame.output(Localization.lang("New %0 database created.", mode.getFormattedName()));

@@ -33,7 +33,7 @@ public class DBSynchronizer {
     public void initializeLocalDatabase(BibDatabase bibDatabase) {
 
         if (!dbProcessor.checkIntegrity()) {
-            System.out.println("checkIntegrity: NOT OK. Fixing...");
+            System.out.println("Integrity check failed. Fixing...");
             dbProcessor.setUpRemoteDatabase();
         }
 
