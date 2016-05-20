@@ -12,34 +12,33 @@ import com.google.common.eventbus.Subscribe;
 public class DBSynchronizer {
 
     private Connection connection;
-    private final DBHelper dbHelper = new DBHelper();
+    private DBProcessor dbProcessor;
     private DBType dbType;
 
 
     @Subscribe
     public void listen(EntryAddedEvent event) {
-        dbHelper.insertEntry(event.getBibEntry());
+        dbProcessor.insertEntry(event.getBibEntry());
     }
 
     @Subscribe
     public void listen(FieldChangedEvent event) {
-        dbHelper.updateEntry(event.getBibEntry(), event.getFieldName(), event.getNewValue());
+        dbProcessor.updateEntry(event.getBibEntry(), event.getFieldName(), event.getNewValue());
     }
 
     @Subscribe
     public void listen(EntryRemovedEvent event) {
-        dbHelper.removeEntry(event.getBibEntry());
+        dbProcessor.removeEntry(event.getBibEntry());
     }
 
-    // TODO synchronizer: ignore fields jabref_database, type ...
     public void initializeLocalDatabase(BibDatabase bibDatabase) {
 
-        if (!dbHelper.checkIntegrity()) {
+        if (!dbProcessor.checkIntegrity()) {
             System.out.println("checkIntegrity: NOT OK. Fixing...");
-            dbHelper.setUpRemoteDatabase(this.dbType);
+            dbProcessor.setUpRemoteDatabase();
         }
 
-        for (BibEntry bibEntry : dbHelper.getRemoteEntries()) {
+        for (BibEntry bibEntry : dbProcessor.getRemoteEntries()) {
             bibDatabase.insertEntry(bibEntry);
         }
 
@@ -47,7 +46,6 @@ public class DBSynchronizer {
 
     public void setConnection(Connection connection) {
         this.connection = connection;
-        this.dbHelper.setConnection(connection);
     }
 
     // TODO getter: database name (probably not the right place)
@@ -55,13 +53,14 @@ public class DBSynchronizer {
         return "test123";
     }
 
-    public void setDBType(DBType dbType) {
-        this.dbType = dbType;
-        dbHelper.setDBType(dbType);
-    }
-
     public DBType getDBType() {
         return this.dbType;
+    }
+
+    public void setUp(Connection connection, DBType dbType) {
+        this.connection = connection;
+        this.dbType = dbType;
+        this.dbProcessor = new DBProcessor(connection, dbType);
     }
 
 }

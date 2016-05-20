@@ -12,6 +12,7 @@ import net.sf.jabref.logic.l10n.Localization;
 import net.sf.jabref.model.database.BibDatabaseMode;
 import net.sf.jabref.model.database.DatabaseLocation;
 import net.sf.jabref.remote.DBConnector;
+import net.sf.jabref.remote.DBSynchronizer;
 import net.sf.jabref.remote.DBType;
 
 /**
@@ -44,11 +45,11 @@ public class OpenRemoteDatabaseAction extends MnemonicAwareAction {
          *  |_ output at frame
          */
 
-        DBType dbType = DBType.ORACLE;
+        DBType dbType = DBType.POSTGRESQL;
 
-        bibDatabaseContext.getDBSynchronizer().setConnection(DBConnector.connect(dbType, "localhost", "xe", "admir", "q1w2e3r4"));
-        bibDatabaseContext.getDBSynchronizer().setDBType(dbType);
-        bibDatabaseContext.getDBSynchronizer().initializeLocalDatabase(bibDatabaseContext.getDatabase());
+        DBSynchronizer dbSynchronizer = bibDatabaseContext.getDBSynchronizer();
+        dbSynchronizer.setUp(DBConnector.getNewConnection(dbType, "localhost", "xe", "admir", "q1w2e3r4"), dbType);
+        dbSynchronizer.initializeLocalDatabase(bibDatabaseContext.getDatabase());
 
         //TODO bibDatabaseContext.setMode(mode);
         jabRefFrame.addTab(bibDatabaseContext, Globals.prefs.getDefaultEncoding(), true);

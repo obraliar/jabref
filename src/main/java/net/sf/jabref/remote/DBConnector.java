@@ -13,7 +13,7 @@ public class DBConnector {
 
     private Connection connection;
 
-    public static Connection connect(DBType dbType, String host, String database, String user, String password) {
+    public static Connection getNewConnection(DBType dbType, String host, String database, String user, String password) {
 
         String url = "jdbc:";
 
