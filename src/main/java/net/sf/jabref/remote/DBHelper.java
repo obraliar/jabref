@@ -43,4 +43,12 @@ public class DBHelper {
         return null;
     }
 
+    public Set<String> allToUpperCase(Set<String> stringSet) {
+        Set<String> upperCaseStringSet = new HashSet<>();
+        for (String string : stringSet) {
+            upperCaseStringSet.add(string.toUpperCase());
+        }
+        return upperCaseStringSet;
+    }
+
 }

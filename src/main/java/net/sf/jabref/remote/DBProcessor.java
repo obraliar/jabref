@@ -164,7 +164,6 @@ public class DBProcessor {
     }
 
 
-    // TODO Case when bibEntry was not synchronized and remote_id is -1
     public void updateEntry(BibEntry bibEntry, String column, String newValue) {
         prepareEntryTableStructure(bibEntry);
         System.out.println(">>> SQL UPDATE");
@@ -193,8 +192,8 @@ public class DBProcessor {
      *
      */
     public void prepareEntryTableStructure(BibEntry bibEntry) {
-        Set<String> fieldNames = allToUpperCase(bibEntry.getFieldNames());
-        fieldNames.removeAll(allToUpperCase(dbHelper.getColumnNames(escape("ENTRY", dbType))));
+        Set<String> fieldNames = dbHelper.allToUpperCase(bibEntry.getFieldNames());
+        fieldNames.removeAll(dbHelper.allToUpperCase(dbHelper.getColumnNames(escape("ENTRY", dbType))));
 
         try {
             if (dbType == DBType.ORACLE) {
@@ -223,7 +222,7 @@ public class DBProcessor {
     public List<BibEntry> getRemoteEntries() {
         ArrayList<BibEntry> remoteEntries = new ArrayList<>();
         try (ResultSet resultSet = dbHelper.query("SELECT * FROM " + escape("ENTRY", dbType))) {
-            Set<String> columns = allToUpperCase(dbHelper.getColumnNames(escape("ENTRY", dbType)));
+            Set<String> columns = dbHelper.allToUpperCase(dbHelper.getColumnNames(escape("ENTRY", dbType)));
 
             while (resultSet.next()) {
                 BibEntry bibEntry = new BibEntry();
@@ -247,6 +246,15 @@ public class DBProcessor {
         return remoteEntries;
     }
 
+    public String escape(String expression, DBType type) {
+        if (type == DBType.ORACLE) {
+            return "\"" + expression + "\"";
+        } else if (type == DBType.MYSQL) {
+            return "`" + expression + "`";
+        }
+        return expression;
+    }
+
     public void setConnection(Connection connection) {
         this.connection = connection;
     }
@@ -257,23 +265,6 @@ public class DBProcessor {
 
     public DBType getDBType() {
         return this.dbType;
-    }
-
-    public Set<String> allToUpperCase(Set<String> stringSet) {
-        Set<String> upperCaseStringSet = new HashSet<>();
-        for (String string : stringSet) {
-            upperCaseStringSet.add(string.toUpperCase());
-        }
-        return upperCaseStringSet;
-    }
-
-    public String escape(String expression, DBType type) {
-        if (type == DBType.ORACLE) {
-            return "\"" + expression + "\"";
-        } else if (type == DBType.MYSQL) {
-            return "`" + expression + "`";
-        }
-        return expression;
     }
 
 

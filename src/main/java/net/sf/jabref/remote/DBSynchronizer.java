@@ -11,7 +11,6 @@ import com.google.common.eventbus.Subscribe;
 
 public class DBSynchronizer {
 
-    private Connection connection;
     private DBProcessor dbProcessor;
     private DBType dbType;
 
@@ -44,10 +43,6 @@ public class DBSynchronizer {
 
     }
 
-    public void setConnection(Connection connection) {
-        this.connection = connection;
-    }
-
     // TODO getter: database name (probably not the right place)
     public String getRemoteDatabaseName() {
         return "test123";
@@ -58,7 +53,6 @@ public class DBSynchronizer {
     }
 
     public void setUp(Connection connection, DBType dbType) {
-        this.connection = connection;
         this.dbType = dbType;
         this.dbProcessor = new DBProcessor(connection, dbType);
     }
