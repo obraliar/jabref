@@ -48,7 +48,7 @@ public class OpenRemoteDatabaseAction extends MnemonicAwareAction {
 
         bibDatabaseContext.getDBSynchronizer().setConnection(DBConnector.connect(dbType, "localhost", "xe", "admir", "q1w2e3r4"));
         bibDatabaseContext.getDBSynchronizer().setDBType(dbType);
-        bibDatabaseContext.getDBSynchronizer().synchronizeLocalDatabase(bibDatabaseContext.getDatabase());
+        bibDatabaseContext.getDBSynchronizer().initializeLocalDatabase(bibDatabaseContext.getDatabase());
 
         //TODO bibDatabaseContext.setMode(mode);
         jabRefFrame.addTab(bibDatabaseContext, Globals.prefs.getDefaultEncoding(), true);
