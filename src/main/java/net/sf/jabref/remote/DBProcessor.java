@@ -217,18 +217,18 @@ public class DBProcessor {
      *  Deletes all unused columns where every entry has a value NULL.
      */
     public void normalizeEntryTable() {
-        ArrayList<String> allColumns = new ArrayList<>();
+        ArrayList<String> columnsToRemove = new ArrayList<>();
 
-        allColumns.addAll(dbHelper.allToUpperCase(dbHelper.getColumnNames(escape(ENTRY, dbType))));
-        allColumns.remove(REMOTE_ID);
-        allColumns.remove(ENTRYTYPE);
+        columnsToRemove.addAll(dbHelper.allToUpperCase(dbHelper.getColumnNames(escape(ENTRY, dbType))));
+        columnsToRemove.remove(REMOTE_ID);
+        columnsToRemove.remove(ENTRYTYPE);
 
         try (ResultSet resultSet = dbHelper.query("SELECT * FROM " + escape(ENTRY, dbType))) {
             while (resultSet.next()) {
-                for (int i = 0; i < allColumns.size(); i++) {
-                    String column = allColumns.get(i);
+                for (int i = 0; i < columnsToRemove.size(); i++) {
+                    String column = columnsToRemove.get(i);
                     if (resultSet.getObject(column) != null) {
-                        allColumns.remove(column);
+                        columnsToRemove.remove(column);
                     }
                 }
             }
@@ -242,10 +242,10 @@ public class DBProcessor {
             expressionPrefix = "DROP ";
         }
 
-        for (int i = 0; i < allColumns.size(); i++) {
-            String column = allColumns.get(i);
+        for (int i = 0; i < columnsToRemove.size(); i++) {
+            String column = columnsToRemove.get(i);
             columnExpression = columnExpression + expressionPrefix + escape(column, dbType);
-            columnExpression = i < (allColumns.size() - 1) ? columnExpression + ", " : columnExpression;
+            columnExpression = i < (columnsToRemove.size() - 1) ? columnExpression + ", " : columnExpression;
         }
 
         if (dbType == dbType.ORACLE) {
@@ -253,7 +253,9 @@ public class DBProcessor {
         }
 
         try {
-            connection.createStatement().executeUpdate("ALTER TABLE " + escape(ENTRY, dbType) + " " + columnExpression);
+            if (columnsToRemove.size() > 0) {
+                connection.createStatement().executeUpdate("ALTER TABLE " + escape(ENTRY, dbType) + " " + columnExpression);
+            }
         } catch (SQLException e) {
             LOGGER.error("SQL Error: " + e.getMessage());
         }
