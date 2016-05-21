@@ -78,7 +78,6 @@ public class DBProcessor {
             e1.printStackTrace();
         }
 
-
         return false;
         /*... TODO ... also for other types*/
     }
@@ -144,9 +143,9 @@ public class DBProcessor {
         }
         query = query + escape(ENTRYTYPE, dbType) + ") VALUES(";
         for (int i = 0; i < keyList.size(); i++) {
-            query = query + "'" + bibEntry.getField(keyList.get(i)) + "', ";
+            query = query + escapeValue(bibEntry.getField(keyList.get(i))) + ", ";
         }
-        query = query + "'" + bibEntry.getType() + "')";
+        query = query + escapeValue(bibEntry.getType()) + ")";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query, new String[] {REMOTE_ID.toLowerCase()})) {
             preparedStatement.executeUpdate();
@@ -168,11 +167,11 @@ public class DBProcessor {
 
     public void updateEntry(BibEntry bibEntry, String column, String newValue) {
         prepareEntryTableStructure(bibEntry);
-        System.out.println(">>> SQL UPDATE");
+
         try {
             connection.createStatement()
                     .executeUpdate("UPDATE " + escape(ENTRY, dbType) + " SET " + escape(column.toUpperCase(), dbType)
-                            + " = " + "'" + newValue + "' WHERE " + escape(REMOTE_ID, dbType) + " = "
+                            + " = " + escapeValue(newValue) + " WHERE " + escape(REMOTE_ID, dbType) + " = "
                             + bibEntry.getRemoteId());
         } catch (SQLException e) {
             e.printStackTrace();
@@ -187,6 +186,7 @@ public class DBProcessor {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        normalizeEntryTable();
     }
 
     /**
@@ -216,7 +216,50 @@ public class DBProcessor {
      *  Deletes all unused columns where every entry has a value NULL.
      */
     public void normalizeEntryTable() {
-        return;
+        ArrayList<String> allColumns = new ArrayList<>();
+
+        allColumns.addAll(dbHelper.allToUpperCase(dbHelper.getColumnNames(escape(ENTRY, dbType))));
+        allColumns.remove(REMOTE_ID);
+        allColumns.remove(ENTRYTYPE);
+
+        try (ResultSet resultSet = dbHelper.query("SELECT * FROM " + escape(ENTRY, dbType))) {
+            while (resultSet.next()) {
+                for (int i = 0; i < allColumns.size(); i++) {
+                    String column = allColumns.get(i);
+                    if (resultSet.getObject(column) != null) {
+                        allColumns.remove(column);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        String columns = "";
+        String expressionPrefix = "";
+        if ((dbType == dbType.MYSQL) || (dbType == dbType.POSTGRESQL)) {
+            expressionPrefix = "DROP ";
+        }
+
+        for (int i = 0; i < allColumns.size(); i++) {
+            String column = allColumns.get(i);
+            columns = columns + expressionPrefix + escape(column, dbType);
+            columns = i < (allColumns.size() - 1) ? columns + ", " : columns;
+        }
+
+        if (dbType == dbType.ORACLE) {
+            columns = "DROP (" + columns + ")";
+        }
+
+        System.out.println("ALTER TABLE " + escape(ENTRY, dbType) + " " + columns);
+
+        try {
+            connection.createStatement().executeUpdate("ALTER TABLE " + escape(ENTRY, dbType) + " " + columns);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+
     }
 
 
@@ -255,6 +298,15 @@ public class DBProcessor {
             return "`" + expression + "`";
         }
         return expression;
+    }
+
+    public String escapeValue(String value) {
+        if (value == null) {
+            value = "NULL";
+        } else {
+            value = "'" + value + "'";
+        }
+        return value;
     }
 
     public void setConnection(Connection connection) {

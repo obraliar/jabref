@@ -56,6 +56,8 @@ public class DBSynchronizer {
     }
 
     public void synchronizeLocalDatabase(BibDatabase bibDatabase) {
+        dbProcessor.normalizeEntryTable();
+
         List<BibEntry> localEntries = bibDatabase.getEntries();
         List<BibEntry> remoteEntries = dbProcessor.getRemoteEntries();
 
