@@ -262,24 +262,24 @@ public class BasePanel extends JPanel implements ClipboardOwner, FileUpdateListe
     public String getTabTitle() {
         StringBuilder title = new StringBuilder();
 
-        if (getBibDatabaseContext().getDatabaseFile() == null) {
-            title.append(GUIGlobals.UNTITLED_TITLE);
+        if (getBibDatabaseContext().getDatabase().getLocation() == DatabaseLocation.LOCAL) {
+            if (getBibDatabaseContext().getDatabaseFile() == null) {
+                title.append(GUIGlobals.UNTITLED_TITLE);
 
-            if (getDatabase().hasEntries()) {
-                // if the database is not empty and no file is assigned,
-                // the database came from an import and has to be treated somehow
-                // -> mark as changed
-                // This also happens internally at basepanel to ensure consistency line 224
-                title.append('*');
+                if (getDatabase().hasEntries()) {
+                    // if the database is not empty and no file is assigned,
+                    // the database came from an import and has to be treated somehow
+                    // -> mark as changed
+                    // This also happens internally at basepanel to ensure consistency line 224
+                    title.append('*');
+                }
+            } else {
+                // check if file is modified
+                String changeFlag = isModified() ? "*" : "";
+                title.append(getBibDatabaseContext().getDatabaseFile().getName()).append(changeFlag);
             }
-        } else {
-            // check if file is modified
-            String changeFlag = isModified() ? "*" : "";
-            title.append(getBibDatabaseContext().getDatabaseFile().getName()).append(changeFlag);
-        }
-
-        if (getBibDatabaseContext().getDatabase().getLocation() == DatabaseLocation.REMOTE) {
-            title.append(" (remote: " + getBibDatabaseContext().getDBSynchronizer().getRemoteDatabaseName() + ")");
+        } else if (getBibDatabaseContext().getDatabase().getLocation() == DatabaseLocation.REMOTE) {
+            title.append(getBibDatabaseContext().getDBSynchronizer().getDBName() + " (remote)");
         }
 
         return title.toString();
@@ -777,6 +777,11 @@ public class BasePanel extends JPanel implements ClipboardOwner, FileUpdateListe
 
         actions.put(Actions.OPEN_CONSOLE, (BaseAction) () -> JabRefDesktop
                 .openConsole(frame.getCurrentBasePanel().getBibDatabaseContext().getDatabaseFile()));
+
+        actions.put(Actions.PULL_REMOTE_ENTRIES, (BaseAction) () -> {
+            frame.getCurrentBasePanel().getBibDatabaseContext().getDBSynchronizer()
+                    .synchronizeLocalDatabase(frame.getCurrentBasePanel().getBibDatabaseContext().getDatabase());
+        });
 
         actions.put(Actions.OPEN_URL, new OpenURLAction());
 

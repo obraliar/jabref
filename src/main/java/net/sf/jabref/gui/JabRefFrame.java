@@ -319,6 +319,13 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
             Localization.lang("Open terminal here"),
             Globals.getKeyPrefs().getKey(KeyBinding.OPEN_CONSOLE),
             IconTheme.JabRefIcon.CONSOLE.getIcon());
+
+    private final AbstractAction pullRemoteEntries = new GeneralAction(Actions.PULL_REMOTE_ENTRIES,
+            Localization.menuTitle("Pull remote entries"),
+            Localization.lang("Pull remote entries"),
+            Globals.getKeyPrefs().getKey(KeyBinding.PULL_REMOTE_ENTRIES),
+            IconTheme.JabRefIcon.ARROW_DOWN_CIRCLE.getIcon());
+
     private final AbstractAction mark = new GeneralAction(Actions.MARK_ENTRIES, Localization.menuTitle("Mark entries"),
             Localization.lang("Mark entries"), Globals.getKeyPrefs().getKey(KeyBinding.MARK_ENTRIES), IconTheme.JabRefIcon.MARK_ENTRIES.getIcon());
     private final AbstractAction unmark = new GeneralAction(Actions.UNMARK_ENTRIES,
@@ -530,6 +537,7 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
     private final List<Object> openDatabaseOnlyActions = new LinkedList<>();
     private final List<Object> severalDatabasesOnlyActions = new LinkedList<>();
     private final List<Object> openAndSavedDatabasesOnlyActions = new LinkedList<>();
+    private final List<Object> remoteDatabasesOnlyActions = new LinkedList<>();
 
 
     private class EditModeAction extends AbstractAction {
@@ -704,7 +712,7 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
         }
     }
 
-    private void refreshTitleAndTabs() {
+    public void refreshTitleAndTabs() {
         setWindowTitle();
         updateAllTabTitles();
     }
@@ -732,8 +740,8 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
                 String databaseFile = panel.getBibDatabaseContext().getDatabaseFile().getPath();
                 setTitle(GUIGlobals.FRAME_TITLE + " - " + databaseFile + changeFlag + modeInfo);
             }
-        } else {
-                setTitle(GUIGlobals.FRAME_TITLE + " - " + panel.getBibDatabaseContext().getDBSynchronizer().getRemoteDatabaseName() + " (remote)" + changeFlag + modeInfo);
+        } else if (panel.getBibDatabaseContext().getDatabase().getLocation() == DatabaseLocation.REMOTE) {
+                setTitle(GUIGlobals.FRAME_TITLE + " - " + panel.getBibDatabaseContext().getDBSynchronizer().getDBName() + " (remote)" + modeInfo);
         }
     }
 
@@ -1365,6 +1373,7 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
         quality.add(findUnlinkedFiles);
         quality.add(autoLinkFile);
         quality.add(downloadFullText);
+        quality.add(pullRemoteEntries);
         mb.add(quality);
 
         tools.add(newSubDatabaseAction);
@@ -1473,6 +1482,7 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
         tlb.addAction(makeKeyAction);
         tlb.addAction(cleanupEntries);
         tlb.addAction(mergeEntries);
+        tlb.addAction(pullRemoteEntries);
         tlb.addAction(openConsole);
 
         tlb.addSeparator();
@@ -1555,6 +1565,7 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
                 .asList(nextTab, prevTab, sortTabs));
 
         openAndSavedDatabasesOnlyActions.addAll(Collections.singletonList(openConsole));
+        remoteDatabasesOnlyActions.addAll(Collections.singletonList(pullRemoteEntries));
 
         tabbedPane.addChangeListener(event -> updateEnabledState());
 
@@ -1593,6 +1604,7 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
             getBackAction().setEnabled(false);
             getForwardAction().setEnabled(false);
             setEnabled(openAndSavedDatabasesOnlyActions, false);
+            setEnabled(remoteDatabasesOnlyActions, false);
         }
 
 
@@ -1602,6 +1614,8 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
                 boolean saved = current.getBibDatabaseContext().getDatabaseFile() != null;
                 setEnabled(openAndSavedDatabasesOnlyActions, saved);
             }
+            setEnabled(remoteDatabasesOnlyActions,
+                    current.getBibDatabaseContext().getDatabase().getLocation() == DatabaseLocation.REMOTE);
         }
     }
 

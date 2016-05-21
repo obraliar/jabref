@@ -165,7 +165,7 @@ public class IconTheme {
         FILE_MULTIPLE("\uf222"), /*css: file-multiple */
         KEY_BINDINGS("\uf30c"), /*css: keyboard */
         FIND_DUPLICATES("\uf16b"), /*css: code-equal */
-
+        ARROW_DOWN_CIRCLE("\uf04b"), /*arrow-down-drop-circle-outline*/
         OPEN_IN_NEW_WINDOW("\uf3cc"), /*css: open-in-new */
         CASE_SENSITIVE("\uf02c"), /* css: mdi-alphabetical */
         REG_EX("\uf451"), /*css: mdi-regex */

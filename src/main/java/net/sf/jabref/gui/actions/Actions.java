@@ -41,6 +41,7 @@ public class Actions {
     public static final String OPEN_URL = "openUrl";
     public static final String PASTE = "paste";
     public static final String PLAIN_TEXT_IMPORT = "plainTextImport";
+    public static final String PULL_REMOTE_ENTRIES = "pullRemoteEntries";
     public static final String REDO = "redo";
     public static final String REMOVE_FROM_GROUP = "removeFromGroup";
     public static final String REPLACE_ALL = "replaceAll";

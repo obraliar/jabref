@@ -36,7 +36,4 @@ public class DBConnector {
         return null;
     }
 
-    public static boolean isNull(Connection connection) {
-        return connection == null;
-    }
 }

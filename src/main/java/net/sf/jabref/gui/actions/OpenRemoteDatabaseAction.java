@@ -45,10 +45,14 @@ public class OpenRemoteDatabaseAction extends MnemonicAwareAction {
          *  |_ output at frame
          */
 
-        DBType dbType = DBType.POSTGRESQL;
+        DBType dbType = DBType.ORACLE;
+        String host = "localhost";
+        String user = "admir";
+        String password = "q1w2e3r4";
+        String dbName = "xe";
 
         DBSynchronizer dbSynchronizer = bibDatabaseContext.getDBSynchronizer();
-        dbSynchronizer.setUp(DBConnector.getNewConnection(dbType, "localhost", "xe", "admir", "q1w2e3r4"), dbType);
+        dbSynchronizer.setUp(DBConnector.getNewConnection(dbType, host, dbName, user, password), dbType, dbName);
         dbSynchronizer.initializeLocalDatabase(bibDatabaseContext.getDatabase());
 
         //TODO bibDatabaseContext.setMode(mode);
