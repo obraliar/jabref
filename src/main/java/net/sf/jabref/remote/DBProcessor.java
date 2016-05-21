@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import net.sf.jabref.event.location.EntryEventLocation;
 import net.sf.jabref.model.entry.BibEntry;
 
 // TODO Exceptions/LOGGER
@@ -235,7 +236,7 @@ public class DBProcessor {
                     } else {
                         String value = resultSet.getString(column);
                         if (value != null) {
-                            bibEntry.setField(column.toLowerCase(), value);
+                            bibEntry.setField(column.toLowerCase(), value, EntryEventLocation.LOCAL);
                         }
                     }
                 }

@@ -11,20 +11,26 @@ public class DBConnector {
 
     private static final Log LOGGER = LogFactory.getLog(DBConnector.class);
 
+
     public static Connection getNewConnection(DBType dbType, String host, String database, String user, String password) {
+        return getNewConnection(dbType, host, getDefaultPort(dbType), database, user, password);
+    }
+
+    public static Connection getNewConnection(DBType dbType, String host, int port, String database, String user,
+            String password) {
 
         String url = "jdbc:";
 
         try {
             if (dbType == DBType.MYSQL) {
                 Class.forName("com.mysql.jdbc.Driver");
-                url = url + "mysql://" + host + "/" + database;
+                url = url + "mysql://" + host + ":" + port + "/" + database;
             } else if (dbType == DBType.ORACLE) {
                 Class.forName("oracle.jdbc.driver.OracleDriver");
-                url = url + "oracle:thin:@" + host + ":1521:" + database;
+                url = url + "oracle:thin:@" + host + ":" + port + ":" + database;
             } else if (dbType == DBType.POSTGRESQL) {
                 Class.forName("org.postgresql.Driver");
-                url = url + "postgresql://" + host + "/" + database;
+                url = url + "postgresql://" + host + ":" + port + "/" + database;
             }
             return DriverManager.getConnection(url, user, password);
         } catch (ClassNotFoundException e) {
@@ -36,4 +42,16 @@ public class DBConnector {
         return null;
     }
 
+    public static int getDefaultPort(DBType dbType) {
+        if (dbType == DBType.MYSQL) {
+            return 3306;
+        }
+        if (dbType == DBType.POSTGRESQL) {
+            return 5432;
+        }
+        if (dbType == DBType.ORACLE) {
+            return 1521;
+        }
+        return -1;
+    }
 }

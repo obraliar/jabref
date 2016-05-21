@@ -45,7 +45,7 @@ public class OpenRemoteDatabaseAction extends MnemonicAwareAction {
          *  |_ output at frame
          */
 
-        DBType dbType = DBType.ORACLE;
+        DBType dbType = DBType.MYSQL;
         String host = "localhost";
         String user = "admir";
         String password = "q1w2e3r4";

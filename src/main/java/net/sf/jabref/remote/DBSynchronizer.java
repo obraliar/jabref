@@ -30,7 +30,9 @@ public class DBSynchronizer {
 
     @Subscribe
     public void listen(FieldChangedEvent event) {
+        if (isInEventLocation(event)) {
             dbProcessor.updateEntry(event.getBibEntry(), event.getFieldName(), event.getNewValue());
+        }
     }
 
     @Subscribe
@@ -79,7 +81,7 @@ public class DBSynchronizer {
                     match = true;
                     Set<String> fields = remoteEntry.getFieldNames();
                     for (String field : fields) {
-                        localEntry.setField(field, remoteEntry.getField(field));
+                        localEntry.setField(field, remoteEntry.getField(field), EntryEventLocation.LOCAL);
                     }
                 }
             }

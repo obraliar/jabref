@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import net.sf.jabref.event.FieldChangedEvent;
+import net.sf.jabref.event.location.EntryEventLocation;
 import net.sf.jabref.model.database.BibDatabase;
 
 import com.google.common.base.Strings;
@@ -338,8 +339,9 @@ public class BibEntry implements Cloneable {
      *
      * @param name  The field to set.
      * @param value The value to set.
+     * @param eventLocation Event location affected while setting the field
      */
-    public void setField(String name, String value) {
+    public void setField(String name, String value, EntryEventLocation eventLocation) {
         Objects.requireNonNull(name, "field name must not be null");
         Objects.requireNonNull(value, "field value must not be null");
 
@@ -357,7 +359,17 @@ public class BibEntry implements Cloneable {
         changed = true;
 
         fields.put(fieldName, value);
-        eventBus.post(new FieldChangedEvent(this, fieldName, value));
+        eventBus.post(new FieldChangedEvent(this, fieldName, value, eventLocation));
+    }
+
+    /**
+     * Set a field, and notify listeners about the change.
+     *
+     * @param name  The field to set.
+     * @param value The value to set.
+     */
+    public void setField(String name, String value) {
+        setField(name, value, EntryEventLocation.ALL);
     }
 
     /**
