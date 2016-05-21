@@ -5,8 +5,10 @@ import java.util.List;
 import java.util.Set;
 
 import net.sf.jabref.event.EntryAddedEvent;
+import net.sf.jabref.event.EntryEvent;
 import net.sf.jabref.event.EntryRemovedEvent;
 import net.sf.jabref.event.FieldChangedEvent;
+import net.sf.jabref.event.location.EntryEventLocation;
 import net.sf.jabref.model.database.BibDatabase;
 import net.sf.jabref.model.entry.BibEntry;
 
@@ -21,17 +23,21 @@ public class DBSynchronizer {
 
     @Subscribe
     public void listen(EntryAddedEvent event) {
-        dbProcessor.insertEntry(event.getBibEntry());
+        if (isInEventLocation(event)) {
+            dbProcessor.insertEntry(event.getBibEntry());
+        }
     }
 
     @Subscribe
     public void listen(FieldChangedEvent event) {
-        dbProcessor.updateEntry(event.getBibEntry(), event.getFieldName(), event.getNewValue());
+            dbProcessor.updateEntry(event.getBibEntry(), event.getFieldName(), event.getNewValue());
     }
 
     @Subscribe
     public void listen(EntryRemovedEvent event) {
-        dbProcessor.removeEntry(event.getBibEntry());
+        if (isInEventLocation(event)) {
+            dbProcessor.removeEntry(event.getBibEntry());
+        }
     }
 
     public void initializeLocalDatabase(BibDatabase bibDatabase) {
@@ -51,9 +57,24 @@ public class DBSynchronizer {
         List<BibEntry> localEntries = bibDatabase.getEntries();
         List<BibEntry> remoteEntries = dbProcessor.getRemoteEntries();
 
-        for (BibEntry remoteEntry : remoteEntries) {
+        for (int i = 0; i < localEntries.size(); i++) {
+            BibEntry localEntry = localEntries.get(i);
             boolean match = false;
-            for (BibEntry localEntry : localEntries) {
+            for (int j = 0; j < remoteEntries.size(); j++) {
+                if (localEntry.getRemoteId() == remoteEntries.get(j).getRemoteId()) {
+                    match = true;
+                }
+            }
+            if (!match) {
+                bibDatabase.removeEntry(localEntry, EntryEventLocation.LOCAL);
+            }
+        }
+
+        for (int i = 0; i < remoteEntries.size(); i++) {
+            BibEntry remoteEntry = remoteEntries.get(i);
+            boolean match = false;
+            for (int j = 0; j < localEntries.size(); j++) {
+                BibEntry localEntry = localEntries.get(j);
                 if (remoteEntry.getRemoteId() == localEntry.getRemoteId()) {
                     match = true;
                     Set<String> fields = remoteEntry.getFieldNames();
@@ -63,10 +84,11 @@ public class DBSynchronizer {
                 }
             }
             if (!match) {
-                bibDatabase.insertEntry(remoteEntry);
+                bibDatabase.insertEntry(remoteEntry, EntryEventLocation.LOCAL);
             }
         }
     }
+
 
     public String getDBName() {
         return dbName;
@@ -74,6 +96,11 @@ public class DBSynchronizer {
 
     public DBType getDBType() {
         return this.dbType;
+    }
+
+    public boolean isInEventLocation(EntryEvent event) {
+        EntryEventLocation eventLocation = event.getEntryEventLocation();
+        return ((eventLocation == EntryEventLocation.REMOTE) || (eventLocation == EntryEventLocation.ALL));
     }
 
     public void setUp(Connection connection, DBType dbType, String dbName) {

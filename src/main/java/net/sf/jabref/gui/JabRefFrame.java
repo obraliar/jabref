@@ -320,11 +320,11 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
             Globals.getKeyPrefs().getKey(KeyBinding.OPEN_CONSOLE),
             IconTheme.JabRefIcon.CONSOLE.getIcon());
 
-    private final AbstractAction pullRemoteEntries = new GeneralAction(Actions.PULL_REMOTE_ENTRIES,
-            Localization.menuTitle("Pull remote entries"),
-            Localization.lang("Pull remote entries"),
-            Globals.getKeyPrefs().getKey(KeyBinding.PULL_REMOTE_ENTRIES),
-            IconTheme.JabRefIcon.ARROW_DOWN_CIRCLE.getIcon());
+    private final AbstractAction pullRemoteChanges = new GeneralAction(Actions.PULL_REMOTE_CHANGES,
+            Localization.menuTitle("Pull remote changes"),
+            Localization.lang("Pull remote changes"),
+            Globals.getKeyPrefs().getKey(KeyBinding.PULL_REMOTE_CHANGES),
+            IconTheme.JabRefIcon.PULL.getIcon());
 
     private final AbstractAction mark = new GeneralAction(Actions.MARK_ENTRIES, Localization.menuTitle("Mark entries"),
             Localization.lang("Mark entries"), Globals.getKeyPrefs().getKey(KeyBinding.MARK_ENTRIES), IconTheme.JabRefIcon.MARK_ENTRIES.getIcon());
@@ -1373,7 +1373,7 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
         quality.add(findUnlinkedFiles);
         quality.add(autoLinkFile);
         quality.add(downloadFullText);
-        quality.add(pullRemoteEntries);
+        quality.add(pullRemoteChanges);
         mb.add(quality);
 
         tools.add(newSubDatabaseAction);
@@ -1482,7 +1482,7 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
         tlb.addAction(makeKeyAction);
         tlb.addAction(cleanupEntries);
         tlb.addAction(mergeEntries);
-        tlb.addAction(pullRemoteEntries);
+        tlb.addAction(pullRemoteChanges);
         tlb.addAction(openConsole);
 
         tlb.addSeparator();
@@ -1565,7 +1565,7 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
                 .asList(nextTab, prevTab, sortTabs));
 
         openAndSavedDatabasesOnlyActions.addAll(Collections.singletonList(openConsole));
-        remoteDatabasesOnlyActions.addAll(Collections.singletonList(pullRemoteEntries));
+        remoteDatabasesOnlyActions.addAll(Collections.singletonList(pullRemoteChanges));
 
         tabbedPane.addChangeListener(event -> updateEnabledState());
 

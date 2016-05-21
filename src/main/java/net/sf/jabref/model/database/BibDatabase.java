@@ -44,6 +44,7 @@ import java.util.regex.Pattern;
 
 import net.sf.jabref.event.EntryAddedEvent;
 import net.sf.jabref.event.EntryRemovedEvent;
+import net.sf.jabref.event.location.EntryEventLocation;
 import net.sf.jabref.model.entry.BibEntry;
 import net.sf.jabref.model.entry.BibtexString;
 import net.sf.jabref.model.entry.EntryUtil;
@@ -185,9 +186,22 @@ public class BibDatabase {
      * Inserts the entry, given that its ID is not already in use.
      * use Util.createId(...) to make up a unique ID for an entry.
      *
+     * @param entry BibEntry to insert
      * @return false if the insert was done without a duplicate warning
      */
     public synchronized boolean insertEntry(BibEntry entry) throws KeyCollisionException {
+        return insertEntry(entry, EntryEventLocation.ALL);
+    }
+
+    /**
+     * Inserts the entry, given that its ID is not already in use.
+     * use Util.createId(...) to make up a unique ID for an entry.
+     *
+     * @param entry BibEntry to insert
+     * @param eventLocation Event location which is affected by inserting a new entry
+     * @return false if the insert was done without a duplicate warning
+     */
+    public synchronized boolean insertEntry(BibEntry entry, EntryEventLocation eventLocation) throws KeyCollisionException {
         Objects.requireNonNull(entry);
 
         String id = entry.getId();
@@ -197,22 +211,35 @@ public class BibDatabase {
 
         internalIDs.add(id);
         entries.add(entry);
-        eventBus.post(new EntryAddedEvent(entry));
+        eventBus.post(new EntryAddedEvent(entry, eventLocation));
         return duplicationChecker.checkForDuplicateKeyAndAdd(null, entry.getCiteKey());
+    }
+
+
+
+    /**
+     * Removes the given entry.
+     * The Entry is removed based on the id {@link BibEntry#id}
+     * @param toBeDeleted Entry to delete
+     */
+    public synchronized void removeEntry(BibEntry toBeDeleted) {
+        removeEntry(toBeDeleted, EntryEventLocation.ALL);
     }
 
     /**
      * Removes the given entry.
      * The Entry is removed based on the id {@link BibEntry#id}
+     * @param toBeDeleted Entry to delete
+     * @param eventLocation Event location which is affected by deleting the entry
      */
-    public synchronized void removeEntry(BibEntry toBeDeleted) {
+    public synchronized void removeEntry(BibEntry toBeDeleted, EntryEventLocation eventLocation) {
         Objects.requireNonNull(toBeDeleted);
 
         boolean anyRemoved =  entries.removeIf(entry -> entry.getId().equals(toBeDeleted.getId()));
         if (anyRemoved) {
             internalIDs.remove(toBeDeleted.getId());
             duplicationChecker.removeKeyFromSet(toBeDeleted.getCiteKey());
-            eventBus.post(new EntryRemovedEvent(toBeDeleted));
+            eventBus.post(new EntryRemovedEvent(toBeDeleted, eventLocation));
         }
     }
 
