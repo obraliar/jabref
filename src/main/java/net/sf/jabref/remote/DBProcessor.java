@@ -15,11 +15,12 @@ import java.util.Set;
 import net.sf.jabref.event.location.EntryEventLocation;
 import net.sf.jabref.model.entry.BibEntry;
 
-// TODO Exceptions/LOGGER
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class DBProcessor {
 
-    // private static final Log LOGGER = LogFactory.getLog(DBConnector.class);
+    private static final Log LOGGER = LogFactory.getLog(DBConnector.class);
 
     private Connection connection;
 
@@ -66,7 +67,7 @@ public class DBProcessor {
 
                         return requiredColumns.size() == 0;
                     } catch (SQLException e) {
-                        e.printStackTrace();
+                        LOGGER.error("SQL Error: " + e.getMessage());
                     }
 
                     if (this.dbType == DBType.MYSQL) {
@@ -109,7 +110,7 @@ public class DBProcessor {
                         + "END;");
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.error("SQL Error: " + e.getMessage());
         }
 
         if (!checkIntegrity()) {
@@ -157,7 +158,7 @@ public class DBProcessor {
                 generatedKeys.close();
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.error("SQL Error: " + e.getMessage());
         }
 
         System.out.println(">>> SQL INSERT: " + query);
@@ -174,7 +175,7 @@ public class DBProcessor {
                             + " = " + escapeValue(newValue) + " WHERE " + escape(REMOTE_ID, dbType) + " = "
                             + bibEntry.getRemoteId());
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.error("SQL Error: " + e.getMessage());
         }
     }
 
@@ -184,7 +185,7 @@ public class DBProcessor {
             connection.createStatement().executeUpdate("DELETE FROM " + escape(ENTRY, dbType) + " WHERE "
                     + escape(REMOTE_ID, dbType) + " = " + bibEntry.getRemoteId());
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.error("SQL Error: " + e.getMessage());
         }
         normalizeEntryTable();
     }
@@ -208,7 +209,7 @@ public class DBProcessor {
                         "ALTER TABLE " + escape(ENTRY, dbType) + " ADD " + escape(fieldName, dbType) + columnType);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.error("SQL Error: " + e.getMessage());
         }
     }
 
@@ -232,10 +233,10 @@ public class DBProcessor {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.error("SQL Error: " + e.getMessage());
         }
 
-        String columns = "";
+        String columnExpression = "";
         String expressionPrefix = "";
         if ((dbType == dbType.MYSQL) || (dbType == dbType.POSTGRESQL)) {
             expressionPrefix = "DROP ";
@@ -243,23 +244,19 @@ public class DBProcessor {
 
         for (int i = 0; i < allColumns.size(); i++) {
             String column = allColumns.get(i);
-            columns = columns + expressionPrefix + escape(column, dbType);
-            columns = i < (allColumns.size() - 1) ? columns + ", " : columns;
+            columnExpression = columnExpression + expressionPrefix + escape(column, dbType);
+            columnExpression = i < (allColumns.size() - 1) ? columnExpression + ", " : columnExpression;
         }
 
         if (dbType == dbType.ORACLE) {
-            columns = "DROP (" + columns + ")";
+            columnExpression = "DROP (" + columnExpression + ")";
         }
-
-        System.out.println("ALTER TABLE " + escape(ENTRY, dbType) + " " + columns);
 
         try {
-            connection.createStatement().executeUpdate("ALTER TABLE " + escape(ENTRY, dbType) + " " + columns);
+            connection.createStatement().executeUpdate("ALTER TABLE " + escape(ENTRY, dbType) + " " + columnExpression);
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.error("SQL Error: " + e.getMessage());
         }
-
-
     }
 
 
@@ -286,7 +283,7 @@ public class DBProcessor {
                 remoteEntries.add(bibEntry);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.error("SQL Error: " + e.getMessage());
         }
         return remoteEntries;
     }

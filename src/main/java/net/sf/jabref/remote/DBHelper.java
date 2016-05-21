@@ -7,10 +7,14 @@ import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 public class DBHelper {
 
-    private final Connection connection;
+    private static final Log LOGGER = LogFactory.getLog(DBConnector.class);
 
+    private final Connection connection;
 
     public DBHelper(Connection connection) {
         this.connection = connection;
@@ -29,7 +33,7 @@ public class DBHelper {
             return columnNames;
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.error("SQL Error: " + e.getMessage());
         }
         return null;
     }
@@ -38,7 +42,7 @@ public class DBHelper {
         try {
             return connection.createStatement().executeQuery(query);
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.error("SQL Error: " + e.getMessage());
         }
         return null;
     }
