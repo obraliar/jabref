@@ -20,6 +20,7 @@ import org.apache.commons.logging.LogFactory;
 
 public class DBProcessor {
 
+    //TODO Ausgaben entfernen
     private static final Log LOGGER = LogFactory.getLog(DBConnector.class);
 
     private Connection connection;

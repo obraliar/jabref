@@ -6,17 +6,15 @@ import javax.swing.Action;
 
 import net.sf.jabref.BibDatabaseContext;
 import net.sf.jabref.Defaults;
-import net.sf.jabref.Globals;
 import net.sf.jabref.gui.JabRefFrame;
+import net.sf.jabref.gui.OpenRemoteDatabaseDialog;
 import net.sf.jabref.logic.l10n.Localization;
 import net.sf.jabref.model.database.BibDatabaseMode;
 import net.sf.jabref.model.database.DatabaseLocation;
-import net.sf.jabref.remote.DBConnector;
-import net.sf.jabref.remote.DBSynchronizer;
 import net.sf.jabref.remote.DBType;
 
 /**
- * The action concerned with opening a new database.
+ * The action concerned with opening a remote database.
  */
 public class OpenRemoteDatabaseAction extends MnemonicAwareAction {
 
@@ -51,14 +49,15 @@ public class OpenRemoteDatabaseAction extends MnemonicAwareAction {
         String password = "q1w2e3r4";
         String dbName = "xe";
 
-        DBSynchronizer dbSynchronizer = bibDatabaseContext.getDBSynchronizer();
+        /*DBSynchronizer dbSynchronizer = bibDatabaseContext.getDBSynchronizer();
         dbSynchronizer.setUp(DBConnector.getNewConnection(dbType, host, dbName, user, password), dbType, dbName);
         dbSynchronizer.initializeLocalDatabase(bibDatabaseContext.getDatabase());
-
         //TODO bibDatabaseContext.setMode(mode);
-
-        jabRefFrame.addTab(bibDatabaseContext, Globals.prefs.getDefaultEncoding(), true);
+        jabRefFrame.addTab(bibDatabaseContext, Globals.prefs.getDefaultEncoding(), true);*/
 
         //TODO jabRefFrame.output(Localization.lang("New %0 database created.", mode.getFormattedName()));
+        OpenRemoteDatabaseDialog csd = new OpenRemoteDatabaseDialog(jabRefFrame, jabRefFrame);
+        csd.setLocationRelativeTo(jabRefFrame);
+        csd.setVisible(true);
     }
 }
