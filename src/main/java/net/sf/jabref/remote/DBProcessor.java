@@ -20,7 +20,6 @@ import org.apache.commons.logging.LogFactory;
 
 public class DBProcessor {
 
-    //TODO Ausgaben entfernen
     private static final Log LOGGER = LogFactory.getLog(DBConnector.class);
 
     private Connection connection;
@@ -70,10 +69,6 @@ public class DBProcessor {
                     } catch (SQLException e) {
                         LOGGER.error("SQL Error: " + e.getMessage());
                     }
-
-                    if (this.dbType == DBType.MYSQL) {
-                        /*..*/
-                    }
                 }
             }
         } catch (SQLException e1) {
@@ -81,7 +76,6 @@ public class DBProcessor {
         }
 
         return false;
-        /*... TODO ... also for other types*/
     }
 
     public void setUpRemoteDatabase() {
@@ -115,7 +109,7 @@ public class DBProcessor {
         }
 
         if (!checkIntegrity()) {
-            System.err.println("Corrupt tables. Please fix manully or use another.");
+            LOGGER.error("Corrupt remote database structure. Please fix manully or use another.");
         }
 
     }
@@ -162,32 +156,32 @@ public class DBProcessor {
             LOGGER.error("SQL Error: " + e.getMessage());
         }
 
-        System.out.println(">>> SQL INSERT: " + query);
-
+        LOGGER.info("SQL INSERT: " + query);
     }
 
 
     public void updateEntry(BibEntry bibEntry, String column, String newValue) {
         prepareEntryTableStructure(bibEntry);
-
+        String query = "UPDATE " + escape(ENTRY, dbType) + " SET " + escape(column.toUpperCase(), dbType) + " = "
+                + escapeValue(newValue) + " WHERE " + escape(REMOTE_ID, dbType) + " = " + bibEntry.getRemoteId();
         try {
-            connection.createStatement()
-                    .executeUpdate("UPDATE " + escape(ENTRY, dbType) + " SET " + escape(column.toUpperCase(), dbType)
-                            + " = " + escapeValue(newValue) + " WHERE " + escape(REMOTE_ID, dbType) + " = "
-                            + bibEntry.getRemoteId());
+            connection.createStatement().executeUpdate(query);
         } catch (SQLException e) {
             LOGGER.error("SQL Error: " + e.getMessage());
         }
+
+        LOGGER.info("SQL UPDATE: " + query);
     }
 
     public void removeEntry(BibEntry bibEntry) {
-        System.out.println(">>> SQL DELETE");
+        String query = "DELETE FROM " + escape(ENTRY, dbType) + " WHERE " + escape(REMOTE_ID, dbType) + " = "
+                + bibEntry.getRemoteId();
         try {
-            connection.createStatement().executeUpdate("DELETE FROM " + escape(ENTRY, dbType) + " WHERE "
-                    + escape(REMOTE_ID, dbType) + " = " + bibEntry.getRemoteId());
+            connection.createStatement().executeUpdate(query);
         } catch (SQLException e) {
             LOGGER.error("SQL Error: " + e.getMessage());
         }
+        LOGGER.info("SQL DELETE: " + query);
         normalizeEntryTable();
     }
 

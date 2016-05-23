@@ -46,8 +46,6 @@ import net.sf.jabref.remote.DBSynchronizer;
 import net.sf.jabref.remote.DBType;
 
 import com.jgoodies.forms.builder.ButtonBarBuilder;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 public class OpenRemoteDatabaseDialog extends JDialog {
 
@@ -81,8 +79,6 @@ public class OpenRemoteDatabaseDialog extends JDialog {
     private final JRadioButton radioBibTeX = new JRadioButton(BibDatabaseMode.BIBTEX.getFormattedName());
     private final JRadioButton radioBibLaTeX = new JRadioButton(BibDatabaseMode.BIBLATEX.getFormattedName());
 
-    private static final Log LOGGER = LogFactory.getLog(OpenRemoteDatabaseDialog.class);
-
     private static final String REMOTE_DATABASE_TYPE = "remoteDatabaseType";
     private static final String REMOTE_HOST = "remoteHost";
     private static final String REMOTE_PORT = "remotePort";
@@ -110,7 +106,6 @@ public class OpenRemoteDatabaseDialog extends JDialog {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    //TODO check....
                     checkFields();
                     int port = Integer.parseInt(portField.getText());
                     BibDatabaseMode selectedMode = getSelectedBibDatabaseMode();
@@ -127,19 +122,10 @@ public class OpenRemoteDatabaseDialog extends JDialog {
                     dbSynchronizer.initializeLocalDatabase(bibDatabaseContext.getDatabase());
                     frame.addTab(bibDatabaseContext, Globals.prefs.getDefaultEncoding(), true);
 
-                    /** TODO:
-                     *  + GUI
-                     *  |
-                     *  |_ get host, database type (see DatabaseType.java), database name, login data, mode (see BibDatabaseMode.java)
-                     *  |_ use DBConnector for new connection (see below)
-                     *  |_ check connection (also with DBConnector.isNull(...))
-                     *  |_ output at frame
-                     */
-
                     setGlobalPrefs();
 
-                    //TODO jabRefFrame.output(Localization.lang("New %0 database created.", mode.getFormattedName()));
-                    dispose(); //TODO CHECK
+                    frame.output("Remote connection to " + selectedType + " server stablished.");
+                    dispose();
                 } catch (ClassNotFoundException exception) {
                     JOptionPane.showMessageDialog(OpenRemoteDatabaseDialog.this, exception.getMessage(), "Connection error",
                             JOptionPane.ERROR_MESSAGE);
@@ -284,8 +270,6 @@ public class OpenRemoteDatabaseDialog extends JDialog {
         bsb.addButton(openButton);
         bsb.addRelatedGap();
         bsb.addButton(cancelButton);
-        //bsb.addButton(new HelpAction(HelpFiles.CONTENT_SELECTOR).getHelpButton());
-        bsb.addGlue();
 
         gridBagConstraints.fill = GridBagConstraints.BOTH;
         getContentPane().setLayout(gridBagLayout);
