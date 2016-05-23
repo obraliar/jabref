@@ -4,14 +4,9 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.Action;
 
-import net.sf.jabref.BibDatabaseContext;
-import net.sf.jabref.Defaults;
 import net.sf.jabref.gui.JabRefFrame;
 import net.sf.jabref.gui.OpenRemoteDatabaseDialog;
 import net.sf.jabref.logic.l10n.Localization;
-import net.sf.jabref.model.database.BibDatabaseMode;
-import net.sf.jabref.model.database.DatabaseLocation;
-import net.sf.jabref.remote.DBType;
 
 /**
  * The action concerned with opening a remote database.
@@ -31,7 +26,7 @@ public class OpenRemoteDatabaseAction extends MnemonicAwareAction {
     @Override
     public void actionPerformed(ActionEvent e) {
 
-        BibDatabaseContext bibDatabaseContext = new BibDatabaseContext(DatabaseLocation.REMOTE,
+        /*BibDatabaseContext bibDatabaseContext = new BibDatabaseContext(DatabaseLocation.REMOTE,
                 new Defaults(BibDatabaseMode.BIBTEX));
 
         /** TODO:
@@ -43,11 +38,12 @@ public class OpenRemoteDatabaseAction extends MnemonicAwareAction {
          *  |_ output at frame
          */
 
+        /*
         DBType dbType = DBType.ORACLE;
         String host = "localhost";
         String user = "admir";
         String password = "q1w2e3r4";
-        String dbName = "xe";
+        String dbName = "xe";*/
 
         /*DBSynchronizer dbSynchronizer = bibDatabaseContext.getDBSynchronizer();
         dbSynchronizer.setUp(DBConnector.getNewConnection(dbType, host, dbName, user, password), dbType, dbName);
@@ -56,7 +52,7 @@ public class OpenRemoteDatabaseAction extends MnemonicAwareAction {
         jabRefFrame.addTab(bibDatabaseContext, Globals.prefs.getDefaultEncoding(), true);*/
 
         //TODO jabRefFrame.output(Localization.lang("New %0 database created.", mode.getFormattedName()));
-        OpenRemoteDatabaseDialog csd = new OpenRemoteDatabaseDialog(jabRefFrame, jabRefFrame);
+        OpenRemoteDatabaseDialog csd = new OpenRemoteDatabaseDialog(jabRefFrame);
         csd.setLocationRelativeTo(jabRefFrame);
         csd.setVisible(true);
     }

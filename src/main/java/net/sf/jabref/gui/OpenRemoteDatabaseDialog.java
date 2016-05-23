@@ -18,8 +18,8 @@ package net.sf.jabref.gui;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.Window;
 import java.awt.event.ActionEvent;
+import java.sql.SQLException;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -35,7 +35,14 @@ import javax.swing.JPasswordField;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 
+import net.sf.jabref.BibDatabaseContext;
+import net.sf.jabref.Defaults;
+import net.sf.jabref.Globals;
 import net.sf.jabref.logic.l10n.Localization;
+import net.sf.jabref.model.database.BibDatabaseMode;
+import net.sf.jabref.model.database.DatabaseLocation;
+import net.sf.jabref.remote.DBConnector;
+import net.sf.jabref.remote.DBSynchronizer;
 import net.sf.jabref.remote.DBType;
 
 import com.jgoodies.forms.builder.ButtonBarBuilder;
@@ -58,51 +65,95 @@ public class OpenRemoteDatabaseDialog extends JDialog {
     private final JLabel userLabel = new JLabel("User:"); //local...
     private final JLabel passwordLabel = new JLabel("Password:"); //local...
 
-
     private final JTextField hostField = new JTextField(12);
+    private final JTextField portField = new JTextField(4);
     private final JTextField userField = new JTextField(14);
     private final JTextField databaseField = new JTextField(14);
-    private final JPasswordField passwordField = new JPasswordField(14);
 
-    private final JComboBox<DBType> dbType = new JComboBox<>(
+    private final JPasswordField passwordField = new JPasswordField(14);
+    private final JComboBox<DBType> dbTypeDropDown = new JComboBox<>(
             new DBType[] {DBType.MYSQL, DBType.ORACLE, DBType.POSTGRESQL});
 
-    private final JTextField portSpinner = new JTextField(4);
-    /*private final JSpinner portSpinner = new JSpinner(
-            new SpinnerNumberModel(DBConnector.getDefaultPort(DBType.MYSQL), 0, 65535, 1));*/
-
-    private final JButton ok = new JButton(Localization.lang("Open")); //Local...
-    private final JButton open = new JButton();
+    private final JButton openButton = new JButton(Localization.lang("Open")); //Local...
+    private final JButton cancelButton = new JButton();
 
     private final ButtonGroup radioGroup = new ButtonGroup();
-    private final JRadioButton radioBibTeX = new JRadioButton("BibTeX");
-    private final JRadioButton radioBibLaTeX = new JRadioButton("BibLaTeX");
+    private final JRadioButton radioBibTeX = new JRadioButton(BibDatabaseMode.BIBTEX.getFormattedName());
+    private final JRadioButton radioBibLaTeX = new JRadioButton(BibDatabaseMode.BIBLATEX.getFormattedName());
 
     private static final Log LOGGER = LogFactory.getLog(OpenRemoteDatabaseDialog.class);
+
+    private static final String REMOTE_DATABASE_TYPE = "remoteDatabaseType";
+    private static final String REMOTE_HOST = "remoteHost";
+    private static final String REMOTE_PORT = "remotePort";
+    private static final String REMOTE_DATABASE = "remoteDatabase";
+    private static final String REMOTE_USER = "remoteUser";
+    private static final String REMOTE_MODE = "remoteMode";
+
 
     /**
      * @param owner the parent Window (Dialog or Frame)
      * @param frame the JabRef Frame
      */
-    public OpenRemoteDatabaseDialog(Window owner, JabRefFrame frame) {
-        super(owner, Localization.lang("Open remote database"));
+    public OpenRemoteDatabaseDialog(JabRefFrame frame) {
+        super(frame, Localization.lang("Open remote database"));
         this.frame = frame;
         initLayout();
+        setUpValues();
         setupActions();
         pack();
-        setModal(true);
     }
 
     private void setupActions() {
 
-        ok.addActionListener(e -> {
-            try {
-                dispose();
-            } catch (Exception ex) {
-                LOGGER.info("Could not apply changes in \"Setup selectors\"", ex);
-                JOptionPane.showMessageDialog(frame, Localization.lang("Could not apply changes."));
+        Action openAction = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    //TODO check....
+                    checkFields();
+                    int port = Integer.parseInt(portField.getText());
+                    BibDatabaseMode selectedMode = getSelectedBibDatabaseMode();
+                    DBType selectedType = (DBType) dbTypeDropDown.getSelectedItem();
+
+                    BibDatabaseContext bibDatabaseContext = new BibDatabaseContext(DatabaseLocation.REMOTE,
+                            new Defaults(selectedMode));
+                    DBSynchronizer dbSynchronizer = bibDatabaseContext.getDBSynchronizer();
+                    dbSynchronizer.setUp(
+                            DBConnector.getNewConnection(selectedType, hostField.getText(), port,
+                                    databaseField.getText(), userField.getText(),
+                                    new String(passwordField.getPassword())),
+                            selectedType, databaseField.getText());
+                    dbSynchronizer.initializeLocalDatabase(bibDatabaseContext.getDatabase());
+                    frame.addTab(bibDatabaseContext, Globals.prefs.getDefaultEncoding(), true);
+
+                    /** TODO:
+                     *  + GUI
+                     *  |
+                     *  |_ get host, database type (see DatabaseType.java), database name, login data, mode (see BibDatabaseMode.java)
+                     *  |_ use DBConnector for new connection (see below)
+                     *  |_ check connection (also with DBConnector.isNull(...))
+                     *  |_ output at frame
+                     */
+
+                    setGlobalPrefs();
+
+                    //TODO jabRefFrame.output(Localization.lang("New %0 database created.", mode.getFormattedName()));
+                    dispose(); //TODO CHECK
+                } catch (ClassNotFoundException exception) {
+                    JOptionPane.showMessageDialog(OpenRemoteDatabaseDialog.this, exception.getMessage(), "Connection error",
+                            JOptionPane.ERROR_MESSAGE);
+                } catch (SQLException exception) {
+                    JOptionPane.showMessageDialog(OpenRemoteDatabaseDialog.this, exception.getMessage(),
+                            "Connection error", JOptionPane.ERROR_MESSAGE);
+                } catch (Exception exception) {
+                    JOptionPane.showMessageDialog(OpenRemoteDatabaseDialog.this, exception.getMessage(), "Warning",
+                            JOptionPane.WARNING_MESSAGE);
+                }
             }
-        });
+        };
+        //connectAction.putValue(Action.NAME, Localization.lang("Open")); //TODO
+        openButton.addActionListener(openAction);
 
         Action cancelAction = new AbstractAction() {
             @Override
@@ -110,9 +161,51 @@ public class OpenRemoteDatabaseDialog extends JDialog {
                 dispose();
             }
         };
-
         cancelAction.putValue(Action.NAME, Localization.lang("Cancel"));
-        open.setAction(cancelAction);
+        cancelButton.setAction(cancelAction);
+
+        Action dbTypeDropDownAction = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                portField.setText(
+                        Integer.toString(DBConnector.getDefaultPort((DBType) dbTypeDropDown.getSelectedItem())));
+            }
+        };
+        dbTypeDropDown.addActionListener(dbTypeDropDownAction);
+    }
+
+    private void setUpValues() {
+
+        String remoteDatabaseType = Globals.prefs.get(REMOTE_DATABASE_TYPE);
+        if (remoteDatabaseType != null) {
+            if (remoteDatabaseType.equals(DBType.ORACLE.toString())) {
+                dbTypeDropDown.setSelectedItem(DBType.ORACLE);
+            } else if (remoteDatabaseType.equals(DBType.POSTGRESQL.toString())) {
+                dbTypeDropDown.setSelectedItem(DBType.POSTGRESQL);
+            }
+        }
+
+        hostField.setText(Globals.prefs.get(REMOTE_HOST));
+
+        String port = Globals.prefs.get(REMOTE_PORT);
+        if (port == null) {
+            portField
+                    .setText(Integer.toString(DBConnector.getDefaultPort((DBType) dbTypeDropDown.getSelectedItem())));
+        } else {
+            portField.setText(port);
+        }
+
+        databaseField.setText(Globals.prefs.get(REMOTE_DATABASE));
+        userField.setText(Globals.prefs.get(REMOTE_USER));
+
+        String mode = Globals.prefs.get(REMOTE_MODE);
+        if (mode != null) {
+            if (Globals.prefs.get(REMOTE_MODE).equals(BibDatabaseMode.BIBLATEX.getFormattedName())) {
+                radioBibLaTeX.setSelected(true);
+            } else {
+                radioBibTeX.setSelected(true);
+            }
+        }
     }
 
     private void initLayout() {
@@ -120,7 +213,6 @@ public class OpenRemoteDatabaseDialog extends JDialog {
         setResizable(false);
 
         Insets defautInsets = new Insets(4, 15, 4, 4);
-
         radioBibTeX.setSelected(true);
         radioGroup.add(radioBibTeX);
         radioGroup.add(radioBibLaTeX);
@@ -155,7 +247,7 @@ public class OpenRemoteDatabaseDialog extends JDialog {
 
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 0;
-        connectionPanel.add(dbType, gridBagConstraints);
+        connectionPanel.add(dbTypeDropDown, gridBagConstraints);
 
         gridBagConstraints.gridy = 1;
         gridBagConstraints.gridwidth = 1;
@@ -178,7 +270,7 @@ public class OpenRemoteDatabaseDialog extends JDialog {
         gridBagConstraints.gridy = 1;
         gridBagConstraints.gridwidth = 1;
         gridBagConstraints.insets = new Insets(4, 0, 4, 4);
-        connectionPanel.add(portSpinner, gridBagConstraints);
+        connectionPanel.add(portField, gridBagConstraints);
 
         gridBagConstraints.insets = new Insets(4, 4, 4, 4);
         gridBagConstraints.gridx = 0;
@@ -189,9 +281,9 @@ public class OpenRemoteDatabaseDialog extends JDialog {
 
         ButtonBarBuilder bsb = new ButtonBarBuilder(buttonPan);
         bsb.addGlue();
-        bsb.addButton(ok);
+        bsb.addButton(openButton);
         bsb.addRelatedGap();
-        bsb.addButton(open);
+        bsb.addButton(cancelButton);
         //bsb.addButton(new HelpAction(HelpFiles.CONTENT_SELECTOR).getHelpButton());
         bsb.addGlue();
 
@@ -209,6 +301,52 @@ public class OpenRemoteDatabaseDialog extends JDialog {
         gridBagConstraints.insets = new Insets(12, 4, 12, 4);
         gridBagLayout.setConstraints(buttonPan, gridBagConstraints);
         getContentPane().add(buttonPan);
+
+        setModal(true);
+    }
+
+    public void setGlobalPrefs() {
+        Globals.prefs.put(REMOTE_DATABASE_TYPE, ((DBType) dbTypeDropDown.getSelectedItem()).toString());
+        Globals.prefs.put(REMOTE_HOST, hostField.getText());
+        Globals.prefs.put(REMOTE_PORT, portField.getText());
+        Globals.prefs.put(REMOTE_DATABASE, databaseField.getText());
+        Globals.prefs.put(REMOTE_USER, userField.getText());
+        Globals.prefs.put(REMOTE_MODE, getSelectedBibDatabaseMode().getFormattedName());
+    }
+
+    private BibDatabaseMode getSelectedBibDatabaseMode() {
+        BibDatabaseMode selectedMode = BibDatabaseMode.BIBTEX;
+        if (radioBibLaTeX.isSelected()) {
+            selectedMode = BibDatabaseMode.BIBLATEX;
+        }
+        return selectedMode;
+    }
+
+    private boolean isEmptyField(JTextField field) {
+        return field.getText().trim().length() == 0;
+    }
+
+    private void checkFields() throws Exception {
+        if (isEmptyField(hostField)) {
+            hostField.requestFocus();
+            throw new Exception("Required field \"Host\" is empty."); // Local
+        }
+        if (isEmptyField(portField)) {
+            portField.requestFocus();
+            throw new Exception("Required field \"Port\" is empty."); // Local
+        }
+        if (isEmptyField(databaseField)) {
+            databaseField.requestFocus();
+            throw new Exception("Required field \"Database\" is empty."); // Local
+        }
+        if (isEmptyField(userField)) {
+            userField.requestFocus();
+            throw new Exception("Required field \"User\" is empty."); // Local
+        }
+        if (isEmptyField(passwordField)) {
+            passwordField.requestFocus();
+            throw new Exception("Required field \"Passwort\" is empty."); // Local
+        }
 
     }
 

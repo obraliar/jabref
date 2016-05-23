@@ -12,12 +12,13 @@ public class DBConnector {
     private static final Log LOGGER = LogFactory.getLog(DBConnector.class);
 
 
-    public static Connection getNewConnection(DBType dbType, String host, String database, String user, String password) {
+    public static Connection getNewConnection(DBType dbType, String host, String database, String user, String password)
+            throws ClassNotFoundException, SQLException {
         return getNewConnection(dbType, host, getDefaultPort(dbType), database, user, password);
     }
 
     public static Connection getNewConnection(DBType dbType, String host, int port, String database, String user,
-            String password) {
+            String password) throws ClassNotFoundException, SQLException {
 
         String url = "jdbc:";
 
@@ -32,14 +33,16 @@ public class DBConnector {
                 Class.forName("org.postgresql.Driver");
                 url = url + "postgresql://" + host + ":" + port + "/" + database;
             }
+            DriverManager.setLoginTimeout(3);
             return DriverManager.getConnection(url, user, password);
         } catch (ClassNotFoundException e) {
             LOGGER.error("Could not load JDBC driver: " + e.getMessage());
+            throw e;
         } catch (SQLException e) {
             LOGGER.error("Could not connect to database: " +
                     e.getMessage() + " - Error code: " + e.getErrorCode());
+            throw e;
         }
-        return null;
     }
 
     public static int getDefaultPort(DBType dbType) {
