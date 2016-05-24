@@ -57,11 +57,11 @@ public class OpenRemoteDatabaseDialog extends JDialog {
     private final JPanel modePanel = new JPanel();
     private final JPanel buttonPan = new JPanel();
 
-    private final JLabel databaseTypeLabel = new JLabel("Database type:"); //local...
-    private final JLabel hostPortLabel = new JLabel("Host/Port:"); //local...
-    private final JLabel databaseLabel = new JLabel("Database:"); //local...
-    private final JLabel userLabel = new JLabel("User:"); //local...
-    private final JLabel passwordLabel = new JLabel("Password:"); //local...
+    private final JLabel databaseTypeLabel = new JLabel(Localization.lang("Database type") + ":");
+    private final JLabel hostPortLabel = new JLabel(Localization.lang("Port") + "/" + Localization.lang("Port") + ":");
+    private final JLabel databaseLabel = new JLabel(Localization.lang("Database") + ":");
+    private final JLabel userLabel = new JLabel(Localization.lang("User") + ":");
+    private final JLabel passwordLabel = new JLabel(Localization.lang("Password") + ":");
 
     private final JTextField hostField = new JTextField(12);
     private final JTextField portField = new JTextField(4);
@@ -72,8 +72,8 @@ public class OpenRemoteDatabaseDialog extends JDialog {
     private final JComboBox<DBType> dbTypeDropDown = new JComboBox<>(
             new DBType[] {DBType.MYSQL, DBType.ORACLE, DBType.POSTGRESQL});
 
-    private final JButton openButton = new JButton(Localization.lang("Open")); //Local...
-    private final JButton cancelButton = new JButton();
+    private final JButton connectButton = new JButton(Localization.lang("Connect"));
+    private final JButton cancelButton = new JButton(Localization.lang("Cancel"));
 
     private final ButtonGroup radioGroup = new ButtonGroup();
     private final JRadioButton radioBibTeX = new JRadioButton(BibDatabaseMode.BIBTEX.getFormattedName());
@@ -124,22 +124,21 @@ public class OpenRemoteDatabaseDialog extends JDialog {
 
                     setGlobalPrefs();
 
-                    frame.output("Remote connection to " + selectedType + " server stablished.");
+                    frame.output(Localization.lang("Remote_connection_to_%0_server_stablished.", selectedType.toString()));
                     dispose();
                 } catch (ClassNotFoundException exception) {
-                    JOptionPane.showMessageDialog(OpenRemoteDatabaseDialog.this, exception.getMessage(), "Connection error",
+                    JOptionPane.showMessageDialog(OpenRemoteDatabaseDialog.this, exception.getMessage(), Localization.lang("Driver error"),
                             JOptionPane.ERROR_MESSAGE);
                 } catch (SQLException exception) {
                     JOptionPane.showMessageDialog(OpenRemoteDatabaseDialog.this, exception.getMessage(),
-                            "Connection error", JOptionPane.ERROR_MESSAGE);
+                            Localization.lang("Connection error"), JOptionPane.ERROR_MESSAGE);
                 } catch (Exception exception) {
-                    JOptionPane.showMessageDialog(OpenRemoteDatabaseDialog.this, exception.getMessage(), "Warning",
-                            JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.showMessageDialog(OpenRemoteDatabaseDialog.this, exception.getMessage(),
+                            Localization.lang("Warning"), JOptionPane.WARNING_MESSAGE);
                 }
             }
         };
-        //connectAction.putValue(Action.NAME, Localization.lang("Open")); //TODO
-        openButton.addActionListener(openAction);
+        connectButton.addActionListener(openAction);
 
         Action cancelAction = new AbstractAction() {
             @Override
@@ -147,8 +146,7 @@ public class OpenRemoteDatabaseDialog extends JDialog {
                 dispose();
             }
         };
-        cancelAction.putValue(Action.NAME, Localization.lang("Cancel"));
-        cancelButton.setAction(cancelAction);
+        cancelButton.addActionListener(cancelAction);
 
         Action dbTypeDropDownAction = new AbstractAction() {
             @Override
@@ -203,9 +201,9 @@ public class OpenRemoteDatabaseDialog extends JDialog {
         radioGroup.add(radioBibTeX);
         radioGroup.add(radioBibLaTeX);
 
-        connectionPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Connection")); //Localization.lang("Field name")));
+        connectionPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), Localization.lang("Connection")));
         connectionPanel.setLayout(gridBagLayout);
-        modePanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Mode"));
+        modePanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), Localization.lang("Mode")));
         modePanel.setLayout(gridBagLayout);
 
         gridBagConstraints.insets = defautInsets;
@@ -267,7 +265,7 @@ public class OpenRemoteDatabaseDialog extends JDialog {
 
         ButtonBarBuilder bsb = new ButtonBarBuilder(buttonPan);
         bsb.addGlue();
-        bsb.addButton(openButton);
+        bsb.addButton(connectButton);
         bsb.addRelatedGap();
         bsb.addButton(cancelButton);
 
@@ -313,23 +311,23 @@ public class OpenRemoteDatabaseDialog extends JDialog {
     private void checkFields() throws Exception {
         if (isEmptyField(hostField)) {
             hostField.requestFocus();
-            throw new Exception("Required field \"Host\" is empty."); // Local
+            throw new Exception(Localization.lang("Required_field_\"%0\"_is_empty.", Localization.lang("Host")));
         }
         if (isEmptyField(portField)) {
             portField.requestFocus();
-            throw new Exception("Required field \"Port\" is empty."); // Local
+            throw new Exception(Localization.lang("Required_field_\"%0\"_is_empty.", Localization.lang("Port")));
         }
         if (isEmptyField(databaseField)) {
             databaseField.requestFocus();
-            throw new Exception("Required field \"Database\" is empty."); // Local
+            throw new Exception(Localization.lang("Required_field_\"%0\"_is_empty.", Localization.lang("Database")));
         }
         if (isEmptyField(userField)) {
             userField.requestFocus();
-            throw new Exception("Required field \"User\" is empty."); // Local
+            throw new Exception(Localization.lang("Required_field_\"%0\"_is_empty.", Localization.lang("User")));
         }
         if (isEmptyField(passwordField)) {
             passwordField.requestFocus();
-            throw new Exception("Required field \"Passwort\" is empty."); // Local
+            throw new Exception(Localization.lang("Required_field_\"%0\"_is_empty.", Localization.lang("Password")));
         }
 
     }

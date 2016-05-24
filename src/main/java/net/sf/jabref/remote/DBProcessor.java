@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 
 import net.sf.jabref.event.location.EntryEventLocation;
+import net.sf.jabref.logic.l10n.Localization;
 import net.sf.jabref.model.entry.BibEntry;
 
 import org.apache.commons.logging.Log;
@@ -109,7 +110,7 @@ public class DBProcessor {
         }
 
         if (!checkIntegrity()) {
-            LOGGER.error("Corrupt remote database structure. Please fix manully or use another.");
+            LOGGER.error(Localization.lang("Corrupt_remote_database_structure."));
         }
 
     }
