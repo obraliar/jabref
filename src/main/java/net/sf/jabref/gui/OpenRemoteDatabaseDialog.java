@@ -19,6 +19,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.sql.SQLException;
 
 import javax.swing.AbstractAction;
@@ -27,6 +28,7 @@ import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -34,6 +36,7 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 
 import net.sf.jabref.BibDatabaseContext;
 import net.sf.jabref.Defaults;
@@ -120,7 +123,7 @@ public class OpenRemoteDatabaseDialog extends JDialog {
                     dbSynchronizer.setUp(DBConnector.getNewConnection(selectedType, hostField.getText(), port,
                                     databaseField.getText(), userField.getText(), new String(passwordField.getPassword())),
                                     selectedType, databaseField.getText());
-                    dbSynchronizer.initializeLocalDatabase(bibDatabaseContext.getDatabase());
+                    dbSynchronizer.initializeDatabases(bibDatabaseContext.getDatabase());
                     frame.addTab(bibDatabaseContext, Globals.prefs.getDefaultEncoding(), true);
 
                     setGlobalPrefs();
@@ -160,6 +163,12 @@ public class OpenRemoteDatabaseDialog extends JDialog {
             }
         };
         dbTypeDropDown.addActionListener(dbTypeDropDownAction);
+
+        // Add enter button action listener
+        connectButton.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
+                "Enter_pressed");
+        connectButton.getActionMap().put("Enter_pressed", openAction);
+
     }
 
     /**

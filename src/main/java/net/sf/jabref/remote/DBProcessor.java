@@ -69,7 +69,7 @@ public class DBProcessor {
      * @return <code>true</code> if the structure matches the requirements, <code>false</code> if not.
      */
     public boolean checkIntegrity() {
-        Map<String, String> requiredColumns = dbType.getStructure(); //get appropriate column names and their types
+        Map<String, String> requiredColumns = dbType.getStructure(ENTRY); //get appropriate column names and their types
 
         try {
             DatabaseMetaData databaseMetaData = connection.getMetaData();
@@ -96,7 +96,7 @@ public class DBProcessor {
                                         resultSetMetaData.getColumnTypeName(i + 1).toUpperCase());
                         }
 
-                        return requiredColumns.size() == 0;
+                        return requiredColumns.isEmpty();
                     } catch (SQLException e) {
                         LOGGER.error("SQL Error: " + e.getMessage());
                     }
@@ -163,21 +163,21 @@ public class DBProcessor {
                 if (resultSet.next()) {
                     return;
                 }
-            } catch (SQLException e1) {
-                e1.printStackTrace();
+            } catch (SQLException e) {
+                LOGGER.error("SQL Error: " + e.getMessage());
             }
         }
 
 
         String query = "INSERT INTO " + escape(ENTRY, dbType) + "(";
-        ArrayList<String> keyList = new ArrayList<>(bibEntry.getFieldNames());
+        ArrayList<String> fieldNames = new ArrayList<>(bibEntry.getFieldNames());
 
-        for (int i = 0; i < keyList.size(); i++) {
-            query = query + escape(keyList.get(i).toUpperCase(), dbType) + ", ";
+        for (int i = 0; i < fieldNames.size(); i++) {
+            query = query + escape(fieldNames.get(i).toUpperCase(), dbType) + ", ";
         }
         query = query + escape(ENTRYTYPE, dbType) + ") VALUES(";
-        for (int i = 0; i < keyList.size(); i++) {
-            query = query + escapeValue(bibEntry.getField(keyList.get(i))) + ", ";
+        for (int i = 0; i < fieldNames.size(); i++) {
+            query = query + escapeValue(bibEntry.getField(fieldNames.get(i))) + ", ";
         }
         query = query + escapeValue(bibEntry.getType()) + ")";
 
@@ -202,12 +202,12 @@ public class DBProcessor {
      * Updates the remote existing bibEntry data.
      *
      * @param bibEntry {@link BibEntry} affected by changes
-     * @param column Affected field name
+     * @param field Affected field name
      * @param newValue
      */
-    public void updateEntry(BibEntry bibEntry, String column, String newValue) {
+    public void updateEntry(BibEntry bibEntry, String field, String newValue) {
         prepareEntryTableStructure(bibEntry);
-        String query = "UPDATE " + escape(ENTRY, dbType) + " SET " + escape(column.toUpperCase(), dbType) + " = "
+        String query = "UPDATE " + escape(ENTRY, dbType) + " SET " + escape(field.toUpperCase(), dbType) + " = "
                 + escapeValue(newValue) + " WHERE " + escape(REMOTE_ID, dbType) + " = " + bibEntry.getRemoteId();
         try {
             connection.createStatement().executeUpdate(query);

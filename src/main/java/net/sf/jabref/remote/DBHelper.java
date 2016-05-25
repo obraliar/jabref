@@ -44,21 +44,20 @@ public class DBHelper {
      * @return Set of column names.
      */
     public Set<String> getColumnNames(String table) {
+        Set<String> columnNames = new HashSet<>();
         try (ResultSet resultSet = query("SELECT * FROM " + table)) {
             ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
             int count = resultSetMetaData.getColumnCount();
-            Set<String> columnNames = new HashSet<>();
 
             for (int i = 0; i < count; i++) {
                 columnNames.add(resultSetMetaData.getColumnName(i + 1));
             }
 
-            return columnNames;
 
         } catch (SQLException e) {
             LOGGER.error("SQL Error: " + e.getMessage());
         }
-        return null;
+        return columnNames;
     }
 
     /**
@@ -66,13 +65,8 @@ public class DBHelper {
      * @param query SQL Query
      * @return Instance of {@link ResultSet}
      */
-    public ResultSet query(String query) {
-        try {
-            return connection.createStatement().executeQuery(query);
-        } catch (SQLException e) {
-            LOGGER.error("SQL Error: " + e.getMessage());
-        }
-        return null;
+    public ResultSet query(String query) throws SQLException {
+        return connection.createStatement().executeQuery(query);
     }
 
     /**

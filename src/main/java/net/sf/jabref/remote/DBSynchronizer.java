@@ -24,16 +24,21 @@ import net.sf.jabref.event.EntryEvent;
 import net.sf.jabref.event.EntryRemovedEvent;
 import net.sf.jabref.event.FieldChangedEvent;
 import net.sf.jabref.event.location.EntryEventLocation;
+import net.sf.jabref.logic.l10n.Localization;
 import net.sf.jabref.model.database.BibDatabase;
 import net.sf.jabref.model.entry.BibEntry;
 
 import com.google.common.eventbus.Subscribe;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Synchronizes the remote or local databases with their opposite side.
  * Local changes are pushed by {@link EntryEvent} using Google's Guava EventBus.
  */
 public class DBSynchronizer {
+
+    private static final Log LOGGER = LogFactory.getLog(DBConnector.class);
 
     private DBProcessor dbProcessor;
     private DBType dbType;
@@ -81,20 +86,16 @@ public class DBSynchronizer {
 
     /**
      * Sets the remote table structure if needed and pulls all remote entries
-     * to the local database.
+     * to the new local database.
      * @param bibDatabase Local {@link BibDatabase}
      */
-    public void initializeLocalDatabase(BibDatabase bibDatabase) {
+    public void initializeDatabases(BibDatabase bibDatabase) {
 
         if (!dbProcessor.checkIntegrity()) {
-            System.out.println("Integrity check failed. Fixing...");
+            LOGGER.info(Localization.lang("Integrity check failed. Fixing..."));
             dbProcessor.setUpRemoteDatabase();
         }
-
-        for (BibEntry bibEntry : dbProcessor.getRemoteEntries()) {
-            bibDatabase.insertEntry(bibEntry);
-        }
-
+        synchronizeLocalDatabase(bibDatabase);
     }
 
     /**
