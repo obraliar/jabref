@@ -1,4 +1,4 @@
-/*  Copyright (C) 2003-2015 JabRef contributors.
+/*  Copyright (C) 2003-2016 JabRef contributors.
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
@@ -55,7 +55,7 @@ public class OpenRemoteDatabaseDialog extends JDialog {
     private final GridBagConstraints gridBagConstraints = new GridBagConstraints();
     private final JPanel connectionPanel = new JPanel();
     private final JPanel modePanel = new JPanel();
-    private final JPanel buttonPan = new JPanel();
+    private final JPanel buttonPanel = new JPanel();
 
     private final JLabel databaseTypeLabel = new JLabel(Localization.lang("Database type") + ":");
     private final JLabel hostPortLabel = new JLabel(Localization.lang("Port") + "/" + Localization.lang("Port") + ":");
@@ -69,8 +69,7 @@ public class OpenRemoteDatabaseDialog extends JDialog {
     private final JTextField databaseField = new JTextField(14);
 
     private final JPasswordField passwordField = new JPasswordField(14);
-    private final JComboBox<DBType> dbTypeDropDown = new JComboBox<>(
-            new DBType[] {DBType.MYSQL, DBType.ORACLE, DBType.POSTGRESQL});
+    private final JComboBox<DBType> dbTypeDropDown = new JComboBox<>(new DBType[] {DBType.MYSQL, DBType.ORACLE, DBType.POSTGRESQL});
 
     private final JButton connectButton = new JButton(Localization.lang("Connect"));
     private final JButton cancelButton = new JButton(Localization.lang("Cancel"));
@@ -88,18 +87,20 @@ public class OpenRemoteDatabaseDialog extends JDialog {
 
 
     /**
-     * @param owner the parent Window (Dialog or Frame)
      * @param frame the JabRef Frame
      */
     public OpenRemoteDatabaseDialog(JabRefFrame frame) {
         super(frame, Localization.lang("Open remote database"));
         this.frame = frame;
         initLayout();
-        setUpValues();
+        applyGlobalPrefs();
         setupActions();
         pack();
     }
 
+    /**
+     * Defines and sets the different actions up.
+     */
     private void setupActions() {
 
         Action openAction = new AbstractAction() {
@@ -114,11 +115,11 @@ public class OpenRemoteDatabaseDialog extends JDialog {
                     BibDatabaseContext bibDatabaseContext = new BibDatabaseContext(DatabaseLocation.REMOTE,
                             new Defaults(selectedMode));
                     DBSynchronizer dbSynchronizer = bibDatabaseContext.getDBSynchronizer();
-                    dbSynchronizer.setUp(
-                            DBConnector.getNewConnection(selectedType, hostField.getText(), port,
-                                    databaseField.getText(), userField.getText(),
-                                    new String(passwordField.getPassword())),
-                            selectedType, databaseField.getText());
+
+                    //JPasswordField.getPassword() does not return a String, but a char array.
+                    dbSynchronizer.setUp(DBConnector.getNewConnection(selectedType, hostField.getText(), port,
+                                    databaseField.getText(), userField.getText(), new String(passwordField.getPassword())),
+                                    selectedType, databaseField.getText());
                     dbSynchronizer.initializeLocalDatabase(bibDatabaseContext.getDatabase());
                     frame.addTab(bibDatabaseContext, Globals.prefs.getDefaultEncoding(), true);
 
@@ -148,6 +149,9 @@ public class OpenRemoteDatabaseDialog extends JDialog {
         };
         cancelButton.addActionListener(cancelAction);
 
+        /**
+         * Set up a listener which updates the default port number once the selection in dbTypeDropDown has changed.
+         */
         Action dbTypeDropDownAction = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -158,7 +162,10 @@ public class OpenRemoteDatabaseDialog extends JDialog {
         dbTypeDropDown.addActionListener(dbTypeDropDownAction);
     }
 
-    private void setUpValues() {
+    /**
+     * Fetches possibly saved data and configures the control elements respectively.
+     */
+    private void applyGlobalPrefs() {
 
         String remoteDatabaseType = Globals.prefs.get(REMOTE_DATABASE_TYPE);
         if (remoteDatabaseType != null) {
@@ -192,6 +199,9 @@ public class OpenRemoteDatabaseDialog extends JDialog {
         }
     }
 
+    /**
+     * Set up the layout and position the control units in their right place.
+     */
     private void initLayout() {
 
         setResizable(false);
@@ -210,6 +220,7 @@ public class OpenRemoteDatabaseDialog extends JDialog {
         gridBagConstraints.fill = GridBagConstraints.BOTH;
         gridBagLayout.setConstraints(connectionPanel, gridBagConstraints);
 
+        //1. column
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
         connectionPanel.add(databaseTypeLabel, gridBagConstraints);
@@ -234,7 +245,7 @@ public class OpenRemoteDatabaseDialog extends JDialog {
         connectionPanel.add(dbTypeDropDown, gridBagConstraints);
 
         gridBagConstraints.gridy = 1;
-        gridBagConstraints.gridwidth = 1;
+        gridBagConstraints.gridwidth = 1; // the hostField is smaller than the others.
         gridBagConstraints.insets = new Insets(4, 15, 4, 0);
         connectionPanel.add(hostField, gridBagConstraints);
 
@@ -263,13 +274,12 @@ public class OpenRemoteDatabaseDialog extends JDialog {
         gridBagConstraints.gridx = 1;
         modePanel.add(radioBibLaTeX, gridBagConstraints);
 
-        ButtonBarBuilder bsb = new ButtonBarBuilder(buttonPan);
+        ButtonBarBuilder bsb = new ButtonBarBuilder(buttonPanel);
         bsb.addGlue();
         bsb.addButton(connectButton);
         bsb.addRelatedGap();
         bsb.addButton(cancelButton);
 
-        gridBagConstraints.fill = GridBagConstraints.BOTH;
         getContentPane().setLayout(gridBagLayout);
 
         gridBagConstraints.gridx = 0;
@@ -281,12 +291,15 @@ public class OpenRemoteDatabaseDialog extends JDialog {
         getContentPane().add(modePanel);
         gridBagConstraints.gridy = 2;
         gridBagConstraints.insets = new Insets(12, 4, 12, 4);
-        gridBagLayout.setConstraints(buttonPan, gridBagConstraints);
-        getContentPane().add(buttonPan);
+        gridBagLayout.setConstraints(buttonPanel, gridBagConstraints);
+        getContentPane().add(buttonPanel);
 
-        setModal(true);
+        setModal(true); // Owner window should be disabled while this dialog is opened.
     }
 
+    /**
+     * Saves the data from this dialog persistently to facilitate the usage.
+     */
     public void setGlobalPrefs() {
         Globals.prefs.put(REMOTE_DATABASE_TYPE, ((DBType) dbTypeDropDown.getSelectedItem()).toString());
         Globals.prefs.put(REMOTE_HOST, hostField.getText());
@@ -296,6 +309,9 @@ public class OpenRemoteDatabaseDialog extends JDialog {
         Globals.prefs.put(REMOTE_MODE, getSelectedBibDatabaseMode().getFormattedName());
     }
 
+    /**
+     * Retrieves the chosen bib editing mode in this dialog.
+     */
     private BibDatabaseMode getSelectedBibDatabaseMode() {
         BibDatabaseMode selectedMode = BibDatabaseMode.BIBTEX;
         if (radioBibLaTeX.isSelected()) {
@@ -308,6 +324,9 @@ public class OpenRemoteDatabaseDialog extends JDialog {
         return field.getText().trim().length() == 0;
     }
 
+    /**
+     * Checks every required text field for emptiness.
+     */
     private void checkFields() throws Exception {
         if (isEmptyField(hostField)) {
             hostField.requestFocus();

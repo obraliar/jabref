@@ -50,7 +50,12 @@ public class BibEntry implements Cloneable {
     public static final String DEFAULT_TYPE = "misc";
 
     private String id;
+
+    // This id is set by the remote database system (DBS).
+    // It has to be unique on remote DBS for all connected JabRef instances.
+    // The old id above does not satisfy this requirement.
     private int remote_id;
+
     private String type;
     private Map<String, String> fields = new HashMap<>();
 
