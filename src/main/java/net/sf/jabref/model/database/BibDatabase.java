@@ -94,9 +94,6 @@ public class BibDatabase {
 
     private DatabaseLocation location;
 
-    private String name;
-
-
     public BibDatabase() {
         this(DatabaseLocation.LOCAL);
     }
