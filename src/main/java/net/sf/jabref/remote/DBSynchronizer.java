@@ -115,10 +115,12 @@ public class DBSynchronizer {
             for (int j = 0; j < remoteEntries.size(); j++) {
                 if (localEntry.getRemoteId() == remoteEntries.get(j).getRemoteId()) {
                     match = true;
+                    break;
                 }
             }
             if (!match) {
                 bibDatabase.removeEntry(localEntry, EntryEventLocation.LOCAL); // Should not reach the listeners above.
+                i--; // due to index shift on localEntries
             }
         }
 
