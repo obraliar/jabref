@@ -557,8 +557,7 @@ public class BasePanel extends JPanel implements ClipboardOwner, FileUpdateListe
                 .openConsole(frame.getCurrentBasePanel().getBibDatabaseContext().getDatabaseFile()));
 
         actions.put(Actions.PULL_REMOTE_CHANGES, (BaseAction) () -> {
-            frame.getCurrentBasePanel().getBibDatabaseContext().getDBSynchronizer()
-                    .synchronizeLocalDatabase(frame.getCurrentBasePanel().getBibDatabaseContext().getDatabase());
+            frame.getCurrentBasePanel().getBibDatabaseContext().getDBSynchronizer().synchronizeLocalDatabase();
         });
 
         actions.put(Actions.OPEN_URL, new OpenURLAction());

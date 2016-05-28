@@ -15,8 +15,8 @@
 */
 package net.sf.jabref.event;
 
-import net.sf.jabref.model.database.BibDatabase;
 import net.sf.jabref.event.location.EntryEventLocation;
+import net.sf.jabref.model.database.BibDatabase;
 import net.sf.jabref.model.entry.BibEntry;
 
 /**

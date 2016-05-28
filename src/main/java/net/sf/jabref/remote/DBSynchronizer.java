@@ -43,7 +43,12 @@ public class DBSynchronizer {
     private DBProcessor dbProcessor;
     private DBType dbType;
     private String dbName;
+    private final BibDatabase bibDatabase;
 
+
+    public DBSynchronizer(BibDatabase bibDatabase) {
+        this.bibDatabase = bibDatabase;
+    }
 
     /**
      * Listening method. Inserts a new {@link BibEntry} remotely.
@@ -55,6 +60,7 @@ public class DBSynchronizer {
         // In this case DBSynchronizer should not try to insert the bibEntry entry again (but it would not harm).
         if (isInEventLocation(event)) {
             dbProcessor.insertEntry(event.getBibEntry());
+            synchronizeLocalDatabase(); // Pull remote changes for the case that there where some
         }
     }
 
@@ -68,6 +74,7 @@ public class DBSynchronizer {
         // In this case DBSynchronizer should not try to update the bibEntry entry again (but it would not harm).
         if (isInEventLocation(event)) {
             dbProcessor.updateEntry(event.getBibEntry(), event.getFieldName(), event.getNewValue());
+            synchronizeLocalDatabase(); // Pull remote changes for the case that there where some
         }
     }
 
@@ -81,6 +88,7 @@ public class DBSynchronizer {
         // In this case DBSynchronizer should not try to delete the bibEntry entry again (but it would not harm).
         if (isInEventLocation(event)) {
             dbProcessor.removeEntry(event.getBibEntry());
+            synchronizeLocalDatabase(); // Pull remote changes for the case that there where some
         }
     }
 
@@ -89,13 +97,13 @@ public class DBSynchronizer {
      * to the new local database.
      * @param bibDatabase Local {@link BibDatabase}
      */
-    public void initializeDatabases(BibDatabase bibDatabase) {
+    public void initializeDatabases() {
 
         if (!dbProcessor.checkIntegrity()) {
             LOGGER.info(Localization.lang("Integrity check failed. Fixing..."));
             dbProcessor.setUpRemoteDatabase();
         }
-        synchronizeLocalDatabase(bibDatabase);
+        synchronizeLocalDatabase();
     }
 
     /**
@@ -103,7 +111,7 @@ public class DBSynchronizer {
      * Possible update types are removal, update or insert of a {@link BibEntry}.
      * @param bibDatabase {@link BibDatabase} to be synchronized
      */
-    public void synchronizeLocalDatabase(BibDatabase bibDatabase) {
+    public void synchronizeLocalDatabase() {
         dbProcessor.normalizeEntryTable(); // remove unused columns
 
         List<BibEntry> localEntries = bibDatabase.getEntries();
