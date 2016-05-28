@@ -123,7 +123,7 @@ public class OpenRemoteDatabaseDialog extends JDialog {
                     dbSynchronizer.setUp(DBConnector.getNewConnection(selectedType, hostField.getText(), port,
                                     databaseField.getText(), userField.getText(), new String(passwordField.getPassword())),
                                     selectedType, databaseField.getText());
-                    dbSynchronizer.initializeDatabases(bibDatabaseContext.getDatabase());
+                    dbSynchronizer.initializeDatabases();
                     frame.addTab(bibDatabaseContext, true);
 
                     setGlobalPrefs();
