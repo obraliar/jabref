@@ -262,9 +262,10 @@ public class BasePanel extends JPanel implements ClipboardOwner, FileUpdateListe
 
     public String getTabTitle() {
         StringBuilder title = new StringBuilder();
+        DatabaseLocation databaseLocation = this.bibDatabaseContext.getDatabase().getLocation();
 
-        if (getBibDatabaseContext().getDatabase().getLocation() == DatabaseLocation.LOCAL) {
-            if (getBibDatabaseContext().getDatabaseFile() == null) {
+        if (databaseLocation == DatabaseLocation.LOCAL) {
+            if (this.bibDatabaseContext.getDatabaseFile() == null) {
                 title.append(GUIGlobals.UNTITLED_TITLE);
 
                 if (getDatabase().hasEntries()) {
@@ -277,10 +278,10 @@ public class BasePanel extends JPanel implements ClipboardOwner, FileUpdateListe
             } else {
                 // check if file is modified
                 String changeFlag = isModified() ? "*" : "";
-                title.append(getBibDatabaseContext().getDatabaseFile().getName()).append(changeFlag);
+                title.append(this.bibDatabaseContext.getDatabaseFile().getName()).append(changeFlag);
             }
-        } else if (getBibDatabaseContext().getDatabase().getLocation() == DatabaseLocation.REMOTE) {
-            title.append(getBibDatabaseContext().getDBSynchronizer().getDBName() + " (remote)");
+        } else if (databaseLocation == DatabaseLocation.REMOTE) {
+            title.append(this.bibDatabaseContext.getDBSynchronizer().getDBName() + " (remote)");
         }
 
         return title.toString();
