@@ -19,18 +19,15 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import net.sf.jabref.event.location.EntryEventLocation;
 import net.sf.jabref.logic.l10n.Localization;
 import net.sf.jabref.model.entry.BibEntry;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -46,12 +43,15 @@ public class DBProcessor {
     private DBType dbType;
     private final DBHelper dbHelper;
 
-    // Elected name for main table
     public static final String ENTRY = "ENTRY";
+
+    public static final List<String> ALL_TABLES = new ArrayList<>(Arrays.asList(ENTRY));
+
     // Elected column names of main the table
     // This entries are needed to ease the changeability, cause some database systems dependent on the context expect low or uppercase characters.
     public static final String REMOTE_ID = "REMOTE_ID";
     public static final String ENTRYTYPE = "ENTRYTYPE";
+
 
 
     /**
@@ -65,47 +65,28 @@ public class DBProcessor {
     }
 
     /**
-     * Scans the structure of the main table and checks it.
+     * Scans the database for required tables.
      * @return <code>true</code> if the structure matches the requirements, <code>false</code> if not.
      */
-    public boolean checkIntegrity() {
-        Map<String, String> requiredColumns = dbType.getStructure(ENTRY); //get appropriate column names and their types
-
+    public boolean checkBaseIntegrity() {
+        List<String> requiredTables = new ArrayList<>(ALL_TABLES);
         try {
             DatabaseMetaData databaseMetaData = connection.getMetaData();
 
             // ...getTables(null, ...): no restrictions
             try (ResultSet databaseMetaDataResultSet = databaseMetaData.getTables(null, null, null, null)) {
 
-                Set<String> requiredTables = new HashSet<>(); // Back door for new tables
-                requiredTables.add(ENTRY);
-
                 while (databaseMetaDataResultSet.next()) {
                     String tableName = databaseMetaDataResultSet.getString("TABLE_NAME").toUpperCase();
                     requiredTables.remove(tableName); // Remove matching tables to check requiredTables for emptiness
                 }
+
                 databaseMetaDataResultSet.close();
-
-                if (requiredTables.isEmpty()) {
-                    try (ResultSet resultSet = dbHelper.query("SELECT * FROM " + escape(ENTRY, dbType))) {
-                        ResultSetMetaData resultSetMetaData = resultSet.getMetaData(); // get structural data of the table
-
-                        for (int i = 0; i < resultSetMetaData.getColumnCount(); i++) {
-                            // All databases together don't hold the names in the same character case
-                            requiredColumns.remove(resultSetMetaData.getColumnName(i + 1).toUpperCase(),
-                                        resultSetMetaData.getColumnTypeName(i + 1).toUpperCase());
-                        }
-
-                        return requiredColumns.isEmpty();
-                    } catch (SQLException e) {
-                        LOGGER.error("SQL Error: " + e.getMessage());
-                    }
-                }
+                return requiredTables.size() == 0;
             }
-        } catch (SQLException e1) {
-            e1.printStackTrace();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
-
         return false;
     }
 
@@ -142,7 +123,7 @@ public class DBProcessor {
             LOGGER.error("SQL Error: " + e.getMessage());
         }
 
-        if (!checkIntegrity()) {
+        if (!checkBaseIntegrity()) {
             // can only happen with users direct intervention in remote database
             LOGGER.error(Localization.lang("Corrupt_remote_database_structure."));
         }

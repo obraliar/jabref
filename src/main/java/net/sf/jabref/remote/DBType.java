@@ -15,9 +15,6 @@
 */
 package net.sf.jabref.remote;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * Enumerates all supported database systems (DBS) by JabRef.
  */
@@ -36,27 +33,6 @@ public enum DBType {
     @Override
     public String toString() {
         return this.type;
-    }
-
-    /**
-     * Retrieves a mapping of the table structure dependent on the type.
-     * @return Mapping of columns name and their type
-     */
-    public Map<String, String> getStructure(String table) {
-        Map<String, String> structure = new HashMap<>();
-        if (table.equals(DBProcessor.ENTRY)) {
-            if (type.equals(DBType.MYSQL)) {
-                structure.put(DBProcessor.REMOTE_ID, "INT");
-                structure.put(DBProcessor.ENTRYTYPE, "VARCHAR");
-            } else if (type.equals(DBType.POSTGRESQL)) {
-                structure.put(DBProcessor.REMOTE_ID, "SERIAL");
-                structure.put(DBProcessor.ENTRYTYPE, "VARCHAR");
-            } else if (type.equals(DBType.ORACLE)) {
-                structure.put(DBProcessor.REMOTE_ID, "NUMBER");
-                structure.put(DBProcessor.ENTRYTYPE, "VARCHAR2");
-            }
-        }
-        return structure;
     }
 
 }
