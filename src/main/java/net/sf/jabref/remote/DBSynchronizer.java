@@ -99,7 +99,7 @@ public class DBSynchronizer {
      */
     public void initializeDatabases() {
 
-        if (!dbProcessor.checkIntegrity()) {
+        if (!dbProcessor.checkBaseIntegrity()) {
             LOGGER.info(Localization.lang("Integrity check failed. Fixing..."));
             dbProcessor.setUpRemoteDatabase();
         }
