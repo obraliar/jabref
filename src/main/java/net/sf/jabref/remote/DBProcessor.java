@@ -22,9 +22,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import net.sf.jabref.MetaData;
 import net.sf.jabref.event.location.EntryEventLocation;
 import net.sf.jabref.logic.l10n.Localization;
 import net.sf.jabref.model.entry.BibEntry;
@@ -45,6 +48,8 @@ public class DBProcessor {
     private final DBHelper dbHelper;
 
     public static final String ENTRY = "ENTRY";
+    public static final String METADATA = "METADATA";
+    public static final String META_ENTRY = "META_ENTRY";
 
     public static final List<String> ALL_TABLES = new ArrayList<>(Arrays.asList(ENTRY));
 
@@ -53,6 +58,13 @@ public class DBProcessor {
     public static final String ENTRY_REMOTE_ID = "REMOTE_ID";
     public static final String ENTRY_ENTRYTYPE = "ENTRYTYPE";
 
+    public static final String METADATA_META_ID = "META_ID";
+    public static final String METADATA_META_KEY = "META_KEY";
+
+    public static final String META_ENTRY_ID = "META_ENTRY_ID";
+    public static final String META_ENTRY_META_ID = "META_ID";
+    public static final String META_ENTRY_FIELD = "FIELD";
+    public static final String META_ENTRY_VALUE = "VALUE";
 
 
     /**
@@ -100,6 +112,19 @@ public class DBProcessor {
                     + ENTRY_REMOTE_ID + " INT(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,"
                     + ENTRY_ENTRYTYPE + " VARCHAR(255) DEFAULT NULL"
                     + ") ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;");
+            executeUpdate("CREATE TABLE IF NOT EXISTS " + METADATA + " ("
+                    + METADATA_META_ID + " int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,"
+                    + METADATA_META_KEY + " varchar(255) NOT NULL"
+                    + ") ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;");
+            executeUpdate("CREATE TABLE IF NOT EXISTS " + META_ENTRY + " ("
+                    + META_ENTRY_ID + " int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,"
+                    + META_ENTRY_META_ID + " int(11) NOT NULL,"
+                    + META_ENTRY_FIELD + " varchar(255) DEFAULT NULL,"
+                    + META_ENTRY_VALUE + " text NOT NULL,"
+                    + "FOREIGN KEY (" + META_ENTRY_META_ID + ") REFERENCES " + METADATA + "(" + METADATA_META_ID + ")"
+                    + ") ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;");
+
+
         } else if (dbType == DBType.POSTGRESQL) {
             executeUpdate("CREATE TABLE IF NOT EXISTS " + ENTRY + " ("
                     + ENTRY_REMOTE_ID + " SERIAL PRIMARY KEY,"
@@ -180,6 +205,29 @@ public class DBProcessor {
         prepareEntryTableStructure(bibEntry);
         String query = "UPDATE " + escape(ENTRY, dbType) + " SET " + escape(field.toUpperCase(), dbType) + " = "
                 + escapeValue(newValue) + " WHERE " + escape(ENTRY_REMOTE_ID, dbType) + " = " + bibEntry.getRemoteId();
+        executeUpdate(query);
+        LOGGER.info("SQL UPDATE: " + query);
+    }
+
+    /**
+     * Updates the hole bibEntry remotely.
+     *
+     * @param bibEntry {@link BibEntry} affected by changes
+     */
+    public void updateEntry(BibEntry bibEntry) {
+        prepareEntryTableStructure(bibEntry);
+
+        String query = "UPDATE " + escape(ENTRY, dbType) + " SET ";
+
+        List<String> fields = new ArrayList<>();
+        fields.addAll(bibEntry.getFieldNames());
+
+        for (int i = 0; i < fields.size(); i++) {
+            query = query + escape(fields.get(i).toUpperCase(), dbType) + " = " + escapeValue(bibEntry.getField(fields.get(i)));
+            query = i < (fields.size() - 1) ? query + ", " : query;
+        }
+
+        query = query + " WHERE " + escape(ENTRY_REMOTE_ID, dbType) + " = " + bibEntry.getRemoteId();
         executeUpdate(query);
         LOGGER.info("SQL UPDATE: " + query);
     }
@@ -284,9 +332,75 @@ public class DBProcessor {
                 remoteEntries.add(bibEntry);
             }
         } catch (SQLException e) {
-            LOGGER.error("SQL Error: " + e.getMessage());
+            LOGGER.error("SQL Error", e);
         }
         return remoteEntries;
+    }
+
+
+    /**
+     * Fetches all remotely present meta data.
+     */
+    public Map<String, List<String>> getRemoteMetaData()
+    {
+        Map<String, List<String>> metaData = new HashMap<>();
+        String query = "SELECT * FROM " + escape(METADATA) + ", " + escape(META_ENTRY) + " WHERE " + escape(METADATA)
+                + "." + escape(METADATA_META_ID) + " = " + escape(META_ENTRY) + "." + escape(META_ENTRY_META_ID)
+                + " ORDER BY " + escape(META_ENTRY_ID);
+
+
+        try (ResultSet resultSet = dbHelper.query(query)) {
+            String metaKey = "", field = "";
+            List<String> orderedData = new ArrayList<>();
+
+            while(resultSet.next()) {
+                if (!metaKey.equals(resultSet.getString(METADATA_META_KEY))) {
+                    if (!orderedData.isEmpty()) {
+                        metaData.put(metaKey, new ArrayList<>(orderedData));
+                    }
+                    orderedData.clear();
+                    metaKey = resultSet.getString(METADATA_META_KEY);
+                    field = "";
+                }
+
+                if (metaKey.equals(MetaData.SAVE_ACTIONS)) {
+                    if (resultSet.getString(META_ENTRY_FIELD) == null) {
+                        orderedData.add(resultSet.getString(META_ENTRY_VALUE));
+                    } else {
+                        if (field.isEmpty()) {
+                            orderedData.add(resultSet.getString(META_ENTRY_FIELD) + "[" + resultSet.getString(META_ENTRY_VALUE) + "]");
+                        } else if (!field.equals(resultSet.getString(META_ENTRY_FIELD))) {
+                            String value = orderedData.remove(orderedData.size() - 1);
+                            value = value + "\n" + resultSet.getString(META_ENTRY_FIELD) + "[" + resultSet.getString(META_ENTRY_VALUE) + "]";
+                            orderedData.add(value);
+                        } else {
+                            String value = orderedData.remove(orderedData.size() - 1);
+                            value = value.substring(0, value.lastIndexOf(']')) + ",";
+                            value = value + resultSet.getString(META_ENTRY_VALUE) + "]";
+                            orderedData.add(value);
+                        }
+                        field = resultSet.getString(META_ENTRY_FIELD);
+                    }
+                } else if (metaKey.equals(MetaData.SAVE_ORDER_CONFIG)) {
+                    if (resultSet.getString(META_ENTRY_FIELD) == null) {
+                        orderedData.add(resultSet.getString(META_ENTRY_VALUE));
+                    } else {
+                        orderedData.add(resultSet.getString(META_ENTRY_FIELD));
+                        orderedData.add(resultSet.getString(META_ENTRY_VALUE));
+                    }
+                } else {
+                    orderedData.add(resultSet.getString(META_ENTRY_VALUE));
+                }
+
+                if (resultSet.isLast()) {
+                    metaData.put(metaKey, new ArrayList<>(orderedData));
+                }
+            }
+            resultSet.close();
+        } catch (SQLException e) {
+            LOGGER.error("SQL Error", e);
+        }
+        return metaData;
     }
 
     /**
@@ -303,6 +417,16 @@ public class DBProcessor {
             return "`" + expression + "`";
         }
         return expression;
+    }
+
+    /**
+     * Escapes parts of SQL expressions like table or field name to match the conventions
+     * of the database system using the current dbType.
+     * @param expression Table or field name
+     * @return Correctly escape expression
+     */
+    public String escape(String expression) {
+        return escape(expression, dbType);
     }
 
     /**
@@ -339,6 +463,5 @@ public class DBProcessor {
     public DBType getDBType() {
         return this.dbType;
     }
-
 
 }

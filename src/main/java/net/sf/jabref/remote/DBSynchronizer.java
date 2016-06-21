@@ -19,11 +19,14 @@ import java.sql.Connection;
 import java.util.List;
 import java.util.Set;
 
+import net.sf.jabref.BibDatabaseContext;
+import net.sf.jabref.MetaData;
 import net.sf.jabref.event.EntryAddedEvent;
 import net.sf.jabref.event.EntryEvent;
 import net.sf.jabref.event.EntryRemovedEvent;
 import net.sf.jabref.event.FieldChangedEvent;
 import net.sf.jabref.event.location.EntryEventLocation;
+import net.sf.jabref.exporter.BibDatabaseWriter;
 import net.sf.jabref.logic.l10n.Localization;
 import net.sf.jabref.model.database.BibDatabase;
 import net.sf.jabref.model.entry.BibEntry;
@@ -43,11 +46,14 @@ public class DBSynchronizer {
     private DBProcessor dbProcessor;
     private DBType dbType;
     private String dbName;
+    private final BibDatabaseContext bibDatabaseContext;
     private final BibDatabase bibDatabase;
+    private final MetaData metaData;
 
-
-    public DBSynchronizer(BibDatabase bibDatabase) {
-        this.bibDatabase = bibDatabase;
+    public DBSynchronizer(BibDatabaseContext bibDatabaseContext) {
+        this.bibDatabaseContext = bibDatabaseContext;
+        this.bibDatabase = bibDatabaseContext.getDatabase();
+        this.metaData = bibDatabaseContext.getMetaData();
     }
 
     /**
@@ -73,8 +79,10 @@ public class DBSynchronizer {
         // While synchronizing the local database (see synchronizeLocalDatabase() below), some EntryEvents may be posted.
         // In this case DBSynchronizer should not try to update the bibEntry entry again (but it would not harm).
         if (isInEventLocation(event)) {
-            dbProcessor.updateEntry(event.getBibEntry(), event.getFieldName(), event.getNewValue());
-            synchronizeLocalDatabase(); // Pull remote changes for the case that there where some
+            synchronizeLocalMetaData();
+            BibDatabaseWriter.applySaveActions(event.getBibEntry(), bibDatabaseContext.getMetaData());
+            dbProcessor.updateEntry(event.getBibEntry());
+            //synchronizeLocalDatabase(); // Pull remote changes for the case that there where some
         }
     }
 
@@ -103,13 +111,13 @@ public class DBSynchronizer {
             LOGGER.info(Localization.lang("Integrity check failed. Fixing..."));
             dbProcessor.setUpRemoteDatabase();
         }
+        synchronizeLocalMetaData();
         synchronizeLocalDatabase();
     }
 
     /**
      * Synchronizes the local database with a remote one.
      * Possible update types are removal, update or insert of a {@link BibEntry}.
-     * @param bibDatabase {@link BibDatabase} to be synchronized
      */
     public void synchronizeLocalDatabase() {
         dbProcessor.normalizeEntryTable(); // remove unused columns
@@ -151,6 +159,12 @@ public class DBSynchronizer {
         }
     }
 
+    /**
+     * Synchronizes all meta data locally.
+     */
+    public void synchronizeLocalMetaData() {
+        metaData.setMetaData(dbProcessor.getRemoteMetaData());
+    }
 
     public String getDBName() {
         return dbName;
