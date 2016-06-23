@@ -55,7 +55,7 @@ public class DBHelper {
 
 
         } catch (SQLException e) {
-            LOGGER.error("SQL Error: " + e.getMessage());
+            LOGGER.error("SQL Error: ", e);
         }
         return columnNames;
     }
@@ -90,7 +90,7 @@ public class DBHelper {
                 connection.createStatement().executeUpdate("DELETE FROM " + table); //TODO escape
             }
         } catch (SQLException e) {
-            LOGGER.error("SQL Error: " + e.getMessage());
+            LOGGER.error("SQL Error: ", e);
         }
     }
 
@@ -103,7 +103,7 @@ public class DBHelper {
                 connection.createStatement().executeUpdate("DROP TABLE " + table); //TODO escape
             }
         } catch (SQLException e) {
-            LOGGER.error("SQL Error: " + e.getMessage());
+            LOGGER.error("SQL Error: ", e);
         }
     }
 

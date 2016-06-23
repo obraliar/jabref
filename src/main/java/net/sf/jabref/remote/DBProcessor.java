@@ -157,23 +157,24 @@ public class DBProcessor {
         // Check if already exists
         int remote_id = bibEntry.getRemoteId();
         if (remote_id != -1) {
-            try (ResultSet resultSet = dbHelper.query("SELECT * FROM "+ escape(ENTRY, dbType) +" WHERE "+ escape(ENTRY_REMOTE_ID, dbType) +" = " + remote_id)) {
+            try (ResultSet resultSet = dbHelper.query(
+                    "SELECT * FROM " + escape(ENTRY) + " WHERE " + escape(ENTRY_REMOTE_ID) + " = " + remote_id)) {
                 if (resultSet.next()) {
                     return;
                 }
             } catch (SQLException e) {
-                LOGGER.error("SQL Error: " + e.getMessage());
+                LOGGER.error("SQL Error: ", e);
             }
         }
 
 
-        String query = "INSERT INTO " + escape(ENTRY, dbType) + "(";
+        String query = "INSERT INTO " + escape(ENTRY) + "(";
         ArrayList<String> fieldNames = new ArrayList<>(bibEntry.getFieldNames());
 
         for (int i = 0; i < fieldNames.size(); i++) {
-            query = query + escape(fieldNames.get(i).toUpperCase(), dbType) + ", ";
+            query = query + escape(fieldNames.get(i).toUpperCase()) + ", ";
         }
-        query = query + escape(ENTRY_ENTRYTYPE, dbType) + ") VALUES(";
+        query = query + escape(ENTRY_ENTRYTYPE) + ") VALUES(";
         for (int i = 0; i < fieldNames.size(); i++) {
             query = query + escapeValue(bibEntry.getField(fieldNames.get(i))) + ", ";
         }
@@ -190,7 +191,7 @@ public class DBProcessor {
                 generatedKeys.close();
             }
         } catch (SQLException e) {
-            LOGGER.error("SQL Error: " + e.getMessage());
+            LOGGER.error("SQL Error: ", e);
         }
 
         LOGGER.info("SQL INSERT: " + query);
@@ -205,8 +206,8 @@ public class DBProcessor {
      */
     public void updateEntry(BibEntry bibEntry, String field, String newValue) {
         prepareEntryTableStructure(bibEntry);
-        String query = "UPDATE " + escape(ENTRY, dbType) + " SET " + escape(field.toUpperCase(), dbType) + " = "
-                + escapeValue(newValue) + " WHERE " + escape(ENTRY_REMOTE_ID, dbType) + " = " + bibEntry.getRemoteId();
+        String query = "UPDATE " + escape(ENTRY) + " SET " + escape(field.toUpperCase()) + " = " + escapeValue(newValue)
+                + " WHERE " + escape(ENTRY_REMOTE_ID) + " = " + bibEntry.getRemoteId();
         executeUpdate(query);
         LOGGER.info("SQL UPDATE: " + query);
     }
@@ -219,17 +220,17 @@ public class DBProcessor {
     public void updateEntry(BibEntry bibEntry) {
         prepareEntryTableStructure(bibEntry);
 
-        String query = "UPDATE " + escape(ENTRY, dbType) + " SET ";
+        String query = "UPDATE " + escape(ENTRY) + " SET ";
 
         List<String> fields = new ArrayList<>();
         fields.addAll(bibEntry.getFieldNames());
 
         for (int i = 0; i < fields.size(); i++) {
-            query = query + escape(fields.get(i).toUpperCase(), dbType) + " = " + escapeValue(bibEntry.getField(fields.get(i)));
+            query = query + escape(fields.get(i).toUpperCase()) + " = " + escapeValue(bibEntry.getField(fields.get(i)));
             query = i < (fields.size() - 1) ? query + ", " : query;
         }
 
-        query = query + " WHERE " + escape(ENTRY_REMOTE_ID, dbType) + " = " + bibEntry.getRemoteId();
+        query = query + " WHERE " + escape(ENTRY_REMOTE_ID) + " = " + bibEntry.getRemoteId();
         executeUpdate(query);
         LOGGER.info("SQL UPDATE: " + query);
     }
@@ -239,7 +240,7 @@ public class DBProcessor {
      * @param bibEntry {@link BibEntry} to be deleted
      */
     public void removeEntry(BibEntry bibEntry) {
-        String query = "DELETE FROM " + escape(ENTRY, dbType) + " WHERE " + escape(ENTRY_REMOTE_ID, dbType) + " = "
+        String query = "DELETE FROM " + escape(ENTRY) + " WHERE " + escape(ENTRY_REMOTE_ID) + " = "
                 + bibEntry.getRemoteId();
         executeUpdate(query);
         LOGGER.info("SQL DELETE: " + query);
@@ -255,12 +256,12 @@ public class DBProcessor {
      */
     public void prepareEntryTableStructure(BibEntry bibEntry) {
         Set<String> fieldNames = dbHelper.allToUpperCase(bibEntry.getFieldNames());
-        fieldNames.removeAll(dbHelper.allToUpperCase(dbHelper.getColumnNames(escape(ENTRY, dbType))));
+        fieldNames.removeAll(dbHelper.allToUpperCase(dbHelper.getColumnNames(escape(ENTRY))));
 
         String columnType = dbType == DBType.ORACLE ? " CLOB NULL" : " TEXT NULL DEFAULT NULL";
 
         for (String fieldName : fieldNames) {
-            executeUpdate("ALTER TABLE " + escape(ENTRY, dbType) + " ADD " + escape(fieldName, dbType) + columnType);
+            executeUpdate("ALTER TABLE " + escape(ENTRY) + " ADD " + escape(fieldName) + columnType);
         }
     }
 
@@ -270,11 +271,11 @@ public class DBProcessor {
     public void normalizeEntryTable() {
         ArrayList<String> columnsToRemove = new ArrayList<>();
 
-        columnsToRemove.addAll(dbHelper.allToUpperCase(dbHelper.getColumnNames(escape(ENTRY, dbType))));
+        columnsToRemove.addAll(dbHelper.allToUpperCase(dbHelper.getColumnNames(escape(ENTRY))));
         columnsToRemove.remove(ENTRY_REMOTE_ID); // essential column
         columnsToRemove.remove(ENTRY_ENTRYTYPE); // essential column
 
-        try (ResultSet resultSet = dbHelper.query("SELECT * FROM " + escape(ENTRY, dbType))) {
+        try (ResultSet resultSet = dbHelper.query("SELECT * FROM " + escape(ENTRY))) {
             while (resultSet.next()) {
                 for (int i = 0; i < columnsToRemove.size(); i++) {
                     if (resultSet.getObject(columnsToRemove.get(i)) != null) {
@@ -284,7 +285,7 @@ public class DBProcessor {
                 }
             }
         } catch (SQLException e) {
-            LOGGER.error("SQL Error: " + e.getMessage());
+            LOGGER.error("SQL Error: ", e);
         }
 
         String columnExpression = "";
@@ -295,7 +296,7 @@ public class DBProcessor {
 
         for (int i = 0; i < columnsToRemove.size(); i++) {
             String column = columnsToRemove.get(i);
-            columnExpression = columnExpression + expressionPrefix + escape(column, dbType);
+            columnExpression = columnExpression + expressionPrefix + escape(column);
             columnExpression = i < (columnsToRemove.size() - 1) ? columnExpression + ", " : columnExpression;
         }
 
@@ -304,7 +305,7 @@ public class DBProcessor {
         }
 
         if (columnsToRemove.size() > 0) {
-            executeUpdate("ALTER TABLE " + escape(ENTRY, dbType) + " " + columnExpression);
+            executeUpdate("ALTER TABLE " + escape(ENTRY) + " " + columnExpression);
         }
     }
 
@@ -314,8 +315,8 @@ public class DBProcessor {
      */
     public List<BibEntry> getRemoteEntries() {
         ArrayList<BibEntry> remoteEntries = new ArrayList<>();
-        try (ResultSet resultSet = dbHelper.query("SELECT * FROM " + escape(ENTRY, dbType))) {
-            Set<String> columns = dbHelper.allToUpperCase(dbHelper.getColumnNames(escape(ENTRY, dbType)));
+        try (ResultSet resultSet = dbHelper.query("SELECT * FROM " + escape(ENTRY))) {
+            Set<String> columns = dbHelper.allToUpperCase(dbHelper.getColumnNames(escape(ENTRY)));
 
             while (resultSet.next()) {
                 BibEntry bibEntry = new BibEntry();
@@ -416,7 +417,8 @@ public class DBProcessor {
             for (String metaKey : data.keySet()) {
                 List<String> values = data.get(metaKey);
 
-                String query = "INSERT INTO " + escape(METADATA, dbType) + "(" + METADATA_META_KEY + ") VALUES(" + escapeValue(metaKey) + ")";
+                String query = "INSERT INTO " + escape(METADATA) + "(" + METADATA_META_KEY + ") VALUES("
+                        + escapeValue(metaKey) + ")";
                 int metaId = -1;
 
                 try (PreparedStatement preparedStatement = connection.prepareStatement(query,
@@ -526,7 +528,7 @@ public class DBProcessor {
         try {
             connection.createStatement().executeUpdate(query);
         } catch (SQLException e) {
-            LOGGER.error("SQL Error: " + e.getMessage());
+            LOGGER.error("SQL Error: ", e);
         }
     }
 
