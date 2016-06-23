@@ -29,6 +29,8 @@ import java.util.Set;
 
 import net.sf.jabref.MetaData;
 import net.sf.jabref.event.location.EntryEventLocation;
+import net.sf.jabref.exporter.FieldFormatterCleanups;
+import net.sf.jabref.logic.cleanup.FieldFormatterCleanup;
 import net.sf.jabref.logic.l10n.Localization;
 import net.sf.jabref.model.entry.BibEntry;
 
@@ -121,7 +123,7 @@ public class DBProcessor {
                     + META_ENTRY_META_ID + " int(11) NOT NULL,"
                     + META_ENTRY_FIELD + " varchar(255) DEFAULT NULL,"
                     + META_ENTRY_VALUE + " text NOT NULL,"
-                    + "FOREIGN KEY (" + META_ENTRY_META_ID + ") REFERENCES " + METADATA + "(" + METADATA_META_ID + ")"
+                    + "FOREIGN KEY (" + META_ENTRY_META_ID + ") REFERENCES " + METADATA + "(" + METADATA_META_ID + ") ON DELETE CASCADE"
                     + ") ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;");
 
 
@@ -341,13 +343,11 @@ public class DBProcessor {
     /**
      * Fetches all remotely present meta data.
      */
-    public Map<String, List<String>> getRemoteMetaData()
-    {
+    public Map<String, List<String>> getRemoteMetaData() {
         Map<String, List<String>> metaData = new HashMap<>();
         String query = "SELECT * FROM " + escape(METADATA) + ", " + escape(META_ENTRY) + " WHERE " + escape(METADATA)
                 + "." + escape(METADATA_META_ID) + " = " + escape(META_ENTRY) + "." + escape(META_ENTRY_META_ID)
                 + " ORDER BY " + escape(META_ENTRY_ID);
-
 
         try (ResultSet resultSet = dbHelper.query(query)) {
             String metaKey = "", field = "";
@@ -404,6 +404,79 @@ public class DBProcessor {
     }
 
     /**
+     * Clears and sets all meta data remotely.
+     * @param metaData JabRef meta data.
+     */
+    public void setRemoteMetaData(MetaData metaData) {
+        Map<String, List<String>> data = metaData.getMetaData();
+        dbHelper.dropTables(META_ENTRY, METADATA);
+        setUpRemoteDatabase();
+
+        try {
+            for (String metaKey : data.keySet()) {
+                List<String> values = data.get(metaKey);
+
+                String query = "INSERT INTO " + escape(METADATA, dbType) + "(" + METADATA_META_KEY + ") VALUES(" + escapeValue(metaKey) + ")";
+                int metaId = -1;
+
+                try (PreparedStatement preparedStatement = connection.prepareStatement(query,
+                        new String[] {METADATA_META_ID.toLowerCase()})) { // This is the only method to get generated keys which is accepted by MySQL, PostgreSQL and Oracle.
+                    preparedStatement.executeUpdate();
+                    try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
+                        if (generatedKeys.next()) {
+                            metaId = generatedKeys.getInt(1); // set generated ID locally
+                        }
+                        preparedStatement.close();
+                        generatedKeys.close();
+                    }
+                }
+
+                if (metaKey.equals(MetaData.SAVE_ACTIONS)) {
+                    insert(META_ENTRY, META_ENTRY_META_ID, metaId, META_ENTRY_VALUE, values.get(0));
+                    for (FieldFormatterCleanup cleanUp : FieldFormatterCleanups.parse(values.get(1))) {
+                        insert(META_ENTRY, META_ENTRY_META_ID, metaId, META_ENTRY_FIELD, cleanUp.getField(),
+                                META_ENTRY_VALUE, cleanUp.getFormatter().getKey());
+                    }
+                } else if (metaKey.equals(MetaData.SAVE_ORDER_CONFIG)) {
+                    insert(META_ENTRY, META_ENTRY_META_ID, metaId, META_ENTRY_VALUE, values.get(0));
+
+                    for (int i = 1; i < values.size(); i+=2) {
+                        insert(META_ENTRY, META_ENTRY_META_ID, metaId, META_ENTRY_FIELD, values.get(i), META_ENTRY_VALUE, values.get(i+1));
+                    }
+                } else {
+                    insert(META_ENTRY, META_ENTRY_META_ID, metaId, META_ENTRY_VALUE, values.get(0));
+                }
+
+            }
+        } catch (SQLException e) {
+            LOGGER.error("SQL Error", e);
+        }
+
+
+
+    }
+    /**
+     * Inserts the given data into database.
+     * @param table Relational table the data should be inserted in
+     * @param columnValueMapping Mapping between columns and values in form of an usual array
+     * Call example: <code>insert("table", "column1", "value1", "column2", "value2");</code>
+     */
+    private void insert(String table, Object... columnValueMapping) {
+        String query = "INSERT INTO " + escape(table) + "(";
+        for (int i = 0; i < columnValueMapping.length; i += 2) {
+            query = query + escape(String.valueOf(columnValueMapping[i]));
+            query = i < (columnValueMapping.length - 2) ? query + ", " : query;
+        }
+        query = query + ") VALUES(";
+        for (int i = 1; i < columnValueMapping.length; i += 2) {
+            query = query + escapeValue(columnValueMapping[i]);
+            query = i < (columnValueMapping.length - 2) ? query + ", " : query;
+        }
+        query = query + ")";
+        executeUpdate(query);
+    }
+
+    /**
      * Escapes parts of SQL expressions like table or field name to match the conventions
      * of the database system.
      * @param expression Table or field name
@@ -435,13 +508,18 @@ public class DBProcessor {
      * @param Value to be escaped
      * @return Correctly escaped expression or "NULL" if <code>value</code> is real <code>null</code> object.
      */
-    public String escapeValue(String value) {
-        if (value == null) {
-            value = "NULL";
+    public String escapeValue(Object obj) {
+        String stringValue;
+        if (obj == null) {
+            stringValue = "NULL";
         } else {
-            value = "'" + value + "'";
+            if (obj instanceof String) {
+                stringValue = "'" + obj + "'";
+            } else {
+                stringValue = String.valueOf(obj);
+            }
         }
-        return value;
+        return stringValue;
     }
 
     public void executeUpdate(String query) {

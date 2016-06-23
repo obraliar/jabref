@@ -67,6 +67,7 @@ public class DBSynchronizer {
         if (isInEventLocation(event)) {
             dbProcessor.insertEntry(event.getBibEntry());
             synchronizeLocalDatabase(); // Pull remote changes for the case that there where some
+            synchronizeRemoteMetaData();
         }
     }
 
@@ -164,6 +165,13 @@ public class DBSynchronizer {
      */
     public void synchronizeLocalMetaData() {
         metaData.setMetaData(dbProcessor.getRemoteMetaData());
+    }
+
+    /**
+     * Synchronizes all meta data remotely.
+     */
+    public void synchronizeRemoteMetaData() {
+        dbProcessor.setRemoteMetaData(metaData);
     }
 
     public String getDBName() {
