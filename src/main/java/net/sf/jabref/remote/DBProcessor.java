@@ -51,7 +51,6 @@ public class DBProcessor {
 
     public static final String ENTRY = "ENTRY";
     public static final String METADATA = "METADATA";
-    public static final String META_ENTRY = "META_ENTRY";
 
     public static final List<String> ALL_TABLES = new ArrayList<>(Arrays.asList(ENTRY));
 
@@ -60,13 +59,10 @@ public class DBProcessor {
     public static final String ENTRY_REMOTE_ID = "REMOTE_ID";
     public static final String ENTRY_ENTRYTYPE = "ENTRYTYPE";
 
-    public static final String METADATA_META_ID = "META_ID";
-    public static final String METADATA_META_KEY = "META_KEY";
-
-    public static final String META_ENTRY_ID = "META_ENTRY_ID";
-    public static final String META_ENTRY_META_ID = "META_ID";
-    public static final String META_ENTRY_FIELD = "FIELD";
-    public static final String META_ENTRY_VALUE = "VALUE";
+    public static final String METADATA_ENTRY_ID = "ENTRY_ID";
+    public static final String METADATA_KEY = "META_KEY";
+    public static final String METADATA_FIELD = "FIELD";
+    public static final String METADATA_VALUE = "META_VALUE";
 
 
     /**
@@ -115,31 +111,39 @@ public class DBProcessor {
                     + ENTRY_ENTRYTYPE + " VARCHAR(255) DEFAULT NULL"
                     + ") ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;");
             executeUpdate("CREATE TABLE IF NOT EXISTS " + METADATA + " ("
-                    + METADATA_META_ID + " int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,"
-                    + METADATA_META_KEY + " varchar(255) NOT NULL"
+                    + METADATA_ENTRY_ID + " int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,"
+                    + METADATA_KEY + " varchar(255) NOT NULL,"
+                    + METADATA_FIELD + " varchar(255) DEFAULT NULL,"
+                    + METADATA_VALUE + " text NOT NULL"
                     + ") ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;");
-            executeUpdate("CREATE TABLE IF NOT EXISTS " + META_ENTRY + " ("
-                    + META_ENTRY_ID + " int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,"
-                    + META_ENTRY_META_ID + " int(11) NOT NULL,"
-                    + META_ENTRY_FIELD + " varchar(255) DEFAULT NULL,"
-                    + META_ENTRY_VALUE + " text NOT NULL,"
-                    + "FOREIGN KEY (" + META_ENTRY_META_ID + ") REFERENCES " + METADATA + "(" + METADATA_META_ID + ") ON DELETE CASCADE"
-                    + ") ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;");
-
-
         } else if (dbType == DBType.POSTGRESQL) {
             executeUpdate("CREATE TABLE IF NOT EXISTS " + ENTRY + " ("
                     + ENTRY_REMOTE_ID + " SERIAL PRIMARY KEY,"
                     + ENTRY_ENTRYTYPE + " VARCHAR);");
+            executeUpdate("CREATE TABLE IF NOT EXISTS " + METADATA + " ("
+                    + METADATA_ENTRY_ID + " SERIAL PRIMARY KEY,"
+                    + METADATA_KEY + " VARCHAR,"
+                    + METADATA_FIELD + " VARCHAR,"
+                    + METADATA_VALUE + " TEXT);");
         } else if (dbType == DBType.ORACLE) {
             executeUpdate("CREATE TABLE \"" + ENTRY + "\" (" + "\""
                     + ENTRY_REMOTE_ID + "\"  NUMBER NOT NULL," + "\""
                     + ENTRY_ENTRYTYPE + "\"  VARCHAR2(255) NULL,"
-                    + "CONSTRAINT  \"ENTRY_PK\" PRIMARY KEY (\"" + ENTRY_REMOTE_ID + "\"))");
+                    + "CONSTRAINT  \"" + ENTRY + "_PK\" PRIMARY KEY (\"" + ENTRY_REMOTE_ID + "\"))");
             executeUpdate("CREATE SEQUENCE \"" + ENTRY + "_SEQ\"");
             executeUpdate("CREATE TRIGGER \"BI_" + ENTRY + "\" BEFORE INSERT ON \"" + ENTRY + "\" "
                     + "FOR EACH ROW BEGIN " + "SELECT \"" + ENTRY + "_SEQ\".NEXTVAL INTO :NEW."
                     + ENTRY_REMOTE_ID.toLowerCase() + " FROM DUAL; " + "END;");
+            executeUpdate("CREATE TABLE \"" + METADATA + "\" (" + "\""
+                    + METADATA_ENTRY_ID + "\"  NUMBER NOT NULL," + "\""
+                    + METADATA_KEY + "\"  VARCHAR2(255) NULL," + "\""
+                    + METADATA_FIELD + "\"  VARCHAR2(255) NULL," + "\""
+                    + METADATA_VALUE + "\"  CLOB NOT NULL,"
+                    + "CONSTRAINT  \"" + METADATA + "_PK\" PRIMARY KEY (\"" + METADATA_ENTRY_ID + "\"))");
+            executeUpdate("CREATE SEQUENCE \"" + METADATA + "_SEQ\"");
+            executeUpdate("CREATE TRIGGER \"BI_" + METADATA + "\" BEFORE INSERT ON \"" + METADATA + "\" "
+                    + "FOR EACH ROW BEGIN " + "SELECT \"" + METADATA + "_SEQ\".NEXTVAL INTO :NEW."
+                    + METADATA_ENTRY_ID.toLowerCase() + " FROM DUAL; " + "END;");
         }
         if (!checkBaseIntegrity()) {
             // can only happen with users direct intervention in remote database
@@ -346,51 +350,49 @@ public class DBProcessor {
      */
     public Map<String, List<String>> getRemoteMetaData() {
         Map<String, List<String>> metaData = new HashMap<>();
-        String query = "SELECT * FROM " + escape(METADATA) + ", " + escape(META_ENTRY) + " WHERE " + escape(METADATA)
-                + "." + escape(METADATA_META_ID) + " = " + escape(META_ENTRY) + "." + escape(META_ENTRY_META_ID)
-                + " ORDER BY " + escape(META_ENTRY_ID);
+        String query = "SELECT * FROM " + escape(METADATA) + " ORDER BY " + escape(METADATA_ENTRY_ID);
 
         try (ResultSet resultSet = dbHelper.query(query)) {
             String metaKey = "", field = "";
             List<String> orderedData = new ArrayList<>();
 
             while(resultSet.next()) {
-                if (!metaKey.equals(resultSet.getString(METADATA_META_KEY))) {
+                if (!metaKey.equals(resultSet.getString(METADATA_KEY))) {
                     if (!orderedData.isEmpty()) {
                         metaData.put(metaKey, new ArrayList<>(orderedData));
                     }
                     orderedData.clear();
-                    metaKey = resultSet.getString(METADATA_META_KEY);
+                    metaKey = resultSet.getString(METADATA_KEY);
                     field = "";
                 }
 
                 if (metaKey.equals(MetaData.SAVE_ACTIONS)) {
-                    if (resultSet.getString(META_ENTRY_FIELD) == null) {
-                        orderedData.add(resultSet.getString(META_ENTRY_VALUE));
+                    if (resultSet.getString(METADATA_FIELD) == null) {
+                        orderedData.add(resultSet.getString(METADATA_VALUE));
                     } else {
                         if (field.isEmpty()) {
-                            orderedData.add(resultSet.getString(META_ENTRY_FIELD) + "[" + resultSet.getString(META_ENTRY_VALUE) + "]");
-                        } else if (!field.equals(resultSet.getString(META_ENTRY_FIELD))) {
+                            orderedData.add(resultSet.getString(METADATA_FIELD) + "[" + resultSet.getString(METADATA_VALUE) + "]");
+                        } else if (!field.equals(resultSet.getString(METADATA_FIELD))) {
                             String value = orderedData.remove(orderedData.size() - 1);
-                            value = value + "\n" + resultSet.getString(META_ENTRY_FIELD) + "[" + resultSet.getString(META_ENTRY_VALUE) + "]";
+                            value = value + "\n" + resultSet.getString(METADATA_FIELD) + "[" + resultSet.getString(METADATA_VALUE) + "]";
                             orderedData.add(value);
                         } else {
                             String value = orderedData.remove(orderedData.size() - 1);
                             value = value.substring(0, value.lastIndexOf(']')) + ",";
-                            value = value + resultSet.getString(META_ENTRY_VALUE) + "]";
+                            value = value + resultSet.getString(METADATA_VALUE) + "]";
                             orderedData.add(value);
                         }
-                        field = resultSet.getString(META_ENTRY_FIELD);
+                        field = resultSet.getString(METADATA_FIELD);
                     }
                 } else if (metaKey.equals(MetaData.SAVE_ORDER_CONFIG)) {
-                    if (resultSet.getString(META_ENTRY_FIELD) == null) {
-                        orderedData.add(resultSet.getString(META_ENTRY_VALUE));
+                    if (resultSet.getString(METADATA_FIELD) == null) {
+                        orderedData.add(resultSet.getString(METADATA_VALUE));
                     } else {
-                        orderedData.add(resultSet.getString(META_ENTRY_FIELD));
-                        orderedData.add(resultSet.getString(META_ENTRY_VALUE));
+                        orderedData.add(resultSet.getString(METADATA_FIELD));
+                        orderedData.add(resultSet.getString(METADATA_VALUE));
                     }
                 } else {
-                    orderedData.add(resultSet.getString(META_ENTRY_VALUE));
+                    orderedData.add(resultSet.getString(METADATA_VALUE));
                 }
 
                 if (resultSet.isLast()) {
@@ -410,53 +412,32 @@ public class DBProcessor {
      */
     public void setRemoteMetaData(MetaData metaData) {
         Map<String, List<String>> data = metaData.getMetaData();
-        dbHelper.dropTables(META_ENTRY, METADATA);
+        dbHelper.clearTables(METADATA);
+        resetSequence(METADATA, METADATA_ENTRY_ID);
+
         setUpRemoteDatabase();
 
-        try {
-            for (String metaKey : data.keySet()) {
-                List<String> values = data.get(metaKey);
+        for (String metaKey : data.keySet()) {
+            List<String> values = data.get(metaKey);
 
-                String query = "INSERT INTO " + escape(METADATA) + "(" + METADATA_META_KEY + ") VALUES("
-                        + escapeValue(metaKey) + ")";
-                int metaId = -1;
-
-                try (PreparedStatement preparedStatement = connection.prepareStatement(query,
-                        new String[] {METADATA_META_ID.toLowerCase()})) { // This is the only method to get generated keys which is accepted by MySQL, PostgreSQL and Oracle.
-                    preparedStatement.executeUpdate();
-                    try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
-                        if (generatedKeys.next()) {
-                            metaId = generatedKeys.getInt(1); // set generated ID locally
-                        }
-                        preparedStatement.close();
-                        generatedKeys.close();
-                    }
+            if (metaKey.equals(MetaData.SAVE_ACTIONS)) {
+                insert(METADATA, METADATA_KEY, metaKey, METADATA_VALUE, values.get(0));
+                for (FieldFormatterCleanup cleanUp : FieldFormatterCleanups.parse(values.get(1))) {
+                    insert(METADATA, METADATA_KEY, metaKey, METADATA_FIELD, cleanUp.getField(),
+                            METADATA_VALUE, cleanUp.getFormatter().getKey());
                 }
+            } else if (metaKey.equals(MetaData.SAVE_ORDER_CONFIG)) {
+                insert(METADATA, METADATA_KEY, metaKey, METADATA_VALUE, values.get(0));
 
-                if (metaKey.equals(MetaData.SAVE_ACTIONS)) {
-                    insert(META_ENTRY, META_ENTRY_META_ID, metaId, META_ENTRY_VALUE, values.get(0));
-                    for (FieldFormatterCleanup cleanUp : FieldFormatterCleanups.parse(values.get(1))) {
-                        insert(META_ENTRY, META_ENTRY_META_ID, metaId, META_ENTRY_FIELD, cleanUp.getField(),
-                                META_ENTRY_VALUE, cleanUp.getFormatter().getKey());
-                    }
-                } else if (metaKey.equals(MetaData.SAVE_ORDER_CONFIG)) {
-                    insert(META_ENTRY, META_ENTRY_META_ID, metaId, META_ENTRY_VALUE, values.get(0));
-
-                    for (int i = 1; i < values.size(); i+=2) {
-                        insert(META_ENTRY, META_ENTRY_META_ID, metaId, META_ENTRY_FIELD, values.get(i), META_ENTRY_VALUE, values.get(i+1));
-                    }
-                } else {
-                    insert(META_ENTRY, META_ENTRY_META_ID, metaId, META_ENTRY_VALUE, values.get(0));
+                for (int i = 1; i < values.size(); i+=2) {
+                    insert(METADATA, METADATA_KEY, metaKey, METADATA_FIELD, values.get(i), METADATA_VALUE, values.get(i+1));
                 }
-
+            } else {
+                insert(METADATA, METADATA_KEY, metaKey, METADATA_VALUE, values.get(0));
             }
-        } catch (SQLException e) {
-            LOGGER.error("SQL Error", e);
         }
-
-
-
     }
+
     /**
      * Inserts the given data into database.
      * @param table Relational table the data should be inserted in
@@ -522,6 +503,15 @@ public class DBProcessor {
             }
         }
         return stringValue;
+    }
+
+    public void resetSequence(String table, String column) {
+        if (dbType == DBType.MYSQL) {
+            executeUpdate("ALTER TABLE " + escape(table) + " AUTO_INCREMENT = 1");
+        } else if (dbType == DBType.POSTGRESQL) {
+            executeUpdate("ALTER SEQUENCE " + table + "_" + column + "_seq RESTART WITH 1");
+        }
+        // Oracle is not supported. Only reseting a sequence takes 20-30 LOC (!)
     }
 
     public void executeUpdate(String query) {
