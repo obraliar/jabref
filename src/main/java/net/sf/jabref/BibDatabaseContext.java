@@ -57,7 +57,8 @@ public class BibDatabaseContext {
 
         if (database.getLocation() == DatabaseLocation.REMOTE) {
             this.dbSynchronizer = new DBSynchronizer(this);
-            database.registerListener(dbSynchronizer);
+            this.database.registerListener(dbSynchronizer);
+            this.metaData.registerListener(dbSynchronizer);
         }
     }
 

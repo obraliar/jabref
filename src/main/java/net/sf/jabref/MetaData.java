@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.Vector;
 
+import net.sf.jabref.event.MetaDataChangedEvent;
 import net.sf.jabref.exporter.FieldFormatterCleanups;
 import net.sf.jabref.importer.fileformat.ParseException;
 import net.sf.jabref.logic.config.SaveOrderConfig;
@@ -41,6 +42,7 @@ import net.sf.jabref.logic.labelpattern.DatabaseLabelPattern;
 import net.sf.jabref.logic.util.strings.StringUtil;
 import net.sf.jabref.model.database.BibDatabaseMode;
 
+import com.google.common.eventbus.EventBus;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -62,6 +64,7 @@ public class MetaData implements Iterable<String> {
 
     private Map<String, List<String>> metaData = new HashMap<>();
     private GroupTreeNode groupsRoot;
+    private final EventBus eventBus = new EventBus();
 
     private AbstractLabelPattern labelPattern;
 
@@ -155,6 +158,7 @@ public class MetaData implements Iterable<String> {
      */
     public void remove(String key) {
         metaData.remove(key);
+        postChange();
     }
 
     /**
@@ -165,6 +169,7 @@ public class MetaData implements Iterable<String> {
      */
     public void putData(String key, List<String> orderedData) {
         metaData.put(key, orderedData);
+        postChange();
     }
 
     /**
@@ -434,6 +439,13 @@ public class MetaData implements Iterable<String> {
     }
 
     /**
+     * Posts a new {@link MetaDataChangedEvent} on the {@link EventBus}.
+     */
+    private void postChange() {
+        eventBus.post(new MetaDataChangedEvent(this));
+    }
+
+    /**
      * Returns the encoding used during parsing.
      */
     public Charset getEncoding() {
@@ -454,5 +466,9 @@ public class MetaData implements Iterable<String> {
 
     public void setMetaData(Map<String, List<String>> metaData) {
         this.metaData = metaData;
+    }
+
+    public void registerListener(Object listener) {
+        this.eventBus.register(listener);
     }
 }
