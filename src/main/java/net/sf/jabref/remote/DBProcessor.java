@@ -59,7 +59,7 @@ public class DBProcessor {
     public static final String ENTRY_REMOTE_ID = "REMOTE_ID";
     public static final String ENTRY_ENTRYTYPE = "ENTRYTYPE";
 
-    public static final String METADATA_ENTRY_ID = "ENTRY_ID";
+    public static final String METADATA_SORT_ID = "SORT_ID";
     public static final String METADATA_KEY = "META_KEY";
     public static final String METADATA_FIELD = "FIELD";
     public static final String METADATA_VALUE = "META_VALUE";
@@ -111,17 +111,18 @@ public class DBProcessor {
                     + ENTRY_ENTRYTYPE + " VARCHAR(255) DEFAULT NULL"
                     + ") ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;");
             executeUpdate("CREATE TABLE IF NOT EXISTS " + METADATA + " ("
-                    + METADATA_ENTRY_ID + " int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,"
+                    + METADATA_SORT_ID + " int(11) NOT NULL,"
                     + METADATA_KEY + " varchar(255) NOT NULL,"
                     + METADATA_FIELD + " varchar(255) DEFAULT NULL,"
-                    + METADATA_VALUE + " text NOT NULL"
+                    + METADATA_VALUE + " text NOT NULL,"
+                    + "UNIQUE(" + METADATA_SORT_ID + ")"
                     + ") ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;");
         } else if (dbType == DBType.POSTGRESQL) {
             executeUpdate("CREATE TABLE IF NOT EXISTS " + ENTRY + " ("
                     + ENTRY_REMOTE_ID + " SERIAL PRIMARY KEY,"
                     + ENTRY_ENTRYTYPE + " VARCHAR);");
             executeUpdate("CREATE TABLE IF NOT EXISTS " + METADATA + " ("
-                    + METADATA_ENTRY_ID + " SERIAL PRIMARY KEY,"
+                    + METADATA_SORT_ID + " INT UNIQUE,"
                     + METADATA_KEY + " VARCHAR,"
                     + METADATA_FIELD + " VARCHAR,"
                     + METADATA_VALUE + " TEXT);");
@@ -135,15 +136,11 @@ public class DBProcessor {
                     + "FOR EACH ROW BEGIN " + "SELECT \"" + ENTRY + "_SEQ\".NEXTVAL INTO :NEW."
                     + ENTRY_REMOTE_ID.toLowerCase() + " FROM DUAL; " + "END;");
             executeUpdate("CREATE TABLE \"" + METADATA + "\" (" + "\""
-                    + METADATA_ENTRY_ID + "\"  NUMBER NOT NULL," + "\""
+                    + METADATA_SORT_ID + "\"  NUMBER NOT NULL," + "\""
                     + METADATA_KEY + "\"  VARCHAR2(255) NULL," + "\""
                     + METADATA_FIELD + "\"  VARCHAR2(255) NULL," + "\""
                     + METADATA_VALUE + "\"  CLOB NOT NULL,"
-                    + "CONSTRAINT  \"" + METADATA + "_PK\" PRIMARY KEY (\"" + METADATA_ENTRY_ID + "\"))");
-            executeUpdate("CREATE SEQUENCE \"" + METADATA + "_SEQ\"");
-            executeUpdate("CREATE TRIGGER \"BI_" + METADATA + "\" BEFORE INSERT ON \"" + METADATA + "\" "
-                    + "FOR EACH ROW BEGIN " + "SELECT \"" + METADATA + "_SEQ\".NEXTVAL INTO :NEW."
-                    + METADATA_ENTRY_ID.toLowerCase() + " FROM DUAL; " + "END;");
+                    + "CONSTRAINT  \"" + METADATA + "_UQ\" UNIQUE (\"" + METADATA_SORT_ID + "\"))");
         }
         if (!checkBaseIntegrity()) {
             // can only happen with users direct intervention in remote database
@@ -350,9 +347,9 @@ public class DBProcessor {
      */
     public Map<String, List<String>> getRemoteMetaData() {
         Map<String, List<String>> metaData = new HashMap<>();
-        String query = "SELECT * FROM " + escape(METADATA) + " ORDER BY " + escape(METADATA_ENTRY_ID);
+        String query = "SELECT * FROM " + escape(METADATA) + " ORDER BY " + escape(METADATA_SORT_ID);
 
-        try (ResultSet resultSet = dbHelper.query(query)) {
+        try (ResultSet resultSet = dbHelper.query(query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
             String metaKey = "", field = "";
             List<String> orderedData = new ArrayList<>();
 
@@ -413,27 +410,24 @@ public class DBProcessor {
     public void setRemoteMetaData(MetaData metaData) {
         Map<String, List<String>> data = metaData.getMetaData();
         dbHelper.clearTables(METADATA);
-        resetSequence(METADATA, METADATA_ENTRY_ID);
-
-        setUpRemoteDatabase();
 
         for (String metaKey : data.keySet()) {
             List<String> values = data.get(metaKey);
 
             if (metaKey.equals(MetaData.SAVE_ACTIONS)) {
-                insert(METADATA, METADATA_KEY, metaKey, METADATA_VALUE, values.get(0));
+                insertMetaData(METADATA, METADATA_KEY, metaKey, METADATA_VALUE, values.get(0));
                 for (FieldFormatterCleanup cleanUp : FieldFormatterCleanups.parse(values.get(1))) {
-                    insert(METADATA, METADATA_KEY, metaKey, METADATA_FIELD, cleanUp.getField(),
+                    insertMetaData(METADATA, METADATA_KEY, metaKey, METADATA_FIELD, cleanUp.getField(),
                             METADATA_VALUE, cleanUp.getFormatter().getKey());
                 }
             } else if (metaKey.equals(MetaData.SAVE_ORDER_CONFIG)) {
-                insert(METADATA, METADATA_KEY, metaKey, METADATA_VALUE, values.get(0));
+                insertMetaData(METADATA, METADATA_KEY, metaKey, METADATA_VALUE, values.get(0));
 
                 for (int i = 1; i < values.size(); i+=2) {
-                    insert(METADATA, METADATA_KEY, metaKey, METADATA_FIELD, values.get(i), METADATA_VALUE, values.get(i+1));
+                    insertMetaData(METADATA, METADATA_KEY, metaKey, METADATA_FIELD, values.get(i), METADATA_VALUE, values.get(i+1));
                 }
             } else {
-                insert(METADATA, METADATA_KEY, metaKey, METADATA_VALUE, values.get(0));
+                insertMetaData(METADATA, METADATA_KEY, metaKey, METADATA_VALUE, values.get(0));
             }
         }
     }
@@ -444,14 +438,26 @@ public class DBProcessor {
      * @param columnValueMapping Mapping between columns and values in form of an usual array
      * Call example: <code>insert("table", "column1", "value1", "column2", "value2");</code>
      */
-    private void insert(String table, Object... columnValueMapping) {
-        String query = "INSERT INTO " + escape(table) + "(";
-        for (int i = 0; i < columnValueMapping.length; i += 2) {
+    private void insertMetaData(String table, Object... columnValueMapping) {
+        int sortId = 1;
+
+        // To unify all three systems it was necessary to work around with the following code
+        // Only reseting a sequence in Oracle takes 20-30 LOC (!)
+        try (ResultSet resultSet = dbHelper.query("SELECT MAX(" + escape(METADATA_SORT_ID) + ") FROM " + escape(METADATA))) {
+            if (resultSet.next()) {
+                sortId = resultSet.getInt(1) + 1;
+            }
+        } catch (SQLException e) {
+            LOGGER.error("SQL Error", e);
+        }
+
+        String query = "INSERT INTO " + escape(table) + "(" + escape(METADATA_SORT_ID) + ", ";
+        for (int i = 0; i < columnValueMapping.length; i += 2) { // Prepare columns
             query = query + escape(String.valueOf(columnValueMapping[i]));
             query = i < (columnValueMapping.length - 2) ? query + ", " : query;
         }
-        query = query + ") VALUES(";
-        for (int i = 1; i < columnValueMapping.length; i += 2) {
+        query = query + ") VALUES(" + escapeValue(sortId) + ", ";
+        for (int i = 1; i < columnValueMapping.length; i += 2) { // Prepare values
             query = query + escapeValue(columnValueMapping[i]);
             query = i < (columnValueMapping.length - 2) ? query + ", " : query;
         }
@@ -503,15 +509,6 @@ public class DBProcessor {
             }
         }
         return stringValue;
-    }
-
-    public void resetSequence(String table, String column) {
-        if (dbType == DBType.MYSQL) {
-            executeUpdate("ALTER TABLE " + escape(table) + " AUTO_INCREMENT = 1");
-        } else if (dbType == DBType.POSTGRESQL) {
-            executeUpdate("ALTER SEQUENCE " + table + "_" + column + "_seq RESTART WITH 1");
-        }
-        // Oracle is not supported. Only reseting a sequence takes 20-30 LOC (!)
     }
 
     public void executeUpdate(String query) {
