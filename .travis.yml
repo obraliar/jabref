@@ -16,6 +16,7 @@ before_script:
   - "sh -e /etc/init.d/xvfb start"
   - sleep 3 # give xvfb some time to start
   - psql -c 'create database jabref;' -U postgres
+  - mysql -u travis -e 'create database jabref'
 
 script:
   - ./gradlew check
