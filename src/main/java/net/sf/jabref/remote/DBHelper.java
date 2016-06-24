@@ -98,20 +98,7 @@ public class DBHelper {
     public void clearTables(String... tables) {
         try {
             for (String table : tables) {
-                connection.createStatement().executeUpdate("DELETE FROM " + table); //TODO escape
-            }
-        } catch (SQLException e) {
-            LOGGER.error("SQL Error: ", e);
-        }
-    }
-
-    /**
-     * Drops the given tables.
-     */
-    public void dropTables(String... tables) {
-        try {
-            for (String table : tables) {
-                connection.createStatement().executeUpdate("DROP TABLE " + table); //TODO escape
+                connection.createStatement().executeUpdate("TRUNCATE TABLE " + table); //TODO escape
             }
         } catch (SQLException e) {
             LOGGER.error("SQL Error: ", e);
