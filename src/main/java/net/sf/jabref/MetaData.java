@@ -157,8 +157,10 @@ public class MetaData implements Iterable<String> {
      * @param key the key to remove
      */
     public void remove(String key) {
-        metaData.remove(key);
-        postChange();
+        if (metaData.containsKey(key)) { //otherwise redundant and disturbing events are going to be posted
+            metaData.remove(key);
+            postChange();
+        }
     }
 
     /**
