@@ -25,7 +25,6 @@ import java.sql.SQLException;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.BorderFactory;
-import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -34,7 +33,6 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
-import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 
@@ -57,7 +55,6 @@ public class OpenRemoteDatabaseDialog extends JDialog {
     private final GridBagLayout gridBagLayout = new GridBagLayout();
     private final GridBagConstraints gridBagConstraints = new GridBagConstraints();
     private final JPanel connectionPanel = new JPanel();
-    private final JPanel modePanel = new JPanel();
     private final JPanel buttonPanel = new JPanel();
 
     private final JLabel databaseTypeLabel = new JLabel(Localization.lang("Database type") + ":");
@@ -77,16 +74,11 @@ public class OpenRemoteDatabaseDialog extends JDialog {
     private final JButton connectButton = new JButton(Localization.lang("Connect"));
     private final JButton cancelButton = new JButton(Localization.lang("Cancel"));
 
-    private final ButtonGroup radioGroup = new ButtonGroup();
-    private final JRadioButton radioBibTeX = new JRadioButton(BibDatabaseMode.BIBTEX.getFormattedName());
-    private final JRadioButton radioBibLaTeX = new JRadioButton(BibDatabaseMode.BIBLATEX.getFormattedName());
-
     private static final String REMOTE_DATABASE_TYPE = "remoteDatabaseType";
     private static final String REMOTE_HOST = "remoteHost";
     private static final String REMOTE_PORT = "remotePort";
     private static final String REMOTE_DATABASE = "remoteDatabase";
     private static final String REMOTE_USER = "remoteUser";
-    private static final String REMOTE_MODE = "remoteMode";
 
 
     /**
@@ -112,7 +104,7 @@ public class OpenRemoteDatabaseDialog extends JDialog {
                 try {
                     checkFields();
                     int port = Integer.parseInt(portField.getText());
-                    BibDatabaseMode selectedMode = getSelectedBibDatabaseMode();
+                    BibDatabaseMode selectedMode = Globals.prefs.getDefaultBibDatabaseMode();
                     DBType selectedType = (DBType) dbTypeDropDown.getSelectedItem();
 
                     BibDatabaseContext bibDatabaseContext = new BibDatabaseContext(DatabaseLocation.REMOTE,
@@ -198,14 +190,6 @@ public class OpenRemoteDatabaseDialog extends JDialog {
         databaseField.setText(Globals.prefs.get(REMOTE_DATABASE));
         userField.setText(Globals.prefs.get(REMOTE_USER));
 
-        String mode = Globals.prefs.get(REMOTE_MODE);
-        if (mode != null) {
-            if (Globals.prefs.get(REMOTE_MODE).equals(BibDatabaseMode.BIBLATEX.getFormattedName())) {
-                radioBibLaTeX.setSelected(true);
-            } else {
-                radioBibTeX.setSelected(true);
-            }
-        }
     }
 
     /**
@@ -216,14 +200,9 @@ public class OpenRemoteDatabaseDialog extends JDialog {
         setResizable(false);
 
         Insets defautInsets = new Insets(4, 15, 4, 4);
-        radioBibTeX.setSelected(true);
-        radioGroup.add(radioBibTeX);
-        radioGroup.add(radioBibLaTeX);
 
         connectionPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), Localization.lang("Connection")));
         connectionPanel.setLayout(gridBagLayout);
-        modePanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), Localization.lang("Mode")));
-        modePanel.setLayout(gridBagLayout);
 
         gridBagConstraints.insets = defautInsets;
         gridBagConstraints.fill = GridBagConstraints.BOTH;
@@ -277,11 +256,6 @@ public class OpenRemoteDatabaseDialog extends JDialog {
         connectionPanel.add(portField, gridBagConstraints);
 
         gridBagConstraints.insets = new Insets(4, 4, 4, 4);
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 0;
-        modePanel.add(radioBibTeX, gridBagConstraints);
-        gridBagConstraints.gridx = 1;
-        modePanel.add(radioBibLaTeX, gridBagConstraints);
 
         ButtonBarBuilder bsb = new ButtonBarBuilder(buttonPanel);
         bsb.addGlue();
@@ -296,10 +270,7 @@ public class OpenRemoteDatabaseDialog extends JDialog {
         gridBagLayout.setConstraints(connectionPanel, gridBagConstraints);
         getContentPane().add(connectionPanel);
         gridBagConstraints.gridy = 1;
-        gridBagLayout.setConstraints(modePanel, gridBagConstraints);
-        getContentPane().add(modePanel);
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.insets = new Insets(12, 4, 12, 4);
+        gridBagConstraints.insets = new Insets(10, 0, 12, 13);
         gridBagLayout.setConstraints(buttonPanel, gridBagConstraints);
         getContentPane().add(buttonPanel);
 
@@ -315,18 +286,6 @@ public class OpenRemoteDatabaseDialog extends JDialog {
         Globals.prefs.put(REMOTE_PORT, portField.getText());
         Globals.prefs.put(REMOTE_DATABASE, databaseField.getText());
         Globals.prefs.put(REMOTE_USER, userField.getText());
-        Globals.prefs.put(REMOTE_MODE, getSelectedBibDatabaseMode().getFormattedName());
-    }
-
-    /**
-     * Retrieves the chosen bib editing mode in this dialog.
-     */
-    private BibDatabaseMode getSelectedBibDatabaseMode() {
-        BibDatabaseMode selectedMode = BibDatabaseMode.BIBTEX;
-        if (radioBibLaTeX.isSelected()) {
-            selectedMode = BibDatabaseMode.BIBLATEX;
-        }
-        return selectedMode;
     }
 
     private boolean isEmptyField(JTextField field) {
