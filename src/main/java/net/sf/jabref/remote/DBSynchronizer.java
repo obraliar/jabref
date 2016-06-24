@@ -19,7 +19,6 @@ import java.sql.Connection;
 import java.util.List;
 import java.util.Set;
 
-import net.sf.jabref.BibDatabaseContext;
 import net.sf.jabref.MetaData;
 import net.sf.jabref.event.EntryAddedEvent;
 import net.sf.jabref.event.EntryEvent;
@@ -47,14 +46,12 @@ public class DBSynchronizer {
     private DBProcessor dbProcessor;
     private DBType dbType;
     private String dbName;
-    private final BibDatabaseContext bibDatabaseContext;
     private final BibDatabase bibDatabase;
     private final MetaData metaData;
 
-    public DBSynchronizer(BibDatabaseContext bibDatabaseContext) {
-        this.bibDatabaseContext = bibDatabaseContext;
-        this.bibDatabase = bibDatabaseContext.getDatabase();
-        this.metaData = bibDatabaseContext.getMetaData();
+    public DBSynchronizer(BibDatabase bibDatabase, MetaData metaData) {
+        this.bibDatabase = bibDatabase;
+        this.metaData = metaData;
     }
 
     /**
@@ -67,6 +64,7 @@ public class DBSynchronizer {
         // In this case DBSynchronizer should not try to insert the bibEntry entry again (but it would not harm).
         if (isInEventLocation(event)) {
             dbProcessor.insertEntry(event.getBibEntry());
+            synchronizeLocalMetaData();
             synchronizeLocalDatabase(); // Pull remote changes for the case that there where some
         }
     }
@@ -81,7 +79,7 @@ public class DBSynchronizer {
         // In this case DBSynchronizer should not try to update the bibEntry entry again (but it would not harm).
         if (isInEventLocation(event)) {
             synchronizeLocalMetaData();
-            BibDatabaseWriter.applySaveActions(event.getBibEntry(), bibDatabaseContext.getMetaData());
+            BibDatabaseWriter.applySaveActions(event.getBibEntry(), metaData);
             dbProcessor.updateEntry(event.getBibEntry());
             //synchronizeLocalDatabase(); // Pull remote changes for the case that there where some
         }
@@ -97,17 +95,19 @@ public class DBSynchronizer {
         // In this case DBSynchronizer should not try to delete the bibEntry entry again (but it would not harm).
         if (isInEventLocation(event)) {
             dbProcessor.removeEntry(event.getBibEntry());
+            synchronizeLocalMetaData();
             synchronizeLocalDatabase(); // Pull remote changes for the case that there where some
         }
     }
 
     /**
-     * Listening method. Synchronizes the {@link MetaData} remotely.
+     * Listening method. Synchronizes the {@link MetaData} remotely and applies it locally.
      * @param event
      */
     @Subscribe
     public void listen(MetaDataChangedEvent event) {
         synchronizeRemoteMetaData(event.getMetaData());
+        applyMetaData();
     }
 
     /**
@@ -181,6 +181,16 @@ public class DBSynchronizer {
      */
     public void synchronizeRemoteMetaData(MetaData data) {
         dbProcessor.setRemoteMetaData(data);
+    }
+
+    /**
+     * Applies the {@link MetaData} on all local and remote BibEntries.
+     */
+    public void applyMetaData() {
+        for (BibEntry entry : bibDatabase.getEntries()) {
+            BibDatabaseWriter.applySaveActions(entry, metaData);
+            dbProcessor.updateEntry(entry);
+        }
     }
 
     public String getDBName() {
