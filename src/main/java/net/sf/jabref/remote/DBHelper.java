@@ -70,6 +70,17 @@ public class DBHelper {
     }
 
     /**
+     * Executes the given query and retrieves the {@link ResultSet}
+     * @param query SQL Query
+     * @param resultSetType
+     * @param resultSetConcurrency
+     * @return Instance of {@link ResultSet}
+     */
+    public ResultSet query(String query, int resultSetType, int resultSetConcurrency) throws SQLException {
+        return connection.createStatement(resultSetType, resultSetConcurrency).executeQuery(query);
+    }
+
+    /**
      *  Converts even String value to uppercase representation.
      *  Useful to harmonize character case for different database systems (see {@link DBType}).
      */
