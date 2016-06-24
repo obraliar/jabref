@@ -25,6 +25,7 @@ import net.sf.jabref.event.EntryAddedEvent;
 import net.sf.jabref.event.EntryEvent;
 import net.sf.jabref.event.EntryRemovedEvent;
 import net.sf.jabref.event.FieldChangedEvent;
+import net.sf.jabref.event.MetaDataChangedEvent;
 import net.sf.jabref.event.location.EntryEventLocation;
 import net.sf.jabref.exporter.BibDatabaseWriter;
 import net.sf.jabref.logic.l10n.Localization;
@@ -67,7 +68,6 @@ public class DBSynchronizer {
         if (isInEventLocation(event)) {
             dbProcessor.insertEntry(event.getBibEntry());
             synchronizeLocalDatabase(); // Pull remote changes for the case that there where some
-            synchronizeRemoteMetaData();
         }
     }
 
@@ -99,6 +99,15 @@ public class DBSynchronizer {
             dbProcessor.removeEntry(event.getBibEntry());
             synchronizeLocalDatabase(); // Pull remote changes for the case that there where some
         }
+    }
+
+    /**
+     * Listening method. Synchronizes the {@link MetaData} remotely.
+     * @param event
+     */
+    @Subscribe
+    public void listen(MetaDataChangedEvent event) {
+        synchronizeRemoteMetaData(event.getMetaData());
     }
 
     /**
@@ -170,8 +179,8 @@ public class DBSynchronizer {
     /**
      * Synchronizes all meta data remotely.
      */
-    public void synchronizeRemoteMetaData() {
-        dbProcessor.setRemoteMetaData(metaData);
+    public void synchronizeRemoteMetaData(MetaData data) {
+        dbProcessor.setRemoteMetaData(data);
     }
 
     public String getDBName() {
