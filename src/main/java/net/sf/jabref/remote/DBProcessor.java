@@ -52,7 +52,7 @@ public class DBProcessor {
     public static final String ENTRY = "ENTRY";
     public static final String METADATA = "METADATA";
 
-    public static final List<String> ALL_TABLES = new ArrayList<>(Arrays.asList(ENTRY));
+    public static final List<String> ALL_TABLES = new ArrayList<>(Arrays.asList(ENTRY, METADATA));
 
     // Elected column names of main the table
     // This entries are needed to ease the changeability, cause some database systems dependent on the context expect low or uppercase characters.
@@ -92,7 +92,6 @@ public class DBProcessor {
                     requiredTables.remove(tableName); // Remove matching tables to check requiredTables for emptiness
                 }
 
-                databaseMetaDataResultSet.close();
                 return requiredTables.size() == 0;
             }
         } catch (SQLException e) {
@@ -199,21 +198,6 @@ public class DBProcessor {
     }
 
     /**
-     * Updates the remote existing bibEntry data.
-     *
-     * @param bibEntry {@link BibEntry} affected by changes
-     * @param field Affected field name
-     * @param newValue
-     */
-    public void updateEntry(BibEntry bibEntry, String field, String newValue) {
-        prepareEntryTableStructure(bibEntry);
-        String query = "UPDATE " + escape(ENTRY) + " SET " + escape(field.toUpperCase()) + " = " + escapeValue(newValue)
-                + " WHERE " + escape(ENTRY_REMOTE_ID) + " = " + bibEntry.getRemoteId();
-        executeUpdate(query);
-        LOGGER.info("SQL UPDATE: " + query);
-    }
-
-    /**
      * Updates the hole bibEntry remotely.
      *
      * @param bibEntry {@link BibEntry} affected by changes
@@ -226,9 +210,11 @@ public class DBProcessor {
         List<String> fields = new ArrayList<>();
         fields.addAll(bibEntry.getFieldNames());
 
+        query = query + escape(ENTRY_ENTRYTYPE) + " = " + escapeValue(bibEntry.getType());
+
         for (int i = 0; i < fields.size(); i++) {
-            query = query + escape(fields.get(i).toUpperCase()) + " = " + escapeValue(bibEntry.getField(fields.get(i)));
-            query = i < (fields.size() - 1) ? query + ", " : query;
+            query = query + ", " + escape(fields.get(i).toUpperCase()) + " = "
+                    + escapeValue(bibEntry.getField(fields.get(i)));
         }
 
         query = query + " WHERE " + escape(ENTRY_REMOTE_ID) + " = " + bibEntry.getRemoteId();
@@ -396,7 +382,6 @@ public class DBProcessor {
                     metaData.put(metaKey, new ArrayList<>(orderedData));
                 }
             }
-            resultSet.close();
         } catch (SQLException e) {
             LOGGER.error("SQL Error", e);
         }
@@ -407,12 +392,11 @@ public class DBProcessor {
      * Clears and sets all meta data remotely.
      * @param metaData JabRef meta data.
      */
-    public void setRemoteMetaData(MetaData metaData) {
-        Map<String, List<String>> data = metaData.getMetaData();
+    public void setRemoteMetaData(Map<String, List<String>> metaData) {
         dbHelper.clearTables(METADATA);
 
-        for (String metaKey : data.keySet()) {
-            List<String> values = data.get(metaKey);
+        for (String metaKey : metaData.keySet()) {
+            List<String> values = metaData.get(metaKey);
 
             if (metaKey.equals(MetaData.SAVE_ACTIONS)) {
                 insertMetaData(METADATA, METADATA_KEY, metaKey, METADATA_VALUE, values.get(0));
@@ -472,7 +456,7 @@ public class DBProcessor {
      * @param type Type of database system
      * @return Correctly escape expression
      */
-    public String escape(String expression, DBType type) {
+    public static String escape(String expression, DBType type) {
         if (type == DBType.ORACLE) {
             return "\"" + expression + "\"";
         } else if (type == DBType.MYSQL) {
@@ -497,7 +481,7 @@ public class DBProcessor {
      * @param Value to be escaped
      * @return Correctly escaped expression or "NULL" if <code>value</code> is real <code>null</code> object.
      */
-    public String escapeValue(Object obj) {
+    public static String escapeValue(Object obj) {
         String stringValue;
         if (obj == null) {
             stringValue = "NULL";

@@ -46,8 +46,8 @@ public class DBSynchronizer {
     private DBProcessor dbProcessor;
     private DBType dbType;
     private String dbName;
+    private MetaData metaData;
     private final BibDatabase bibDatabase;
-    private final MetaData metaData;
 
     public DBSynchronizer(BibDatabase bibDatabase, MetaData metaData) {
         this.bibDatabase = bibDatabase;
@@ -180,7 +180,7 @@ public class DBSynchronizer {
      * Synchronizes all meta data remotely.
      */
     public void synchronizeRemoteMetaData(MetaData data) {
-        dbProcessor.setRemoteMetaData(data);
+        dbProcessor.setRemoteMetaData(data.getMetaData());
     }
 
     /**
@@ -201,6 +201,14 @@ public class DBSynchronizer {
         return this.dbType;
     }
 
+    public DBProcessor getDBProcessor() {
+        return dbProcessor;
+    }
+
+    public void setMetaData(MetaData metaData) {
+        this.metaData = metaData;
+    }
+
     public boolean isInEventLocation(EntryEvent event) {
         EntryEventLocation eventLocation = event.getEntryEventLocation();
         return ((eventLocation == EntryEventLocation.REMOTE) || (eventLocation == EntryEventLocation.ALL));
@@ -211,5 +219,4 @@ public class DBSynchronizer {
         this.dbName = dbName;
         this.dbProcessor = new DBProcessor(connection, dbType);
     }
-
 }
