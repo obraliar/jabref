@@ -9,7 +9,7 @@ public class TestConnector {
 
 
     public static Connection getTestConnection(DBType dbType) throws ClassNotFoundException, SQLException {
-        String user = "travis";
+        String user = "root";
         String password = "";
         String database = "jabref";
 

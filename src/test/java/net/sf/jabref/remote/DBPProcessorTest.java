@@ -242,23 +242,23 @@ public class DBPProcessorTest {
 
         if (dbType == DBType.MYSQL) {
             Assert.assertEquals("`TABLE`", dbProcessor.escape("TABLE"));
-            Assert.assertEquals("`TABLE`", dbProcessor.escape("TABLE", dbType));
+            Assert.assertEquals("`TABLE`", DBProcessor.escape("TABLE", dbType));
         } else if (dbType == DBType.POSTGRESQL) {
             Assert.assertEquals("TABLE", dbProcessor.escape("TABLE"));
-            Assert.assertEquals("TABLE", dbProcessor.escape("TABLE", dbType));
+            Assert.assertEquals("TABLE", DBProcessor.escape("TABLE", dbType));
         } else if (dbType == DBType.ORACLE) {
             Assert.assertEquals("\"TABLE\"", dbProcessor.escape("TABLE"));
-            Assert.assertEquals("\"TABLE\"", dbProcessor.escape("TABLE", dbType));
+            Assert.assertEquals("\"TABLE\"", DBProcessor.escape("TABLE", dbType));
         }
 
-        Assert.assertEquals("TABLE", dbProcessor.escape("TABLE", null));
+        Assert.assertEquals("TABLE", DBProcessor.escape("TABLE", null));
     }
 
     @Test
     public void testEscapeValue() {
-        Assert.assertEquals("NULL", dbProcessor.escapeValue(null));
-        Assert.assertEquals("'value'", dbProcessor.escapeValue("value"));
-        Assert.assertEquals("1", dbProcessor.escapeValue(1));
+        Assert.assertEquals("NULL", DBProcessor.escapeValue(null));
+        Assert.assertEquals("'value'", DBProcessor.escapeValue("value"));
+        Assert.assertEquals("1", DBProcessor.escapeValue(1));
     }
 
     private Map<String, List<String>> getMetaDataExample() {
@@ -304,11 +304,9 @@ public class DBPProcessorTest {
     // Therefore this function was defined to improve the readability and to keep the code short.
     private void insertMetaData(int sortId, String key, String field, String value) {
         try {
-            connection.createStatement().executeUpdate("INSERT INTO " + escape(dbProcessor.METADATA) + "(" +
-                    escape(dbProcessor.METADATA_SORT_ID) + ", " +
-                    escape(dbProcessor.METADATA_KEY) + ", " +
-                    escape(dbProcessor.METADATA_FIELD) + ", " +
-                    escape(dbProcessor.METADATA_VALUE) + ") VALUES(" +
+            connection.createStatement().executeUpdate("INSERT INTO " + escape(DBProcessor.METADATA) + "("
+                    + escape(DBProcessor.METADATA_SORT_ID) + ", " + escape(DBProcessor.METADATA_KEY) + ", "
+                    + escape(DBProcessor.METADATA_FIELD) + ", " + escape(DBProcessor.METADATA_VALUE) + ") VALUES(" +
                     escapeValue(sortId) + ", " +
                     escapeValue(key) + ", " +
                     escapeValue(field) + ", " +
@@ -323,15 +321,15 @@ public class DBPProcessorTest {
     }
 
     private String escapeValue(Object value) {
-        return dbProcessor.escapeValue(value);
+        return DBProcessor.escapeValue(value);
     }
 
     @After
     public void clear() {
         try {
             if ((dbType == DBType.MYSQL) || (dbType == DBType.POSTGRESQL)) {
-                connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape(dbProcessor.ENTRY));
-                connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape(dbProcessor.METADATA));
+                connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape(DBProcessor.ENTRY));
+                connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape(DBProcessor.METADATA));
             } else if (dbType == DBType.ORACLE) {
                 connection.createStatement().executeUpdate(
                             "BEGIN\n" +

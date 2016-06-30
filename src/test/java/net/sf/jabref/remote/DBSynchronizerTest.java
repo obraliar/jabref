@@ -208,8 +208,8 @@ public class DBSynchronizerTest {
     public void clear() {
         try {
             if ((dbType == DBType.MYSQL) || (dbType == DBType.POSTGRESQL)) {
-                connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape(dbProcessor.ENTRY));
-                connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape(dbProcessor.METADATA));
+                connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape(DBProcessor.ENTRY));
+                connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape(DBProcessor.METADATA));
             } else if (dbType == DBType.ORACLE) {
                 connection.createStatement()
                         .executeUpdate("BEGIN\n" + "EXECUTE IMMEDIATE 'DROP TABLE " + escape(DBProcessor.ENTRY) + "';\n"

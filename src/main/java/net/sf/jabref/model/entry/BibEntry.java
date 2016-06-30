@@ -35,8 +35,8 @@ import java.util.TreeSet;
 import net.sf.jabref.Globals;
 import net.sf.jabref.JabRefPreferences;
 import net.sf.jabref.event.FieldChangedEvent;
-import net.sf.jabref.model.FieldChange;
 import net.sf.jabref.event.location.EntryEventLocation;
+import net.sf.jabref.model.FieldChange;
 import net.sf.jabref.model.database.BibDatabase;
 
 import com.google.common.base.Strings;
@@ -202,7 +202,6 @@ public class BibEntry implements Cloneable {
     /**
      * Returns the contents of the given field, or null if it is not set.
      */
-    @Deprecated //Use getFieldOptional instead
     public String getField(String name) {
         return fields.get(toLowerCase(name));
     }
