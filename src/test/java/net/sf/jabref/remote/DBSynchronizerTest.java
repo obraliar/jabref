@@ -62,7 +62,7 @@ public class DBSynchronizerTest {
         dbProcessor.setUpRemoteDatabase();
     }
 
-    @Parameters(name = "Testing with {0} system")
+    @Parameters(name = "Test with {0} database system")
     public static Collection<DBType> getTestingDatabaseSystems() {
         Set<DBType> dbTypes = new HashSet<>();
         dbTypes.add(DBType.MYSQL);

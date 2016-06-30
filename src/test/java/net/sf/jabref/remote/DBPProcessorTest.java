@@ -25,28 +25,32 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(Parameterized.class)
 public class DBPProcessorTest {
 
-    private Connection connection;
+    private static Connection connection;
     private DBProcessor dbProcessor;
     private DBHelper dbHelper;
 
     @Parameter
     public DBType dbType;
 
+
     @Before
     public void setUp() {
 
-        try {
-            connection = TestConnector.getTestConnection(dbType);
-        } catch (Exception e) {
-            Assert.fail(e.getMessage());
+        // Get only one connection for each parameter
+        if (TestConnector.currentConnectionType != dbType) {
+            try {
+                connection = TestConnector.getTestConnection(dbType);
+            } catch (Exception e) {
+                Assert.fail(e.getMessage());
+            }
         }
-
         dbProcessor = new DBProcessor(connection, dbType);
         dbHelper = new DBHelper(connection);
         dbProcessor.setUpRemoteDatabase();
+
     }
 
-    @Parameters(name = "Testing with {0} system")
+    @Parameters(name = "Test with {0} database system")
     public static Collection<DBType> getTestingDatabaseSystems() {
         Set<DBType> dbTypes = new HashSet<>();
         dbTypes.add(DBType.MYSQL);
