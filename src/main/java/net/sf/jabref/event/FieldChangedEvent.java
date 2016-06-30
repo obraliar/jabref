@@ -1,10 +1,7 @@
 package net.sf.jabref.event;
 
-<<<<<<< HEAD
 import net.sf.jabref.model.FieldChange;
-=======
 import net.sf.jabref.event.location.EntryEventLocation;
->>>>>>> Implementation of shared database support (base system).
 import net.sf.jabref.model.entry.BibEntry;
 
 /**
@@ -26,21 +23,20 @@ public class FieldChangedEvent extends EntryChangedEvent {
         this.newValue = newValue;
     }
 
-<<<<<<< HEAD
-    public FieldChangedEvent(FieldChange fieldChange) {
-        this(fieldChange.getEntry(), fieldChange.getField(), fieldChange.getNewValue());
-=======
     /**
      * @param bibEntry Affected BibEntry object
      * @param fieldName Name of field which has been changed
      * @param newValue new field value
      * @param location location Location affected by this event
      */
-    public FieldChangedEvent(BibEntry bibEntry, String fieldName, String newValue, EntryEventLocation location) {
-        super(bibEntry, location);
-        this.fieldName = fieldName;
-        this.newValue = newValue;
->>>>>>> Implementation of shared database support (base system).
+    public FieldChangedEvent(FieldChange fieldChange, EntryEventLocation location) {
+        super(fieldChange.getEntry(), location);
+        this.fieldName = fieldChange.getField();
+        this.newValue = fieldChange.getNewValue();
+    }
+
+    public FieldChangedEvent(FieldChange fieldChange) {
+        this(fieldChange, EntryEventLocation.ALL);
     }
 
     public String getFieldName() {

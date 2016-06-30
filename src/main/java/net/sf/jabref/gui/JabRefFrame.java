@@ -92,11 +92,8 @@ import net.sf.jabref.gui.actions.MnemonicAwareAction;
 import net.sf.jabref.gui.actions.NewDatabaseAction;
 import net.sf.jabref.gui.actions.NewEntryAction;
 import net.sf.jabref.gui.actions.NewSubDatabaseAction;
-<<<<<<< HEAD
 import net.sf.jabref.gui.actions.SearchForUpdateAction;
-=======
 import net.sf.jabref.gui.actions.OpenRemoteDatabaseAction;
->>>>>>> Implementation of shared database support (base system).
 import net.sf.jabref.gui.actions.SortTabsAction;
 import net.sf.jabref.gui.dbproperties.DatabasePropertiesDialog;
 import net.sf.jabref.gui.groups.EntryTableTransferHandler;

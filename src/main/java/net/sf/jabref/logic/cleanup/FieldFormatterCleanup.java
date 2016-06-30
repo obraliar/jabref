@@ -20,11 +20,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
-<<<<<<< HEAD
-=======
 import net.sf.jabref.event.location.EntryEventLocation;
-import net.sf.jabref.logic.FieldChange;
->>>>>>> Implementation of shared database support (base system).
 import net.sf.jabref.logic.formatter.Formatter;
 import net.sf.jabref.model.FieldChange;
 import net.sf.jabref.model.entry.BibEntry;

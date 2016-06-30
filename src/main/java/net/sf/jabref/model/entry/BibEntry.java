@@ -35,11 +35,8 @@ import java.util.TreeSet;
 import net.sf.jabref.Globals;
 import net.sf.jabref.JabRefPreferences;
 import net.sf.jabref.event.FieldChangedEvent;
-<<<<<<< HEAD
 import net.sf.jabref.model.FieldChange;
-=======
 import net.sf.jabref.event.location.EntryEventLocation;
->>>>>>> Implementation of shared database support (base system).
 import net.sf.jabref.model.database.BibDatabase;
 
 import com.google.common.base.Strings;
@@ -353,11 +350,7 @@ public class BibEntry implements Cloneable {
      * @param value The value to set.
      * @param eventLocation Event location affected while setting the field
      */
-<<<<<<< HEAD
-    public Optional<FieldChange> setField(String name, String value) {
-=======
-    public void setField(String name, String value, EntryEventLocation eventLocation) {
->>>>>>> Implementation of shared database support (base system).
+    public Optional<FieldChange>  setField(String name, String value, EntryEventLocation eventLocation) {
         Objects.requireNonNull(name, "field name must not be null");
         Objects.requireNonNull(value, "field value must not be null");
 
@@ -379,13 +372,10 @@ public class BibEntry implements Cloneable {
         changed = true;
 
         fields.put(fieldName, value);
-<<<<<<< HEAD
 
         FieldChange change = new FieldChange(this, fieldName, oldValue, value);
-        eventBus.post(new FieldChangedEvent(change));
+        eventBus.post(new FieldChangedEvent(change, eventLocation));
         return Optional.of(change);
-=======
-        eventBus.post(new FieldChangedEvent(this, fieldName, value, eventLocation));
     }
 
     /**
@@ -394,9 +384,8 @@ public class BibEntry implements Cloneable {
      * @param name  The field to set.
      * @param value The value to set.
      */
-    public void setField(String name, String value) {
-        setField(name, value, EntryEventLocation.ALL);
->>>>>>> Implementation of shared database support (base system).
+    public Optional<FieldChange> setField(String name, String value) {
+        return setField(name, value, EntryEventLocation.ALL);
     }
 
     /**
