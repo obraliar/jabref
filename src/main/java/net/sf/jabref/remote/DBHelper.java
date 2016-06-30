@@ -20,6 +20,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
 import org.apache.commons.logging.Log;
@@ -88,7 +89,7 @@ public class DBHelper {
     public Set<String> allToUpperCase(Set<String> stringSet) {
         Set<String> upperCaseStringSet = new HashSet<>();
         for (String string : stringSet) {
-            upperCaseStringSet.add(string.toUpperCase());
+            upperCaseStringSet.add(string.toUpperCase(Locale.ENGLISH));
         }
         return upperCaseStringSet;
     }
@@ -99,7 +100,7 @@ public class DBHelper {
     public void clearTables(String... tables) {
         try {
             for (String table : tables) {
-                connection.createStatement().executeUpdate("TRUNCATE TABLE " + table); //TODO escape
+                connection.createStatement().executeUpdate("TRUNCATE TABLE " + table);
             }
         } catch (SQLException e) {
             LOGGER.error("SQL Error: ", e);

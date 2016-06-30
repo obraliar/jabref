@@ -61,6 +61,7 @@ public class DBPProcessorTest {
             dbTypes.add(DBType.ORACLE);
         } catch (ClassNotFoundException e) {
             // In case that Oracle interface is not available do not perform tests for this system.
+            System.out.println("Oracle driver not available. Skipping tests for this system...");
         }
         return dbTypes;
     }

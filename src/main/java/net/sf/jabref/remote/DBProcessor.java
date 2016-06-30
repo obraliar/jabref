@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -133,7 +134,7 @@ public class DBProcessor {
             executeUpdate("CREATE SEQUENCE \"" + ENTRY + "_SEQ\"");
             executeUpdate("CREATE TRIGGER \"BI_" + ENTRY + "\" BEFORE INSERT ON \"" + ENTRY + "\" "
                     + "FOR EACH ROW BEGIN " + "SELECT \"" + ENTRY + "_SEQ\".NEXTVAL INTO :NEW."
-                    + ENTRY_REMOTE_ID.toLowerCase() + " FROM DUAL; " + "END;");
+                    + ENTRY_REMOTE_ID.toLowerCase(Locale.ENGLISH) + " FROM DUAL; " + "END;");
             executeUpdate("CREATE TABLE \"" + METADATA + "\" (" + "\""
                     + METADATA_SORT_ID + "\"  NUMBER NOT NULL," + "\""
                     + METADATA_KEY + "\"  VARCHAR2(255) NULL," + "\""
@@ -181,7 +182,7 @@ public class DBProcessor {
         query = query + escapeValue(bibEntry.getType()) + ")";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query,
-                new String[] {ENTRY_REMOTE_ID.toLowerCase()})) { // This is the only method to get generated keys which is accepted by MySQL, PostgreSQL and Oracle.
+                new String[] {ENTRY_REMOTE_ID.toLowerCase(Locale.ENGLISH)})) { // This is the only method to get generated keys which is accepted by MySQL, PostgreSQL and Oracle.
             preparedStatement.executeUpdate();
             try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
@@ -205,12 +206,19 @@ public class DBProcessor {
     public void updateEntry(BibEntry bibEntry) {
         prepareEntryTableStructure(bibEntry);
 
-        String query = "UPDATE " + escape(ENTRY) + " SET ";
+        String query = "UPDATE " + escape(ENTRY) + " SET " + escape(ENTRY_ENTRYTYPE) + " = "
+                + escapeValue(bibEntry.getType());
 
         List<String> fields = new ArrayList<>();
         fields.addAll(bibEntry.getFieldNames());
 
-        query = query + escape(ENTRY_ENTRYTYPE) + " = " + escapeValue(bibEntry.getType());
+        List<String> emptyFields = new ArrayList<>();
+        emptyFields.addAll(getRemoteEntry(bibEntry.getRemoteId()).getFieldNames());
+        emptyFields.removeAll(fields); // emptyFields now contains only fields which should be null.
+
+        for (int i = 0; i < emptyFields.size(); i++) {
+            query = query + ", " + escape(emptyFields.get(i).toUpperCase()) + " = NULL";
+        }
 
         for (int i = 0; i < fields.size(); i++) {
             query = query + ", " + escape(fields.get(i).toUpperCase()) + " = "
@@ -275,34 +283,36 @@ public class DBProcessor {
             LOGGER.error("SQL Error: ", e);
         }
 
-        String columnExpression = "";
-        String expressionPrefix = "";
-        if ((dbType == dbType.MYSQL) || (dbType == dbType.POSTGRESQL)) {
-            expressionPrefix = "DROP ";
-        }
-
-        for (int i = 0; i < columnsToRemove.size(); i++) {
-            String column = columnsToRemove.get(i);
-            columnExpression = columnExpression + expressionPrefix + escape(column);
-            columnExpression = i < (columnsToRemove.size() - 1) ? columnExpression + ", " : columnExpression;
-        }
-
-        if (dbType == dbType.ORACLE) {
-            columnExpression = "DROP (" + columnExpression + ")"; // DROP command in Oracle differs from the other systems.
-        }
-
-        if (columnsToRemove.size() > 0) {
-            executeUpdate("ALTER TABLE " + escape(ENTRY) + " " + columnExpression);
-        }
+        dropColumns(columnsToRemove);
     }
-
 
     /**
      * Converts all remotely present bib entries to the List of real {@link BibEntry} objects and retrieves them.
      */
     public List<BibEntry> getRemoteEntries() {
+        return getRemoteEntries(0);
+    }
+
+    /**
+     * @param remoteId Entry ID
+     * @return instance of {@link BibEntry}
+     */
+    public BibEntry getRemoteEntry(int remoteId) {
+        List<BibEntry> entries = getRemoteEntries(remoteId);
+        if (entries.size() > 0) {
+            return entries.get(0);
+        }
+        return null;
+    }
+
+    /**
+     * @param remoteId Entry ID. If 0, all entries are going to be fetched.
+     * @return List of {@link BibEntry} instances
+     */
+    private List<BibEntry> getRemoteEntries(int remoteId) {
         List<BibEntry> remoteEntries = new ArrayList<>();
-        try (ResultSet resultSet = dbHelper.query("SELECT * FROM " + escape(ENTRY))) {
+        try (ResultSet resultSet = dbHelper.query("SELECT * FROM " + escape(ENTRY)
+                + (remoteId != 0 ? " WHERE " + ENTRY_REMOTE_ID + " = " + remoteId : ""))) {
             Set<String> columns = dbHelper.allToUpperCase(dbHelper.getColumnNames(escape(ENTRY)));
 
             while (resultSet.next()) {
@@ -315,7 +325,7 @@ public class DBProcessor {
                     } else {
                         String value = resultSet.getString(column);
                         if (value != null) {
-                            bibEntry.setField(column.toLowerCase(), value, EntryEventLocation.LOCAL);
+                            bibEntry.setField(column.toLowerCase(Locale.ENGLISH), value, EntryEventLocation.LOCAL);
                         }
                     }
                 }
@@ -327,7 +337,6 @@ public class DBProcessor {
         return remoteEntries;
     }
 
-
     /**
      * Fetches all remotely present meta data.
      */
@@ -336,7 +345,8 @@ public class DBProcessor {
         String query = "SELECT * FROM " + escape(METADATA) + " ORDER BY " + escape(METADATA_SORT_ID);
 
         try (ResultSet resultSet = dbHelper.query(query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
-            String metaKey = "", field = "";
+            String metaKey = "";
+            String field = "";
             List<String> orderedData = new ArrayList<>();
 
             while(resultSet.next()) {
@@ -447,6 +457,32 @@ public class DBProcessor {
         }
         query = query + ")";
         executeUpdate(query);
+    }
+
+    /**
+     * Drops the given columns.
+     * @param columnsToRemove
+     */
+    private void dropColumns(List<String> columnsToRemove) {
+        String columnExpression = "";
+        String expressionPrefix = "";
+        if ((dbType == dbType.MYSQL) || (dbType == dbType.POSTGRESQL)) {
+            expressionPrefix = "DROP ";
+        }
+
+        for (int i = 0; i < columnsToRemove.size(); i++) {
+            String column = columnsToRemove.get(i);
+            columnExpression = columnExpression + expressionPrefix + escape(column);
+            columnExpression = i < (columnsToRemove.size() - 1) ? columnExpression + ", " : columnExpression;
+        }
+
+        if (dbType == dbType.ORACLE) {
+            columnExpression = "DROP (" + columnExpression + ")"; // DROP command in Oracle differs from the other systems.
+        }
+
+        if (columnsToRemove.size() > 0) {
+            executeUpdate("ALTER TABLE " + escape(ENTRY) + " " + columnExpression);
+        }
     }
 
     /**

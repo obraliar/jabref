@@ -33,7 +33,6 @@ public class DBSynchronizerTest {
     private Connection connection;
     private DBProcessor dbProcessor;
     private BibDatabase bibDatabase;
-    private MetaData metaData;
 
     @Parameter
     public DBType dbType;
@@ -51,12 +50,10 @@ public class DBSynchronizerTest {
         }
 
         bibDatabase = new BibDatabase();
-        metaData = new MetaData();
-        dbSynchronizer = new DBSynchronizer(bibDatabase, metaData);
+        dbSynchronizer = new DBSynchronizer(bibDatabase, new MetaData());
         dbProcessor = new DBProcessor(connection, dbType);
 
         bibDatabase.registerListener(dbSynchronizer);
-        metaData.registerListener(dbSynchronizer);
 
         dbSynchronizer.setUp(connection, dbType, "TEST");
         dbProcessor.setUpRemoteDatabase();
@@ -73,6 +70,7 @@ public class DBSynchronizerTest {
             dbTypes.add(DBType.ORACLE);
         } catch (ClassNotFoundException e) {
             // In case that Oracle interface is not available do not perform tests for this system.
+            System.out.println("Oracle driver not available. Skipping tests for this system...");
         }
         return dbTypes;
     }

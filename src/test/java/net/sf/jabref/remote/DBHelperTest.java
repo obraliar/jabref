@@ -50,6 +50,7 @@ public class DBHelperTest {
             dbTypes.add(DBType.ORACLE);
         } catch (ClassNotFoundException e) {
             // In case that Oracle interface is not available do not perform tests for this system.
+            System.out.println("Oracle driver not available. Skipping tests for this system...");
         }
         return dbTypes;
     }
@@ -140,7 +141,7 @@ public class DBHelperTest {
         try {
             connection.createStatement().executeUpdate("DROP TABLE " + escape("TEST"));
         } catch (SQLException e) {
-            e.printStackTrace();
+            Assert.fail(e.getMessage());
         }
     }
 

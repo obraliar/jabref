@@ -30,9 +30,10 @@ public class DBConnectorTest {
     public void testGetNewMySQLConnectionFail() {
         try {
             DBConnector.getNewConnection(DBType.MYSQL, "XXXX", "XXXX", "XXXX", "XXXX");
-        } catch (Exception e) {
-            Assert.assertTrue(e instanceof SQLException);
-            Assert.assertEquals(0, (((SQLException) e).getErrorCode()));
+        } catch (ClassNotFoundException e) {
+            Assert.fail(e.getMessage());
+        } catch (SQLException e) {
+            Assert.assertEquals(0, e.getErrorCode());
         }
     }
 
