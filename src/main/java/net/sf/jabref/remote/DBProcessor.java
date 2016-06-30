@@ -95,7 +95,7 @@ public class DBProcessor {
                 return requiredTables.size() == 0;
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.error("SQL Error: ", e);
         }
         return false;
     }
@@ -301,7 +301,7 @@ public class DBProcessor {
      * Converts all remotely present bib entries to the List of real {@link BibEntry} objects and retrieves them.
      */
     public List<BibEntry> getRemoteEntries() {
-        ArrayList<BibEntry> remoteEntries = new ArrayList<>();
+        List<BibEntry> remoteEntries = new ArrayList<>();
         try (ResultSet resultSet = dbHelper.query("SELECT * FROM " + escape(ENTRY))) {
             Set<String> columns = dbHelper.allToUpperCase(dbHelper.getColumnNames(escape(ENTRY)));
 

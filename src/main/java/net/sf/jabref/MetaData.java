@@ -172,7 +172,6 @@ public class MetaData implements Iterable<String> {
     public void putData(String key, List<String> orderedData) {
         metaData.put(key, orderedData);
         postChange();
-        System.out.println(key + ":" + orderedData);
     }
 
     /**
