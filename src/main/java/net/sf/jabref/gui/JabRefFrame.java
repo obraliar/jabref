@@ -1164,6 +1164,7 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
         file.add(exportSelected);
         file.addSeparator();
         file.add(openRemoteDatabaseAction);
+        file.add(pullRemoteChanges);
 
         file.addSeparator();
         file.add(databaseProperties);
@@ -1324,7 +1325,6 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
         quality.add(findUnlinkedFiles);
         quality.add(autoLinkFile);
         quality.add(downloadFullText);
-        quality.add(pullRemoteChanges);
         mb.add(quality);
 
         tools.add(newSubDatabaseAction);
