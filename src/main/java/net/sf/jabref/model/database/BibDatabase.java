@@ -43,7 +43,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
-import net.sf.jabref.event.scope.EntryEventScope;
+import net.sf.jabref.event.scope.EntryEventSource;
 import net.sf.jabref.model.entry.BibEntry;
 import net.sf.jabref.model.entry.BibtexString;
 import net.sf.jabref.model.entry.EntryUtil;
@@ -177,12 +177,12 @@ public class BibDatabase {
      * Inserts the entry, given that its ID is not already in use.
      * use Util.createId(...) to make up a unique ID for an entry.
      *
-     * @param entry BibEntry to insert
+     * @param entry BibEntry to insert insert into the database
      * @return false if the insert was done without a duplicate warning
      * @throws KeyCollisionException thrown if the entry id ({@link BibEntry#getId()}) is already  present in the database
      */
     public synchronized boolean insertEntry(BibEntry entry) throws KeyCollisionException {
-        return insertEntry(entry, EntryEventScope.LOCAL_AND_REMOTE);
+        return insertEntry(entry, EntryEventSource.LOCAL);
     }
 
     /**
@@ -193,7 +193,7 @@ public class BibDatabase {
      * @param eventLocation Event location which is affected by inserting a new entry
      * @return false if the insert was done without a duplicate warning
      */
-    public synchronized boolean insertEntry(BibEntry entry, EntryEventScope eventLocation)
+    public synchronized boolean insertEntry(BibEntry entry, EntryEventSource eventLocation)
             throws KeyCollisionException {
         Objects.requireNonNull(entry);
 
@@ -215,7 +215,7 @@ public class BibDatabase {
      * @param toBeDeleted Entry to delete
      */
     public synchronized void removeEntry(BibEntry toBeDeleted) {
-        removeEntry(toBeDeleted, EntryEventScope.LOCAL_AND_REMOTE);
+        removeEntry(toBeDeleted, EntryEventSource.LOCAL);
     }
 
     /**
@@ -224,7 +224,7 @@ public class BibDatabase {
      * @param toBeDeleted Entry to delete
      * @param eventLocation Event location which is affected by deleting the entry
      */
-    public synchronized void removeEntry(BibEntry toBeDeleted, EntryEventScope eventLocation) {
+    public synchronized void removeEntry(BibEntry toBeDeleted, EntryEventSource eventLocation) {
         Objects.requireNonNull(toBeDeleted);
 
         boolean anyRemoved =  entries.removeIf(entry -> entry.getId().equals(toBeDeleted.getId()));
