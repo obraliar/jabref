@@ -36,6 +36,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.InvalidPreferencesFormatException;
@@ -943,6 +944,10 @@ public class JabRefPreferences {
 
     public String get(String key) {
         return prefs.get(key, (String) defaults.get(key));
+    }
+
+    public Optional<String> getAsOptional(String key) {
+        return Optional.ofNullable(prefs.get(key, (String) defaults.get(key)));
     }
 
     public String get(String key, String def) {
