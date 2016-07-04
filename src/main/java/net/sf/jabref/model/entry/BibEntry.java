@@ -35,11 +35,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import net.sf.jabref.Globals;
-<<<<<<< HEAD
-=======
-import net.sf.jabref.JabRefPreferences;
-import net.sf.jabref.event.location.EntryEventLocation;
->>>>>>> Implementation of shared database support (base system).
+import net.sf.jabref.event.location.EntryEventTargetScope;
 import net.sf.jabref.model.FieldChange;
 import net.sf.jabref.model.database.BibDatabase;
 import net.sf.jabref.model.event.FieldChangedEvent;
@@ -358,7 +354,7 @@ public class BibEntry implements Cloneable {
      * @param value The value to set.
      * @param eventLocation Event location affected while setting the field
      */
-    public Optional<FieldChange>  setField(String name, String value, EntryEventLocation eventLocation) {
+    public Optional<FieldChange>  setField(String name, String value, EntryEventTargetScope eventLocation) {
         Objects.requireNonNull(name, "field name must not be null");
         Objects.requireNonNull(value, "field value must not be null");
 
@@ -394,7 +390,7 @@ public class BibEntry implements Cloneable {
      * @param value The value to set.
      */
     public Optional<FieldChange> setField(String name, String value) {
-        return setField(name, value, EntryEventLocation.ALL);
+        return setField(name, value, EntryEventTargetScope.LOCAL_AND_REMOTE);
     }
 
     /**
