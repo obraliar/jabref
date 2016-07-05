@@ -92,16 +92,6 @@ public class BibDatabase {
 
     private final EventBus eventBus = new EventBus();
 
-    private DatabaseLocation location;
-
-    public BibDatabase() {
-        this(DatabaseLocation.LOCAL);
-    }
-
-    public BibDatabase(DatabaseLocation location) {
-        this.location = location;
-    }
-
     /**
      * Returns the number of entries.
      */
@@ -600,13 +590,4 @@ public class BibDatabase {
     private void relayEntryChangeEvent(FieldChangedEvent event) {
         eventBus.post(event);
     }
-
-    public void setLocation(DatabaseLocation location) {
-        this.location = location;
-    }
-
-    public DatabaseLocation getLocation() {
-        return this.location;
-    }
-
 }
