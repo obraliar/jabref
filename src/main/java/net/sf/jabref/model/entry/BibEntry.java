@@ -58,7 +58,7 @@ public class BibEntry implements Cloneable {
     // This id is set by the remote database system (DBS).
     // It has to be unique on remote DBS for all connected JabRef instances.
     // The old id above does not satisfy this requirement.
-    private int remote_id;
+    private int remoteId;
 
     private String type;
     private Map<String, String> fields = new HashMap<>();
@@ -108,7 +108,7 @@ public class BibEntry implements Cloneable {
 
         this.id = id;
         setType(type);
-        this.remote_id = -1;
+        this.remoteId = -1;
     }
 
     /**
@@ -349,7 +349,7 @@ public class BibEntry implements Cloneable {
      * @param value The value to set.
      * @param eventLocation Event location affected while setting the field
      */
-    public Optional<FieldChange>  setField(String name, String value, EntryEventSource eventLocation) {
+    public Optional<FieldChange> setField(String name, String value, EntryEventSource eventLocation) {
         Objects.requireNonNull(name, "field name must not be null");
         Objects.requireNonNull(value, "field value must not be null");
 
@@ -610,11 +610,11 @@ public class BibEntry implements Cloneable {
     }
 
     public int getRemoteId() {
-        return this.remote_id;
+        return this.remoteId;
     }
 
     public void setRemoteId(int remote_id) {
-        this.remote_id = remote_id;
+        this.remoteId = remote_id;
     }
 
 
