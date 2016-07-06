@@ -25,7 +25,7 @@ public class BibDatabaseContext {
     private final Defaults defaults;
     /** The file where this database was last saved to. */
     private File file;
-    private DBMSSynchronizer dbSynchronizer;
+    private DBMSSynchronizer dbmsSynchronizer;
     private final DatabaseLocation location;
 
     public BibDatabaseContext() {
@@ -55,9 +55,9 @@ public class BibDatabaseContext {
         this.location = Objects.requireNonNull(location);
 
         if (this.location == DatabaseLocation.REMOTE) {
-            this.dbSynchronizer = new DBMSSynchronizer(database, metaData);
-            this.database.registerListener(dbSynchronizer);
-            this.metaData.registerListener(dbSynchronizer);
+            this.dbmsSynchronizer = new DBMSSynchronizer(database, metaData);
+            this.database.registerListener(dbmsSynchronizer);
+            this.metaData.registerListener(dbmsSynchronizer);
         }
     }
 
@@ -200,7 +200,7 @@ public class BibDatabaseContext {
     }
 
     public DBMSSynchronizer getDBSynchronizer() {
-        return this.dbSynchronizer;
+        return this.dbmsSynchronizer;
     }
 
     public DatabaseLocation getLocation() {
