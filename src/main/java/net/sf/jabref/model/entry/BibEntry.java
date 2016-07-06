@@ -346,7 +346,7 @@ public class BibEntry implements Cloneable {
 
     /**
      * Set a field, and notify listeners about the change.
-     *  @param name  The field to set.
+     * @param name  The field to set.
      * @param value The value to set.
      * @param eventLocation Event location affected while setting the field
      */
@@ -376,6 +376,13 @@ public class BibEntry implements Cloneable {
         FieldChange change = new FieldChange(this, fieldName, oldValue, value);
         eventBus.post(new FieldChangedEvent(change, eventLocation));
         return Optional.of(change);
+    }
+
+    public Optional<FieldChange> setField(String name, Optional<String> value, EntryEventSource eventLocation) {
+        if (value.isPresent()) {
+            return setField(name, value.get(), eventLocation);
+        }
+        return Optional.empty();
     }
 
     /**
