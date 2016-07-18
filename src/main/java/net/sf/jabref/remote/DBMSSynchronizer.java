@@ -22,10 +22,6 @@ import java.util.Set;
 
 import net.sf.jabref.BibDatabaseContext;
 import net.sf.jabref.MetaData;
-import net.sf.jabref.event.EntryAddedEvent;
-import net.sf.jabref.event.EntryEvent;
-import net.sf.jabref.event.EntryRemovedEvent;
-import net.sf.jabref.event.FieldChangedEvent;
 import net.sf.jabref.event.MetaDataChangedEvent;
 import net.sf.jabref.event.RemoteConnectionLostEvent;
 import net.sf.jabref.event.source.EntryEventSource;
@@ -35,6 +31,10 @@ import net.sf.jabref.logic.l10n.Localization;
 import net.sf.jabref.model.FieldChange;
 import net.sf.jabref.model.database.BibDatabase;
 import net.sf.jabref.model.entry.BibEntry;
+import net.sf.jabref.model.event.EntryAddedEvent;
+import net.sf.jabref.model.event.EntryEvent;
+import net.sf.jabref.model.event.EntryRemovedEvent;
+import net.sf.jabref.model.event.FieldChangedEvent;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
