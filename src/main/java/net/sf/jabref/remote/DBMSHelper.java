@@ -106,6 +106,14 @@ public class DBMSHelper {
 
     /**
      * @param query SQL query
+     * @return Instance of {@link PreparedStatement}
+     */
+    public PreparedStatement prepareStatement(String query) throws SQLException {
+        return connection.prepareStatement(query);
+    }
+
+    /**
+     * @param query SQL query
      * @param columnNames Column names which should be returned
      * @return Instance of {@link PreparedStatement}
      */

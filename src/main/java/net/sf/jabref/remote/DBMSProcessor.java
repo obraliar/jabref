@@ -164,17 +164,23 @@ public class DBMSProcessor {
         query.append(escape(ENTRY_ENTRYTYPE));
         query.append(") VALUES(");
 
-        for (String fieldName : fieldNames) {
-            query.append(escapeValue(bibEntry.getFieldOptional(fieldName)));
-            query.append(", ");
+        for (int i = 0; i < fieldNames.size(); i++) {
+            query.append("?, ");
         }
-
-        query.append(escapeValue(bibEntry.getType()));
-        query.append(")");
+        query.append("?)");
 
         try (PreparedStatement preparedStatement = dbmsHelper.prepareStatement(query.toString(),
                 ENTRY_REMOTE_ID.toLowerCase(Locale.ENGLISH))) { // This is the only method to get generated keys which is accepted by MySQL, PostgreSQL and Oracle.
+
+            for (int i = 0; i < fieldNames.size(); i++) {
+                preparedStatement.setString(i + 1, bibEntry.getFieldOptional(fieldNames.get(i)).get()); //TODO Comment
+            }
+            // TODO DEBUG output
+
+            preparedStatement.setString(fieldNames.size() + 1, bibEntry.getType());
+
             preparedStatement.executeUpdate();
+
             try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
                     bibEntry.setRemoteId(generatedKeys.getInt(1)); // set generated ID locally
@@ -204,14 +210,18 @@ public class DBMSProcessor {
         query.append(escape(ENTRY));
         query.append(" SET ");
         query.append(escape(field.toUpperCase(Locale.ENGLISH)));
-        query.append(" = ");
-        query.append(escapeValue(newValue));
-        query.append(" WHERE ");
+        query.append(" = ? WHERE ");
         query.append(escape(ENTRY_REMOTE_ID));
         query.append(" = ");
         query.append(bibEntry.getRemoteId());
 
-        dbmsHelper.executeUpdate(query.toString());
+        try (PreparedStatement preparedStatement = dbmsHelper.prepareStatement(query.toString())) {
+            preparedStatement.setString(1, newValue);
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            LOGGER.error("SQL Error: ", e);
+        }
+
     }
 
     /**
