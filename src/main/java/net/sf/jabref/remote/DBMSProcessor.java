@@ -173,9 +173,9 @@ public class DBMSProcessor {
                 ENTRY_REMOTE_ID.toLowerCase(Locale.ENGLISH))) { // This is the only method to get generated keys which is accepted by MySQL, PostgreSQL and Oracle.
 
             for (int i = 0; i < fieldNames.size(); i++) {
-                preparedStatement.setString(i + 1, bibEntry.getFieldOptional(fieldNames.get(i)).get()); //TODO Comment
+                // columnIndex starts with 1
+                preparedStatement.setString(i + 1, bibEntry.getFieldOptional(fieldNames.get(i)).get());
             }
-            // TODO DEBUG output
 
             preparedStatement.setString(fieldNames.size() + 1, bibEntry.getType());
 
