@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.Vector;
 
+import net.sf.jabref.event.GroupUpdatedEvent;
 import net.sf.jabref.event.MetaDataChangedEvent;
 import net.sf.jabref.importer.fileformat.ParseException;
 import net.sf.jabref.logic.config.SaveOrderConfig;
@@ -109,6 +110,7 @@ public class MetaData implements Iterable<String> {
             if (GROUPSTREE.equals(entry.getKey())) {
                 putGroups(orderedData);
                 // the keys "groupsversion" and "groups" were used in JabRef versions around 1.3, we will not support them anymore
+                eventBus.post(new GroupUpdatedEvent(this));
             } else if (SAVE_ACTIONS.equals(entry.getKey())) {
                 metaData.put(SAVE_ACTIONS, FieldFormatterCleanups.parse(orderedData).getAsStringList()); // Without MetaDataChangedEvent
             } else {
@@ -386,7 +388,6 @@ public class MetaData implements Iterable<String> {
             }
             serializedMetaData.put(GROUPSTREE, stringBuilder.toString());
         }
-
         return serializedMetaData;
     }
 
@@ -447,7 +448,7 @@ public class MetaData implements Iterable<String> {
     /**
      * Posts a new {@link MetaDataChangedEvent} on the {@link EventBus}.
      */
-    private void postChange() {
+    public void postChange() {
         eventBus.post(new MetaDataChangedEvent(this));
     }
 
@@ -470,10 +471,6 @@ public class MetaData implements Iterable<String> {
         this.eventBus.register(listener);
     }
 
-    /**
-     * Unregisters an listener object.
-     * @param listener listener (subscriber) to remove
-     */
     public void unregisterListener(Object listener) {
         this.eventBus.unregister(listener);
     }

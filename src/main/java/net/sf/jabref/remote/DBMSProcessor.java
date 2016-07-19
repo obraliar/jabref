@@ -172,6 +172,8 @@ public class DBMSProcessor {
         try (PreparedStatement preparedStatement = dbmsHelper.prepareStatement(query.toString(),
                 ENTRY_REMOTE_ID.toLowerCase(Locale.ENGLISH))) { // This is the only method to get generated keys which is accepted by MySQL, PostgreSQL and Oracle.
 
+            dbmsHelper.setAutoCommit(false);
+
             for (int i = 0; i < fieldNames.size(); i++) {
                 // columnIndex starts with 1
                 preparedStatement.setString(i + 1, bibEntry.getFieldOptional(fieldNames.get(i)).get());
@@ -180,6 +182,7 @@ public class DBMSProcessor {
             preparedStatement.setString(fieldNames.size() + 1, bibEntry.getType());
 
             preparedStatement.executeUpdate();
+            dbmsHelper.commit();
 
             try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
@@ -188,6 +191,8 @@ public class DBMSProcessor {
                 preparedStatement.close();
                 generatedKeys.close();
             }
+
+            dbmsHelper.setAutoCommit(true);
         } catch (SQLException e) {
             LOGGER.error("SQL Error: ", e);
         }
@@ -351,9 +356,23 @@ public class DBMSProcessor {
         dbmsHelper.clearTables(METADATA);
 
         for (Map.Entry<String, String> metaEntry : data.entrySet()) {
-            dbmsHelper.executeUpdate("INSERT INTO " + escape(METADATA) + "(" +
-                    escape(METADATA_KEY) + ", " + escape(METADATA_VALUE) + ") VALUES(" +
-                    escapeValue(metaEntry.getKey()) + ", " + escapeValue(metaEntry.getValue()) + ")");
+
+            StringBuilder query = new StringBuilder();
+            query.append("INSERT INTO ");
+            query.append(escape(METADATA));
+            query.append("(");
+            query.append(escape(METADATA_KEY));
+            query.append(", ");
+            query.append(escape(METADATA_VALUE));
+            query.append(") VALUES(?, ?)");
+
+            try (PreparedStatement preparedStatement = dbmsHelper.prepareStatement(query.toString())) {
+                preparedStatement.setString(1, metaEntry.getKey());
+                preparedStatement.setString(2, metaEntry.getValue());
+                preparedStatement.executeUpdate();
+            } catch (SQLException e) {
+                LOGGER.error("SQL Error: ", e);
+            }
         }
     }
 

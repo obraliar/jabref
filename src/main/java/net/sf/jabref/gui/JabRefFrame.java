@@ -1522,8 +1522,7 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
 
         openAndSavedDatabasesOnlyActions.addAll(Collections.singletonList(openConsole));
         remoteDatabasesOnlyActions.addAll(Collections.singletonList(pullRemoteChanges));
-        noRemoteDatabasesActions.addAll(Arrays.asList(save, saveAll, addToGroup, removeFromGroup, toggleGroups, moveToGroup,
-                        toggleHighlightAny, toggleHighlightAll, toggleHighlightDisable));
+        noRemoteDatabasesActions.addAll(Arrays.asList(save, saveAll));
 
         tabbedPane.addChangeListener(event -> updateEnabledState());
 

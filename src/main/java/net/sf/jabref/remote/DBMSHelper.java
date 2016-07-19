@@ -142,4 +142,20 @@ public class DBMSHelper {
         }
     }
 
+    public void setAutoCommit(boolean autoCommit) {
+        try {
+            this.connection.setAutoCommit(autoCommit);
+        } catch (SQLException e) {
+            LOGGER.error("SQL Error: ", e);
+        }
+    }
+
+    public void commit() {
+        try {
+            this.connection.commit();
+        } catch (SQLException e) {
+            LOGGER.error("SQL Error: ", e);
+        }
+    }
+
 }
