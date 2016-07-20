@@ -16,6 +16,18 @@ public class FieldChangedEvent extends EntryChangedEvent {
      * @param bibEntry Affected BibEntry object
      * @param fieldName Name of field which has been changed
      * @param newValue new field value
+     * @param location location Location affected by this event
+     */
+    public FieldChangedEvent(BibEntry bibEntry, String fieldName, String newValue, EntryEventSource location) {
+        super(bibEntry, location);
+        this.fieldName = fieldName;
+        this.newValue = newValue;
+    }
+
+    /**
+     * @param bibEntry Affected BibEntry object
+     * @param fieldName Name of field which has been changed
+     * @param newValue new field value
      */
     public FieldChangedEvent(BibEntry bibEntry, String fieldName, String newValue) {
         super(bibEntry);

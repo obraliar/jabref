@@ -189,6 +189,7 @@ public class DBMSSynchronizer {
                         localEntry.setField(field, remoteEntry.getFieldOptional(field),
                                 EntryEventSource.REMOTE); // Should not reach the listeners above.
                     }
+                    localEntry.setType(remoteEntry.getType(), EntryEventSource.REMOTE);
 
                     Set<String> redundantLocalEntryFields = localEntry.getFieldNames();
                     redundantLocalEntryFields.removeAll(remoteEntryFields);

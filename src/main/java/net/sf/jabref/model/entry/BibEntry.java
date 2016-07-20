@@ -172,7 +172,7 @@ public class BibEntry implements Cloneable {
     /**
      * Sets this entry's type.
      */
-    public void setType(String type) {
+    public void setType(String type, EntryEventSource eventLocation) {
         String newType;
         if (Strings.isNullOrEmpty(type)) {
             newType = DEFAULT_TYPE;
@@ -185,7 +185,14 @@ public class BibEntry implements Cloneable {
         // sets off a change in database sorting etc.
         this.type = newType.toLowerCase(Locale.ENGLISH);
         changed = true;
-        eventBus.post(new FieldChangedEvent(this, TYPE_HEADER, newType));
+        eventBus.post(new FieldChangedEvent(this, TYPE_HEADER, newType, eventLocation));
+    }
+
+    /**
+     * Sets this entry's type.
+     */
+    public void setType(String type) {
+        setType(type, EntryEventSource.LOCAL);
     }
 
     /**
