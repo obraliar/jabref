@@ -1284,7 +1284,7 @@ public class GroupSelector extends SidePaneComponent implements TreeSelectionLis
     }
 
     @Subscribe
-    private void listen(GroupUpdatedEvent updateEvent) {
+    public void listen(GroupUpdatedEvent updateEvent) {
         setGroups(updateEvent.getMetaData().getGroups());
     }
 }

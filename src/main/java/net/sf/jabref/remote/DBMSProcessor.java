@@ -206,15 +206,16 @@ public class DBMSProcessor {
     public void updateField(BibEntry bibEntry, String field, String newValue) {
         prepareEntryTableStructure(bibEntry);
         StringBuilder query = new StringBuilder();
+        String column = field; // avoid reassignment of field
 
         if (field.equals(BibEntry.TYPE_HEADER)) {
-            field = ENTRY_ENTRYTYPE;
+            column = ENTRY_ENTRYTYPE;
         }
 
         query.append("UPDATE ");
         query.append(escape(ENTRY));
         query.append(" SET ");
-        query.append(escape(field.toUpperCase(Locale.ENGLISH)));
+        query.append(escape(column.toUpperCase(Locale.ENGLISH)));
         query.append(" = ? WHERE ");
         query.append(escape(ENTRY_REMOTE_ID));
         query.append(" = ");
