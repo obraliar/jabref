@@ -62,6 +62,8 @@ public class BibEntry implements Cloneable {
     // The old id above does not satisfy this requirement.
     private int remoteId;
 
+    private int version;
+
     private String type;
     private Map<String, String> fields = new HashMap<>();
     /*
@@ -115,6 +117,7 @@ public class BibEntry implements Cloneable {
         this.id = id;
         setType(type);
         this.remoteId = -1;
+        this.version = 1;
     }
 
     /**
@@ -651,6 +654,13 @@ public class BibEntry implements Cloneable {
         this.remoteId = remote_id;
     }
 
+    public int getVersion() {
+        return this.version;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
+    }
 
     @Override
     public boolean equals(Object o) {

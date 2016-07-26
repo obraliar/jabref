@@ -126,7 +126,7 @@ public class OpenRemoteDatabaseDialog extends JDialog {
 
                     setGlobalPrefs();
 
-                    bibDatabaseContext.getDBSynchronizer().registerListener(new RemoteConnectionLostDialog(frame));
+                    bibDatabaseContext.getDBSynchronizer().registerListener(new RemoteDatabaseUIManager(frame));
                     frame.output(Localization.lang("Remote_connection_to_%0_server_stablished.", selectedType.toString()));
                     dispose();
                 } catch (ClassNotFoundException exception) {

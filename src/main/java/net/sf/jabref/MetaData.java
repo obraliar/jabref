@@ -188,6 +188,7 @@ public class MetaData implements Iterable<String> {
     private void putGroups(List<String> orderedData) throws ParseException {
         try {
             groupsRoot = GroupTreeNode.parse(orderedData);
+            eventBus.post(new GroupUpdatedEvent(this));
         } catch (ParseException e) {
             throw new ParseException(Localization.lang(
                     "Group tree could not be parsed. If you save the BibTeX database, all groups will be lost."), e);
@@ -204,6 +205,7 @@ public class MetaData implements Iterable<String> {
      */
     public void setGroups(GroupTreeNode root) {
         groupsRoot = root;
+        eventBus.post(new GroupUpdatedEvent(this));
     }
 
     /**

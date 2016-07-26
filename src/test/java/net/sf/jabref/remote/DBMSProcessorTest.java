@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import net.sf.jabref.model.entry.BibEntry;
@@ -121,8 +120,12 @@ public class DBMSProcessorTest {
             bibEntry.setType("booklet");
             bibEntry.setField("author", "Brad L and Gilson, Kent L");
 
-            dbmsProcessor.updateField(bibEntry, BibEntry.TYPE_HEADER, "booklet");
-            dbmsProcessor.updateField(bibEntry, "author", "Brad L and Gilson, Kent L");
+            try {
+                dbmsProcessor.updateField(bibEntry, BibEntry.TYPE_HEADER, "booklet");
+                dbmsProcessor.updateField(bibEntry, "author", "Brad L and Gilson, Kent L");
+            } catch (OfflineLockException | RemoteEntryNotPresentException e) {
+                Assert.fail(e.getMessage());
+            }
 
             try (ResultSet resultSet = selectFrom(DBMSProcessor.ENTRY)) {
                 Assert.assertTrue(resultSet.next());
@@ -153,7 +156,6 @@ public class DBMSProcessorTest {
     public void testPrepareEntryTableStructure() {
         BibEntry bibEntry = getBibEntryExample();
 
-        dbmsProcessor.prepareEntryTableStructure(bibEntry);
         Set<String> actualColumns = dbmsHelper.allToUpperCase(dbmsHelper.getColumnNames(DBMSProcessor.ENTRY));
 
         Set<String> expectedColumns = new HashSet<>();
@@ -172,7 +174,6 @@ public class DBMSProcessorTest {
         BibEntry bibEntry = getBibEntryExampleWithEmptyFields();
 
         dbmsProcessor.insertEntry(bibEntry);
-        dbmsProcessor.normalizeEntryTable();
 
         Set<String> actualColumns = dbmsHelper.allToUpperCase(dbmsHelper.getColumnNames(DBMSProcessor.ENTRY));
         Set<String> expectedColumns = new HashSet<>();
@@ -238,12 +239,6 @@ public class DBMSProcessorTest {
         Assert.assertEquals("TABLE", DBMSProcessor.escape("TABLE", null));
     }
 
-    @Test
-    public void testEscapeValue() {
-        Assert.assertEquals("NULL", DBMSProcessor.escapeValue(Optional.ofNullable(null)));
-        Assert.assertEquals("'value'", DBMSProcessor.escapeValue("value"));
-    }
-
     private Map<String, String> getMetaDataExample() {
         Map<String, String> expectedMetaData = new HashMap<>();
 
@@ -298,7 +293,7 @@ public class DBMSProcessorTest {
     }
 
     private String escapeValue(String value) {
-        return DBMSProcessor.escapeValue(value);
+        return "'" + value + "'";
     }
 
     @After

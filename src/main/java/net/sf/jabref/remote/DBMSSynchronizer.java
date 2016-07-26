@@ -18,12 +18,16 @@ package net.sf.jabref.remote;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import net.sf.jabref.BibDatabaseContext;
 import net.sf.jabref.MetaData;
 import net.sf.jabref.event.MetaDataChangedEvent;
 import net.sf.jabref.event.RemoteConnectionLostEvent;
+import net.sf.jabref.event.RemoteEntryNotPresentEvent;
+import net.sf.jabref.event.RemoteUpdateLockEvent;
 import net.sf.jabref.event.source.EntryEventSource;
 import net.sf.jabref.importer.fileformat.ParseException;
 import net.sf.jabref.logic.exporter.BibDatabaseWriter;
@@ -91,16 +95,21 @@ public class DBMSSynchronizer {
         // In this case DBSynchronizer should not try to update the bibEntry entry again (but it would not harm).
         if (isInEventLocation(event) && checkCurrentConnection()) {
             synchronizeLocalMetaData();
+            try {
+                List<FieldChange> changes = BibDatabaseWriter.applySaveActions(event.getBibEntry(), metaData);
+                for (FieldChange change : changes) {
+                    dbmsProcessor.updateField(change.getEntry(), change.getField(), change.getNewValue());
+                }
 
-            List<FieldChange> changes = BibDatabaseWriter.applySaveActions(event.getBibEntry(), metaData);
-            for (FieldChange change : changes) {
-                dbmsProcessor.updateField(change.getEntry(), change.getField(), change.getNewValue());
+                if (changes.isEmpty()) { // If no FieldChanges were applied, update the field usually.
+                    dbmsProcessor.updateField(event.getBibEntry(), event.getFieldName(), event.getNewValue());
+                }
+                synchronizeLocalDatabase(); // Pull remote changes for the case that there where some
+            } catch (OfflineLockException exception) {
+                eventBus.post(new RemoteUpdateLockEvent(bibDatabaseContext));
+            } catch (RemoteEntryNotPresentException exception) {
+                eventBus.post(new RemoteEntryNotPresentEvent(event.getBibEntry()));
             }
-
-            if (changes.isEmpty()) { // If no FieldChanges were applied, update the field usually.
-                dbmsProcessor.updateField(event.getBibEntry(), event.getFieldName(), event.getNewValue());
-            }
-            synchronizeLocalDatabase(); // Pull remote changes for the case that there where some
         }
     }
 
@@ -155,16 +164,17 @@ public class DBMSSynchronizer {
             return;
         }
 
-        dbmsProcessor.normalizeEntryTable(); // remove unused columns
-
         List<BibEntry> localEntries = bibDatabase.getEntries();
-        List<BibEntry> remoteEntries = dbmsProcessor.getRemoteEntries();
+        Map<Integer, Integer> idVersionMap = dbmsProcessor.getRemoteIdVersionMapping();
 
+        dbmsProcessor.cleanUpRemoteFields();
+
+        // remove old entries locally
         for (int i = 0; i < localEntries.size(); i++) {
             BibEntry localEntry = localEntries.get(i);
             boolean match = false;
-            for (int j = 0; j < remoteEntries.size(); j++) {
-                if (localEntry.getRemoteId() == remoteEntries.get(j).getRemoteId()) {
+            for (int remoteId : idVersionMap.keySet()) {
+                if (localEntry.getRemoteId() == remoteId) {
                     match = true;
                     break;
                 }
@@ -174,34 +184,38 @@ public class DBMSSynchronizer {
                 i--; // due to index shift on localEntries
             }
         }
-
-        for (int i = 0; i < remoteEntries.size(); i++) {
-            BibEntry remoteEntry = remoteEntries.get(i);
+        // compare versions and update local entry if needed
+        for (Map.Entry<Integer, Integer> idVersionEntry : idVersionMap.entrySet()) {
             boolean match = false;
-            for (int j = 0; j < localEntries.size(); j++) {
-                BibEntry localEntry = localEntries.get(j);
-                if (remoteEntry.getRemoteId() == localEntry.getRemoteId()) {
+            for (BibEntry localEntry : localEntries) {
+                if (idVersionEntry.getKey() == localEntry.getRemoteId()) {
                     match = true;
-                    Set<String> remoteEntryFields = remoteEntry.getFieldNames();
+                    if (idVersionEntry.getValue() > localEntry.getVersion()) {
+                        Optional<BibEntry> remoteEntry = dbmsProcessor.getRemoteEntry(idVersionEntry.getKey());
+                        if (remoteEntry.isPresent()) {
+                            // update fields
+                            localEntry.setType(remoteEntry.get().getType(), EntryEventSource.REMOTE);
+                            localEntry.setVersion(remoteEntry.get().getVersion());
+                            for (String field : remoteEntry.get().getFieldNames()) {
+                                localEntry.setField(field, remoteEntry.get().getFieldOptional(field), EntryEventSource.REMOTE);
+                            }
 
-                    // update fields
-                    for (String field : remoteEntryFields) {
-                        localEntry.setField(field, remoteEntry.getFieldOptional(field),
-                                EntryEventSource.REMOTE); // Should not reach the listeners above.
-                    }
-                    localEntry.setType(remoteEntry.getType(), EntryEventSource.REMOTE);
+                            Set<String> redundantLocalEntryFields = localEntry.getFieldNames();
+                            redundantLocalEntryFields.removeAll(remoteEntry.get().getFieldNames());
 
-                    Set<String> redundantLocalEntryFields = localEntry.getFieldNames();
-                    redundantLocalEntryFields.removeAll(remoteEntryFields);
-
-                    // remove not existing fields
-                    for (String redundantField : redundantLocalEntryFields) {
-                        localEntry.clearField(redundantField, EntryEventSource.REMOTE); // Should not reach the listeners above.
+                            // remove not existing fields
+                            for (String redundantField : redundantLocalEntryFields) {
+                                localEntry.clearField(redundantField, EntryEventSource.REMOTE);
+                            }
+                        }
                     }
                 }
             }
             if (!match) {
-                bibDatabase.insertEntry(remoteEntry, EntryEventSource.REMOTE); // Should not reach the listeners above.
+                Optional<BibEntry> bibEntry = dbmsProcessor.getRemoteEntry(idVersionEntry.getKey());
+                if (bibEntry.isPresent()) {
+                    bibDatabase.insertEntry(bibEntry.get(), EntryEventSource.REMOTE);
+                }
             }
         }
     }
@@ -239,12 +253,19 @@ public class DBMSSynchronizer {
         if (!checkCurrentConnection()) {
             return;
         }
-
-        for (BibEntry entry : bibDatabase.getEntries()) {
-            List<FieldChange> changes = BibDatabaseWriter.applySaveActions(entry, metaData);
-            for (FieldChange change : changes) {
-                dbmsProcessor.updateField(change.getEntry(), change.getField(), change.getNewValue());
+        try {
+            for (BibEntry entry : bibDatabase.getEntries()) {
+                try {
+                    List<FieldChange> changes = BibDatabaseWriter.applySaveActions(entry, metaData);
+                    for (FieldChange change : changes) {
+                        dbmsProcessor.updateField(change.getEntry(), change.getField(), change.getNewValue());
+                    }
+                } catch (RemoteEntryNotPresentException exception) {
+                    eventBus.post(new RemoteEntryNotPresentEvent(entry));
+                }
             }
+        } catch (OfflineLockException exception) {
+            eventBus.post(new RemoteUpdateLockEvent(bibDatabaseContext));
         }
     }
 
@@ -286,7 +307,7 @@ public class DBMSSynchronizer {
      * @param event An {@link EntryEvent}
      * @return <code>true</code> if the event is able to trigger operations in {@link DBMSSynchronizer}, else <code>false</code>
      */
-    public boolean isInEventLocation(EntryEvent event) {
+    public boolean isInEventLocation(EntryEvent event) {// TODO add UNDO...
         EntryEventSource eventLocation = event.getEntryEventLocation();
         return (eventLocation == EntryEventSource.LOCAL);
     }

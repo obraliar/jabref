@@ -158,4 +158,12 @@ public class DBMSHelper {
         }
     }
 
+    public void rollback() {
+        try {
+            this.connection.rollback();
+        } catch (SQLException e) {
+            LOGGER.error("SQL Error: ", e);
+        }
+    }
+
 }
