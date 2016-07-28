@@ -194,13 +194,13 @@ public class DBMSSynchronizerTest {
     public void clear() {
         try {
             if ((dbmsType == DBMSType.MYSQL) || (dbmsType == DBMSType.POSTGRESQL)) {
-                connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape(DBMSProcessor.ENTRY));
-                connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape(DBMSProcessor.METADATA));
+                connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape("ENTRY"));
+                connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape("METADATA"));
             } else if (dbmsType == DBMSType.ORACLE) {
                 connection.createStatement()
-                        .executeUpdate("BEGIN\n" + "EXECUTE IMMEDIATE 'DROP TABLE " + escape(DBMSProcessor.ENTRY) + "';\n"
-                                + "EXECUTE IMMEDIATE 'DROP TABLE " + escape(DBMSProcessor.METADATA) + "';\n"
-                                + "EXECUTE IMMEDIATE 'DROP SEQUENCE " + escape(DBMSProcessor.ENTRY + "_SEQ") + "';\n"
+                        .executeUpdate("BEGIN\n" + "EXECUTE IMMEDIATE 'DROP TABLE " + escape("ENTRY") + "';\n"
+                                + "EXECUTE IMMEDIATE 'DROP TABLE " + escape("METADATA") + "';\n"
+                                + "EXECUTE IMMEDIATE 'DROP SEQUENCE " + escape("ENTRY_SEQ") + "';\n"
                                 + "EXCEPTION\n" + "WHEN OTHERS THEN\n" + "IF SQLCODE != -942 THEN\n" + "RAISE;\n"
                                 + "END IF;\n" + "END;");
             }

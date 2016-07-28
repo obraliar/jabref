@@ -106,9 +106,9 @@ public class DBMSSynchronizer {
                 }
                 synchronizeLocalDatabase(); // Pull remote changes for the case that there where some
             } catch (OfflineLockException exception) {
-                eventBus.post(new RemoteUpdateLockEvent(bibDatabaseContext));
+                eventBus.post(new RemoteUpdateLockEvent(bibDatabaseContext, exception.getLocalBibEntry(), exception.getRemoteBibEntry()));
             } catch (RemoteEntryNotPresentException exception) {
-                eventBus.post(new RemoteEntryNotPresentEvent(event.getBibEntry()));
+                eventBus.post(new RemoteEntryNotPresentEvent(exception.getNonPresentBibEntry()));
             }
         }
     }
@@ -253,19 +253,17 @@ public class DBMSSynchronizer {
         if (!checkCurrentConnection()) {
             return;
         }
-        try {
-            for (BibEntry entry : bibDatabase.getEntries()) {
-                try {
-                    List<FieldChange> changes = BibDatabaseWriter.applySaveActions(entry, metaData);
-                    for (FieldChange change : changes) {
-                        dbmsProcessor.updateField(change.getEntry(), change.getField(), change.getNewValue());
-                    }
-                } catch (RemoteEntryNotPresentException exception) {
-                    eventBus.post(new RemoteEntryNotPresentEvent(entry));
+        for (BibEntry entry : bibDatabase.getEntries()) {
+            try {
+                List<FieldChange> changes = BibDatabaseWriter.applySaveActions(entry, metaData);
+                for (FieldChange change : changes) {
+                    dbmsProcessor.updateField(change.getEntry(), change.getField(), change.getNewValue());
                 }
+            } catch (OfflineLockException exception) {
+                eventBus.post(new RemoteUpdateLockEvent(bibDatabaseContext, exception.getLocalBibEntry(), exception.getRemoteBibEntry()));
+            } catch (RemoteEntryNotPresentException exception) {
+                eventBus.post(new RemoteEntryNotPresentEvent(exception.getNonPresentBibEntry()));
             }
-        } catch (OfflineLockException exception) {
-            eventBus.post(new RemoteUpdateLockEvent(bibDatabaseContext));
         }
     }
 
@@ -307,9 +305,9 @@ public class DBMSSynchronizer {
      * @param event An {@link EntryEvent}
      * @return <code>true</code> if the event is able to trigger operations in {@link DBMSSynchronizer}, else <code>false</code>
      */
-    public boolean isInEventLocation(EntryEvent event) {// TODO add UNDO...
+    public boolean isInEventLocation(EntryEvent event) {
         EntryEventSource eventLocation = event.getEntryEventLocation();
-        return (eventLocation == EntryEventSource.LOCAL);
+        return ((eventLocation == EntryEventSource.LOCAL) || (eventLocation == EntryEventSource.UNDO));
     }
 
     public void openRemoteDatabase(Connection connection, DBMSType type, String name) {

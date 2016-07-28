@@ -6,11 +6,8 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
 import net.sf.jabref.model.entry.BibEntry;
 
 import org.junit.After;
@@ -87,7 +84,7 @@ public class DBMSProcessorTest {
         emptyEntry.setRemoteId(1);
         dbmsProcessor.insertEntry(emptyEntry); // does not insert, due to same remoteId.
 
-        try (ResultSet resultSet = selectFrom(DBMSProcessor.ENTRY)) {
+        try (ResultSet resultSet = selectFrom("ENTRY")) {
 
             Assert.assertTrue(resultSet.next());
             Assert.assertEquals(realEntry.getType(), resultSet.getString("ENTRYTYPE"));
@@ -109,7 +106,7 @@ public class DBMSProcessorTest {
         dbmsProcessor.insertEntry(bibEntry);
 
         try {
-            try (ResultSet resultSet = selectFrom(DBMSProcessor.ENTRY)) {
+            try (ResultSet resultSet = selectFrom("ENTRY")) {
 
                 Assert.assertTrue(resultSet.next());
                 Assert.assertEquals(bibEntry.getType(), resultSet.getString("ENTRYTYPE"));
@@ -127,7 +124,7 @@ public class DBMSProcessorTest {
                 Assert.fail(e.getMessage());
             }
 
-            try (ResultSet resultSet = selectFrom(DBMSProcessor.ENTRY)) {
+            try (ResultSet resultSet = selectFrom("ENTRY")) {
                 Assert.assertTrue(resultSet.next());
                 Assert.assertEquals(bibEntry.getType(), resultSet.getString("ENTRYTYPE"));
                 Assert.assertEquals(bibEntry.getFieldOptional("author").get(), resultSet.getString("AUTHOR"));
@@ -145,45 +142,11 @@ public class DBMSProcessorTest {
         dbmsProcessor.insertEntry(bibEntry);
         dbmsProcessor.removeEntry(bibEntry);
 
-        try (ResultSet resultSet = selectFrom(DBMSProcessor.ENTRY)) {
+        try (ResultSet resultSet = selectFrom("ENTRY")) {
             Assert.assertFalse(resultSet.next());
         } catch (SQLException e) {
             Assert.fail(e.getMessage());
         }
-    }
-
-    @Test
-    public void testPrepareEntryTableStructure() {
-        BibEntry bibEntry = getBibEntryExample();
-
-        Set<String> actualColumns = dbmsHelper.allToUpperCase(dbmsHelper.getColumnNames(DBMSProcessor.ENTRY));
-
-        Set<String> expectedColumns = new HashSet<>();
-        expectedColumns.add(DBMSProcessor.ENTRY_REMOTE_ID);
-        expectedColumns.add(DBMSProcessor.ENTRY_ENTRYTYPE);
-        expectedColumns.add("AUTHOR");
-        expectedColumns.add("TITLE");
-
-        Assert.assertEquals(expectedColumns, actualColumns);
-
-    }
-
-    @Test
-    public void testNormalizeEntryTable() {
-
-        BibEntry bibEntry = getBibEntryExampleWithEmptyFields();
-
-        dbmsProcessor.insertEntry(bibEntry);
-
-        Set<String> actualColumns = dbmsHelper.allToUpperCase(dbmsHelper.getColumnNames(DBMSProcessor.ENTRY));
-        Set<String> expectedColumns = new HashSet<>();
-
-        expectedColumns.add(DBMSProcessor.ENTRY_REMOTE_ID);
-        expectedColumns.add(DBMSProcessor.ENTRY_ENTRYTYPE);
-        expectedColumns.add("AUTHOR");
-
-        Assert.assertEquals(expectedColumns, actualColumns);
-
     }
 
     @Test
@@ -280,8 +243,8 @@ public class DBMSProcessorTest {
     // Therefore this function was defined to improve the readability and to keep the code short.
     private void insertMetaData(String key, String value) {
         try {
-            connection.createStatement().executeUpdate("INSERT INTO " + escape(DBMSProcessor.METADATA) + "("
-                    + escape(DBMSProcessor.METADATA_KEY) + ", " + escape(DBMSProcessor.METADATA_VALUE) + ") VALUES("
+            connection.createStatement().executeUpdate("INSERT INTO " + escape("METADATA") + "("
+                    + escape("KEY") + ", " + escape("VALUE") + ") VALUES("
                     + escapeValue(key) + ", " + escapeValue(value) + ")");
         } catch (SQLException e) {
             Assert.fail(e.getMessage());
@@ -300,14 +263,14 @@ public class DBMSProcessorTest {
     public void clear() {
         try {
             if ((dbmsType == DBMSType.MYSQL) || (dbmsType == DBMSType.POSTGRESQL)) {
-                connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape(DBMSProcessor.ENTRY));
-                connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape(DBMSProcessor.METADATA));
+                connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape("ENTRY"));
+                connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape("METADATA"));
             } else if (dbmsType == DBMSType.ORACLE) {
                 connection.createStatement().executeUpdate(
                             "BEGIN\n" +
-                            "EXECUTE IMMEDIATE 'DROP TABLE " + escape(DBMSProcessor.ENTRY) + "';\n" +
-                            "EXECUTE IMMEDIATE 'DROP TABLE " + escape(DBMSProcessor.METADATA) + "';\n" +
-                            "EXECUTE IMMEDIATE 'DROP SEQUENCE " + escape(DBMSProcessor.ENTRY + "_SEQ") + "';\n" +
+                            "EXECUTE IMMEDIATE 'DROP TABLE " + escape("ENTRY") + "';\n" +
+                            "EXECUTE IMMEDIATE 'DROP TABLE " + escape("METADATA") + "';\n" +
+                            "EXECUTE IMMEDIATE 'DROP SEQUENCE " + escape("ENTRY_SEQ") + "';\n" +
                             "EXCEPTION\n" +
                             "WHEN OTHERS THEN\n" +
                             "IF SQLCODE != -942 THEN\n" +
