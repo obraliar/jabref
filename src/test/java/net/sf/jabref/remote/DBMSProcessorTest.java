@@ -101,42 +101,6 @@ public class DBMSProcessorTest {
     }
 
     @Test
-    public void testUpdateField() {
-        BibEntry bibEntry = getBibEntryExample();
-        dbmsProcessor.insertEntry(bibEntry);
-
-        try {
-            try (ResultSet resultSet = selectFrom("ENTRY")) {
-
-                Assert.assertTrue(resultSet.next());
-                Assert.assertEquals(bibEntry.getType(), resultSet.getString("ENTRYTYPE"));
-                Assert.assertEquals(bibEntry.getFieldOptional("author").get(), resultSet.getString("AUTHOR"));
-                Assert.assertFalse(resultSet.next());
-            }
-
-            bibEntry.setType("booklet");
-            bibEntry.setField("author", "Brad L and Gilson, Kent L");
-
-            try {
-                dbmsProcessor.updateField(bibEntry, BibEntry.TYPE_HEADER, "booklet");
-                dbmsProcessor.updateField(bibEntry, "author", "Brad L and Gilson, Kent L");
-            } catch (OfflineLockException | RemoteEntryNotPresentException e) {
-                Assert.fail(e.getMessage());
-            }
-
-            try (ResultSet resultSet = selectFrom("ENTRY")) {
-                Assert.assertTrue(resultSet.next());
-                Assert.assertEquals(bibEntry.getType(), resultSet.getString("ENTRYTYPE"));
-                Assert.assertEquals(bibEntry.getFieldOptional("author").get(), resultSet.getString("AUTHOR"));
-                Assert.assertFalse(resultSet.next());
-            }
-
-        } catch (SQLException e) {
-            Assert.fail(e.getMessage());
-        }
-    }
-
-    @Test
     public void testRemoveEntry() {
         BibEntry bibEntry = getBibEntryExample();
         dbmsProcessor.insertEntry(bibEntry);

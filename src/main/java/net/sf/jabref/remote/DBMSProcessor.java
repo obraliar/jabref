@@ -22,9 +22,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import net.sf.jabref.event.source.EntryEventSource;
 import net.sf.jabref.logic.l10n.Localization;
@@ -216,11 +218,11 @@ public class DBMSProcessor {
     }
 
     /**
-     * Updates the given field of an {@link BibEntry} remotely.
+     * Updates the whole {@link BibEntry} remotely.
      *
      * @param localBibEntry {@link BibEntry} affected by changes
      */
-    public void updateField(BibEntry localBibEntry, String fieldName, String newValue) throws OfflineLockException, RemoteEntryNotPresentException {
+    public void updateEntry(BibEntry localBibEntry) throws OfflineLockException, RemoteEntryNotPresentException {
         dbmsHelper.setAutoCommit(false); // disable auto commit due to transaction
 
         try {
@@ -232,26 +234,36 @@ public class DBMSProcessor {
 
             BibEntry remoteBibEntry = remoteEntryOptional.get();
 
+            // remove remote fields which does not exist locally
+            Set<String> nullFields = new HashSet<>(remoteBibEntry.getFieldNames());
+            nullFields.removeAll(localBibEntry.getFieldNames());
+            for (String nullField : nullFields) {
+                StringBuilder deleteFieldQuery = new StringBuilder();
+                deleteFieldQuery.append("DELETE FROM ");
+                deleteFieldQuery.append(escape("FIELD"));
+                deleteFieldQuery.append(" WHERE ");
+                deleteFieldQuery.append(escape("NAME"));
+                deleteFieldQuery.append(" = ? AND ");
+                deleteFieldQuery.append(escape("ENTRY_REMOTE_ID"));
+                deleteFieldQuery.append(" = ?");
+
+                try (PreparedStatement preparedDeleteFieldStatement = dbmsHelper.prepareStatement(deleteFieldQuery.toString())) {
+                    preparedDeleteFieldStatement.setString(1, nullField);
+                    preparedDeleteFieldStatement.setInt(2, localBibEntry.getRemoteId());
+                    preparedDeleteFieldStatement.executeUpdate();
+                }
+            }
+
             if (localBibEntry.getVersion() >= remoteBibEntry.getVersion()) {
 
-                if (fieldName.equals(BibEntry.TYPE_HEADER)) {
-                    // updating entry type
-                    StringBuilder updateEntryTypeQuery = new StringBuilder();
-                    updateEntryTypeQuery.append("UPDATE ");
-                    updateEntryTypeQuery.append(escape("ENTRY"));
-                    updateEntryTypeQuery.append(" SET ");
-                    updateEntryTypeQuery.append(escape("TYPE"));
-                    updateEntryTypeQuery.append(" = ? WHERE ");
-                    updateEntryTypeQuery.append(escape("REMOTE_ID"));
-                    updateEntryTypeQuery.append(" = ?");
-
-                    try (PreparedStatement preparedUpdateEntryTypeStatement = dbmsHelper.prepareStatement(updateEntryTypeQuery.toString())) {
-                        preparedUpdateEntryTypeStatement.setString(1, newValue);
-                        preparedUpdateEntryTypeStatement.setInt(2, localBibEntry.getRemoteId());
-                        preparedUpdateEntryTypeStatement.executeUpdate();
+                for (String fieldName : localBibEntry.getFieldNames()) {
+                    // avoiding to use deprecated BibEntry.getField() method. null values are accepted by PreparedStatement!
+                    Optional<String> valueOptional = localBibEntry.getFieldOptional(fieldName);
+                    String value = null;
+                    if (valueOptional.isPresent()) {
+                        value = valueOptional.get();
                     }
-                } else {
-                    // updating other field
+
                     StringBuilder selectFieldQuery = new StringBuilder();
                     selectFieldQuery.append("SELECT * FROM ");
                     selectFieldQuery.append(escape("FIELD"));
@@ -278,8 +290,9 @@ public class DBMSProcessor {
                                 updateFieldQuery.append(escape("ENTRY_REMOTE_ID"));
                                 updateFieldQuery.append(" = ?");
 
-                                try (PreparedStatement preparedUpdateFieldStatement = dbmsHelper.prepareStatement(updateFieldQuery.toString())) {
-                                    preparedUpdateFieldStatement.setString(1, newValue);
+                                try (PreparedStatement preparedUpdateFieldStatement = dbmsHelper
+                                        .prepareStatement(updateFieldQuery.toString())) {
+                                    preparedUpdateFieldStatement.setString(1, value);
                                     preparedUpdateFieldStatement.setString(2, fieldName);
                                     preparedUpdateFieldStatement.setInt(3, localBibEntry.getRemoteId());
                                     preparedUpdateFieldStatement.executeUpdate();
@@ -296,11 +309,11 @@ public class DBMSProcessor {
                                 insertFieldQuery.append(escape("VALUE"));
                                 insertFieldQuery.append(") VALUES(?, ?, ?)");
 
-                                try (PreparedStatement preparedFieldStatement = dbmsHelper.prepareStatement(insertFieldQuery.toString())) {
-                                    // columnIndex starts with 1
+                                try (PreparedStatement preparedFieldStatement = dbmsHelper
+                                        .prepareStatement(insertFieldQuery.toString())) {
                                     preparedFieldStatement.setInt(1, localBibEntry.getRemoteId());
                                     preparedFieldStatement.setString(2, fieldName);
-                                    preparedFieldStatement.setString(3, localBibEntry.getFieldOptional(fieldName).get());
+                                    preparedFieldStatement.setString(3, value);
                                     preparedFieldStatement.executeUpdate();
                                 }
                             }
@@ -308,22 +321,23 @@ public class DBMSProcessor {
                     }
                 }
 
-                // Updating local and remote versions
-                StringBuilder updateEntryVersionQuery = new StringBuilder();
-                updateEntryVersionQuery.append("UPDATE ");
-                updateEntryVersionQuery.append(escape("ENTRY"));
-                updateEntryVersionQuery.append(" SET ");
-                updateEntryVersionQuery.append(escape("VERSION"));
-                updateEntryVersionQuery.append(" = ");
-                updateEntryVersionQuery.append(escape("VERSION"));
-                updateEntryVersionQuery.append(" + 1 WHERE ");
-                updateEntryVersionQuery.append(escape("REMOTE_ID"));
-                updateEntryVersionQuery.append(" = ?");
-
-                try (PreparedStatement preparedUpdateVersionStatement = dbmsHelper.prepareStatement(updateEntryVersionQuery.toString())) {
-                    preparedUpdateVersionStatement.setInt(1, localBibEntry.getRemoteId());
-                    preparedUpdateVersionStatement.executeUpdate();
-                    localBibEntry.setVersion(remoteBibEntry.getVersion() + 1);
+                // updating entry type
+                StringBuilder updateEntryTypeQuery = new StringBuilder();
+                updateEntryTypeQuery.append("UPDATE ");
+                updateEntryTypeQuery.append(escape("ENTRY"));
+                updateEntryTypeQuery.append(" SET ");
+                updateEntryTypeQuery.append(escape("TYPE"));
+                updateEntryTypeQuery.append(" = ?, ");
+                updateEntryTypeQuery.append(escape("VERSION"));
+                updateEntryTypeQuery.append(" = ");
+                updateEntryTypeQuery.append(escape("VERSION"));
+                updateEntryTypeQuery.append(" + 1 WHERE ");
+                updateEntryTypeQuery.append(escape("REMOTE_ID"));
+                updateEntryTypeQuery.append(" = ?");
+                try (PreparedStatement preparedUpdateEntryTypeStatement = dbmsHelper.prepareStatement(updateEntryTypeQuery.toString())) {
+                    preparedUpdateEntryTypeStatement.setString(1, localBibEntry.getType());
+                    preparedUpdateEntryTypeStatement.setInt(2, localBibEntry.getRemoteId());
+                    preparedUpdateEntryTypeStatement.executeUpdate();
                 }
 
                 dbmsHelper.commit(); // apply all changes in current transaction
@@ -338,140 +352,6 @@ public class DBMSProcessor {
             dbmsHelper.setAutoCommit(true); // enable auto commit mode again
         }
     }
-
-    /**
-     * Updates the given field of an {@link BibEntry} remotely.
-     *
-     * @param bibEntry {@link BibEntry} affected by changes
-     */
-    /*public void updateField_O(BibEntry bibEntry, String fieldName, String newValue) throws OfflineLockException, RemoteEntryNotPresentException {
-        dbmsHelper.setAutoCommit(false); // disable auto commit due to transaction
-    
-        StringBuilder selectQuery = new StringBuilder();
-        selectQuery.append("SELECT ");
-        selectQuery.append(escape("VERSION"));
-        selectQuery.append(" FROM ");
-        selectQuery.append(escape("ENTRY"));
-        selectQuery.append(" WHERE ");
-        selectQuery.append(escape("REMOTE_ID"));
-        selectQuery.append(" = ");
-        selectQuery.append(bibEntry.getRemoteId());
-    
-        try (ResultSet remoteVersionResultSet = dbmsHelper.query(selectQuery.toString())) {
-            int remoteVersion = 0;
-    
-            if (remoteVersionResultSet.next()) {
-                remoteVersion = remoteVersionResultSet.getInt(1);
-            } else {
-                throw new RemoteEntryNotPresentException();
-            }
-    
-            if (bibEntry.getVersion() >= remoteVersion) {
-    
-                if (fieldName.equals(BibEntry.TYPE_HEADER)) {
-                    // updating entry type
-                    StringBuilder updateEntryTypeQuery = new StringBuilder();
-                    updateEntryTypeQuery.append("UPDATE ");
-                    updateEntryTypeQuery.append(escape("ENTRY"));
-                    updateEntryTypeQuery.append(" SET ");
-                    updateEntryTypeQuery.append(escape("TYPE"));
-                    updateEntryTypeQuery.append(" = ? WHERE ");
-                    updateEntryTypeQuery.append(escape("REMOTE_ID"));
-                    updateEntryTypeQuery.append(" = ?");
-    
-                    try (PreparedStatement preparedUpdateEntryTypeStatement = dbmsHelper.prepareStatement(updateEntryTypeQuery.toString())) {
-                        preparedUpdateEntryTypeStatement.setString(1, newValue);
-                        preparedUpdateEntryTypeStatement.setInt(2, bibEntry.getRemoteId());
-                        preparedUpdateEntryTypeStatement.executeUpdate();
-                    }
-                } else {
-                    // updating other field
-                    StringBuilder selectFieldQuery = new StringBuilder();
-                    selectFieldQuery.append("SELECT * FROM ");
-                    selectFieldQuery.append(escape("FIELD"));
-                    selectFieldQuery.append(" WHERE ");
-                    selectFieldQuery.append(escape("NAME"));
-                    selectFieldQuery.append(" = ? AND ");
-                    selectFieldQuery.append(escape("ENTRY_REMOTE_ID"));
-                    selectFieldQuery.append(" = ?");
-    
-                    try (PreparedStatement preparedSelectFieldStatement = dbmsHelper.prepareStatement(selectFieldQuery.toString())) {
-                        preparedSelectFieldStatement.setString(1, fieldName);
-                        preparedSelectFieldStatement.setInt(2, bibEntry.getRemoteId());
-    
-                        try (ResultSet selectFieldResultSet = preparedSelectFieldStatement.executeQuery()) {
-                            if (selectFieldResultSet.next()) { // check if field already exists
-                                StringBuilder updateFieldQuery = new StringBuilder();
-                                updateFieldQuery.append("UPDATE ");
-                                updateFieldQuery.append(escape("FIELD"));
-                                updateFieldQuery.append(" SET ");
-                                updateFieldQuery.append(escape("VALUE"));
-                                updateFieldQuery.append(" = ? WHERE ");
-                                updateFieldQuery.append(escape("NAME"));
-                                updateFieldQuery.append(" = ? AND ");
-                                updateFieldQuery.append(escape("ENTRY_REMOTE_ID"));
-                                updateFieldQuery.append(" = ?");
-    
-                                try (PreparedStatement preparedUpdateFieldStatement = dbmsHelper.prepareStatement(updateFieldQuery.toString())) {
-                                    preparedUpdateFieldStatement.setString(1, newValue);
-                                    preparedUpdateFieldStatement.setString(2, fieldName);
-                                    preparedUpdateFieldStatement.setInt(3, bibEntry.getRemoteId());
-                                    preparedUpdateFieldStatement.executeUpdate();
-                                }
-                            } else {
-                                StringBuilder insertFieldQuery = new StringBuilder();
-                                insertFieldQuery.append("INSERT INTO ");
-                                insertFieldQuery.append(escape("FIELD"));
-                                insertFieldQuery.append("(");
-                                insertFieldQuery.append(escape("ENTRY_REMOTE_ID"));
-                                insertFieldQuery.append(", ");
-                                insertFieldQuery.append(escape("NAME"));
-                                insertFieldQuery.append(", ");
-                                insertFieldQuery.append(escape("VALUE"));
-                                insertFieldQuery.append(") VALUES(?, ?, ?)");
-    
-                                try (PreparedStatement preparedFieldStatement = dbmsHelper.prepareStatement(insertFieldQuery.toString())) {
-                                    // columnIndex starts with 1
-                                    preparedFieldStatement.setInt(1, bibEntry.getRemoteId());
-                                    preparedFieldStatement.setString(2, fieldName);
-                                    preparedFieldStatement.setString(3, bibEntry.getFieldOptional(fieldName).get());
-                                    preparedFieldStatement.executeUpdate();
-                                }
-                            }
-                        }
-                    }
-                }
-    
-                // Updating local and remote versions
-                StringBuilder updateEntryVersionQuery = new StringBuilder();
-                updateEntryVersionQuery.append("UPDATE ");
-                updateEntryVersionQuery.append(escape("ENTRY"));
-                updateEntryVersionQuery.append(" SET ");
-                updateEntryVersionQuery.append(escape("VERSION"));
-                updateEntryVersionQuery.append(" = ");
-                updateEntryVersionQuery.append(escape("VERSION"));
-                updateEntryVersionQuery.append(" + 1 WHERE ");
-                updateEntryVersionQuery.append(escape("REMOTE_ID"));
-                updateEntryVersionQuery.append(" = ?");
-    
-                try (PreparedStatement preparedUpdateVersionStatement = dbmsHelper.prepareStatement(updateEntryVersionQuery.toString())) {
-                    preparedUpdateVersionStatement.setInt(1, bibEntry.getRemoteId());
-                    preparedUpdateVersionStatement.executeUpdate();
-                    bibEntry.setVersion(remoteVersion + 1);
-                }
-    
-                dbmsHelper.commit(); // apply all changes in current transaction
-    
-            } else {
-                throw new OfflineLockException();
-            }
-        } catch (SQLException e) {
-            LOGGER.error("SQL Error: ", e);
-            dbmsHelper.rollback(); // undo changes made in current transaction
-        } finally {
-            dbmsHelper.setAutoCommit(true); // enable auto commit mode again
-        }
-    }*/
 
     /**
      * Removes the remote existing bibEntry

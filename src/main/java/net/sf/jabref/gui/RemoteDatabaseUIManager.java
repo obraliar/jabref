@@ -21,7 +21,6 @@ import net.sf.jabref.model.database.BibDatabaseMode;
 import net.sf.jabref.model.database.DatabaseLocation;
 import net.sf.jabref.model.entry.BibEntry;
 import net.sf.jabref.remote.DBMSSynchronizer;
-
 import com.google.common.eventbus.Subscribe;
 
 public class RemoteDatabaseUIManager {
@@ -83,7 +82,7 @@ public class RemoteDatabaseUIManager {
                 null, options, options[0]);
 
         if (answer == 0) {
-            dbmsSynchronizer.getDBProcessor().insertEntry(bibEntry); //TODO? Update version for third user
+            dbmsSynchronizer.getDBProcessor().insertEntry(bibEntry);
         } else if (answer == 1) {
             jabRefFrame.getCurrentBasePanel().hideBottomComponent();
         }
@@ -165,9 +164,11 @@ public class RemoteDatabaseUIManager {
             BibEntry mergedBibEntry = mergeEntries.getMergeEntry();
             mergedBibEntry.setRemoteId(remoteBibEntry.getRemoteId());
             mergedBibEntry.setVersion(remoteBibEntry.getVersion());
-            dbmsSynchronizer.getDBProcessor().removeEntry(remoteBibEntry); /// -> update entry
-            dbmsSynchronizer.getDBProcessor().insertEntry(mergedBibEntry);
-            /// sync local
+
+            mergeDialog.dispose(); // dispose before synchronizing to avoid multiple merge windows in case of new conflict.
+
+            dbmsSynchronizer.synchrnizeRemoteEntry(mergedBibEntry);
+            dbmsSynchronizer.synchronizeLocalDatabase();
         }
     }
 }

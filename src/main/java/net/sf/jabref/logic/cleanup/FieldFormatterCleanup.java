@@ -71,7 +71,7 @@ public class FieldFormatterCleanup implements CleanupJob {
                 entry.clearField(fieldKey);
                 newValue = null;
             } else {
-                entry.setField(fieldKey, newValue, EntryEventSource.REMOTE);
+                entry.setField(fieldKey, newValue, EntryEventSource.SAVE_ACTION);
             }
             FieldChange change = new FieldChange(entry, fieldKey, oldValue, newValue);
             return Collections.singletonList(change);

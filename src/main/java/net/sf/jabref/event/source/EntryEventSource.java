@@ -21,5 +21,6 @@ package net.sf.jabref.event.source;
 public enum EntryEventSource {
     LOCAL,
     REMOTE,
-    UNDO
+    UNDO,
+    SAVE_ACTION
 }

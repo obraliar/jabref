@@ -32,7 +32,6 @@ import net.sf.jabref.event.source.EntryEventSource;
 import net.sf.jabref.importer.fileformat.ParseException;
 import net.sf.jabref.logic.exporter.BibDatabaseWriter;
 import net.sf.jabref.logic.l10n.Localization;
-import net.sf.jabref.model.FieldChange;
 import net.sf.jabref.model.database.BibDatabase;
 import net.sf.jabref.model.entry.BibEntry;
 import net.sf.jabref.model.event.EntryAddedEvent;
@@ -96,14 +95,12 @@ public class DBMSSynchronizer {
         if (isInEventLocation(event) && checkCurrentConnection()) {
             synchronizeLocalMetaData();
             try {
-                List<FieldChange> changes = BibDatabaseWriter.applySaveActions(event.getBibEntry(), metaData);
-                for (FieldChange change : changes) {
-                    dbmsProcessor.updateField(change.getEntry(), change.getField(), change.getNewValue());
-                }
+                BibEntry bibEntry = event.getBibEntry();
+                BibDatabaseWriter.applySaveActions(bibEntry, metaData); // perform possibly existing save actions
+                // do not use newValue from the event cause save actions are only applied on the entry
+                //dbmsProcessor.updateField(event.getBibEntry(), event.getFieldName());
+                dbmsProcessor.updateEntry(event.getBibEntry());
 
-                if (changes.isEmpty()) { // If no FieldChanges were applied, update the field usually.
-                    dbmsProcessor.updateField(event.getBibEntry(), event.getFieldName(), event.getNewValue());
-                }
                 synchronizeLocalDatabase(); // Pull remote changes for the case that there where some
             } catch (OfflineLockException exception) {
                 eventBus.post(new RemoteUpdateLockEvent(bibDatabaseContext, exception.getLocalBibEntry(), exception.getRemoteBibEntry()));
@@ -221,6 +218,25 @@ public class DBMSSynchronizer {
     }
 
     /**
+     * Synchronizes the remote {@link BibEntry} with the local one.
+     * Save actions are applied before updating.
+     */
+    public void synchrnizeRemoteEntry(BibEntry bibEntry) {
+        if (!checkCurrentConnection()) {
+            return;
+        }
+        try {
+            BibDatabaseWriter.applySaveActions(bibEntry, metaData);
+            dbmsProcessor.updateEntry(bibEntry);
+        } catch (OfflineLockException exception) {
+            eventBus.post(new RemoteUpdateLockEvent(bibDatabaseContext, exception.getLocalBibEntry(), exception.getRemoteBibEntry()));
+        } catch (RemoteEntryNotPresentException exception) {
+            eventBus.post(new RemoteEntryNotPresentEvent(exception.getNonPresentBibEntry()));
+        }
+    }
+
+
+    /**
      * Synchronizes all meta data locally.
      */
     public void synchronizeLocalMetaData() {
@@ -253,17 +269,8 @@ public class DBMSSynchronizer {
         if (!checkCurrentConnection()) {
             return;
         }
-        for (BibEntry entry : bibDatabase.getEntries()) {
-            try {
-                List<FieldChange> changes = BibDatabaseWriter.applySaveActions(entry, metaData);
-                for (FieldChange change : changes) {
-                    dbmsProcessor.updateField(change.getEntry(), change.getField(), change.getNewValue());
-                }
-            } catch (OfflineLockException exception) {
-                eventBus.post(new RemoteUpdateLockEvent(bibDatabaseContext, exception.getLocalBibEntry(), exception.getRemoteBibEntry()));
-            } catch (RemoteEntryNotPresentException exception) {
-                eventBus.post(new RemoteEntryNotPresentEvent(exception.getNonPresentBibEntry()));
-            }
+        for (BibEntry bibEntry : bibDatabase.getEntries()) {
+            synchrnizeRemoteEntry(bibEntry);
         }
     }
 
