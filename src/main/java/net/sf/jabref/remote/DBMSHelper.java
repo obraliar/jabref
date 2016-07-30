@@ -129,19 +129,6 @@ public class DBMSHelper {
         return stringSet.stream().map(n -> n.toUpperCase(Locale.ENGLISH)).collect(Collectors.toSet());
     }
 
-    /**
-     * Deletes all data from the given tables.
-     */
-    public void clearTables(String... tables) {
-        try {
-            for (String table : tables) {
-                connection.createStatement().executeUpdate("TRUNCATE TABLE " + table);
-            }
-        } catch (SQLException e) {
-            LOGGER.error("SQL Error: ", e);
-        }
-    }
-
     public void setAutoCommit(boolean autoCommit) {
         try {
             this.connection.setAutoCommit(autoCommit);

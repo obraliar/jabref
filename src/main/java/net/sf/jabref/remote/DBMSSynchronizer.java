@@ -134,6 +134,7 @@ public class DBMSSynchronizer {
         if (checkCurrentConnection()) {
             synchronizeRemoteMetaData(event.getMetaData());
             applyMetaData();
+            synchronizeLocalDatabase();
         }
     }
 
@@ -163,8 +164,6 @@ public class DBMSSynchronizer {
 
         List<BibEntry> localEntries = bibDatabase.getEntries();
         Map<Integer, Integer> idVersionMap = dbmsProcessor.getRemoteIdVersionMapping();
-
-        dbmsProcessor.cleanUpRemoteFields();
 
         // remove old entries locally
         for (int i = 0; i < localEntries.size(); i++) {
@@ -284,7 +283,6 @@ public class DBMSSynchronizer {
 
         synchronizeLocalDatabase();
         synchronizeLocalMetaData();
-        applyMetaData();
     }
 
     /**

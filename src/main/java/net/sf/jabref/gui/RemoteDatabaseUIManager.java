@@ -34,7 +34,7 @@ public class RemoteDatabaseUIManager {
     }
 
     @Subscribe
-    public void listen(RemoteConnectionLostEvent connectionLostEvent) { // TODO get current Context
+    public void listen(RemoteConnectionLostEvent connectionLostEvent) {
 
         jabRefFrame.output(Localization.lang("Connection lost."));
 
@@ -61,7 +61,7 @@ public class RemoteDatabaseUIManager {
     }
 
     @Subscribe
-    public void listen(RemoteUpdateLockEvent remoteUpdateLockEvent) { // TODO get current Context
+    public void listen(RemoteUpdateLockEvent remoteUpdateLockEvent) {
 
         jabRefFrame.output(Localization.lang("Update refused."));
 
@@ -122,7 +122,7 @@ public class RemoteDatabaseUIManager {
             mergeInnformation.setBorder(new EmptyBorder(9, 9, 9, 9));
 
             mergeDialog.add(mergeInnformation, BorderLayout.NORTH);
-            mergeDialog.add(mergeEntries.getMergeEntryPanel(), BorderLayout.CENTER); ///////////////// TODO Update version and remoteId
+            mergeDialog.add(mergeEntries.getMergeEntryPanel(), BorderLayout.CENTER);
 
             JButton mergeButton = new JButton(Localization.lang("Merge entries"));
             mergeButton.addActionListener(e -> mergeEntries());

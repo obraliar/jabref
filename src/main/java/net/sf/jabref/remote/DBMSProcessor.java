@@ -179,7 +179,7 @@ public class DBMSProcessor {
 
         // This is the only method to get generated keys which is accepted by MySQL, PostgreSQL and Oracle.
         try (PreparedStatement preparedEntryStatement = dbmsHelper.prepareStatement(insertIntoEntryQuery.toString(),
-                "remote_id")) {
+                "REMOTE_ID")) {
 
             preparedEntryStatement.setString(1, bibEntry.getType());
             preparedEntryStatement.executeUpdate();
@@ -486,7 +486,7 @@ public class DBMSProcessor {
      * @param metaData JabRef meta data.
      */
     public void setRemoteMetaData(Map<String, String> data) {
-        dbmsHelper.clearTables("METADATA");
+        dbmsHelper.executeUpdate("TRUNCATE TABLE " + escape("METADATA")); // delete data all data from table
 
         for (Map.Entry<String, String> metaEntry : data.entrySet()) {
 
@@ -524,19 +524,6 @@ public class DBMSProcessor {
         query.append(remoteId);
 
         return dbmsHelper.query(query.toString());
-    }
-
-    /**
-     * Removes all entries from FIELD table which have <code>NULL</code> as value.
-     */
-    public void cleanUpRemoteFields() {
-        StringBuilder removeQuery = new StringBuilder();
-        removeQuery.append("DELETE FROM ");
-        removeQuery.append(escape("FIELD"));
-        removeQuery.append(" WHERE ");
-        removeQuery.append(escape("VALUE"));
-        removeQuery.append(" IS NULL"); // TODO is valid for oracle/postgresql?
-        dbmsHelper.executeUpdate(removeQuery.toString());
     }
 
     /**

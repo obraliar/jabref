@@ -107,24 +107,6 @@ public class DBMSHelperTest {
         Assert.assertTrue(expectedSet.isEmpty());
     }
 
-    @Test
-    public void testClearTables() {
-        try {
-            connection.createStatement().executeUpdate(
-                    "INSERT INTO " + escape("TEST") + "(" + escape("A") + ", " + escape("B") + ") VALUES(0, 'test')");
-            dbmsHelper.clearTables(escape("TEST"), escape("XXX"));
-
-            try (ResultSet resultSet = connection.createStatement()
-                    .executeQuery(
-                            "SELECT " + escape("B") + " FROM " + escape("TEST") + " WHERE " + escape("A") + " = 0")) {
-                Assert.assertFalse(resultSet.next());
-            }
-
-        } catch (Exception e) {
-            Assert.fail(e.getMessage());
-        }
-    }
-
     @After
     public void clear() {
         try {
