@@ -1,4 +1,4 @@
-package net.sf.jabref.remote;
+package net.sf.jabref.shared;
 
 
 public class TestConnectionData {

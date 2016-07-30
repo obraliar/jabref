@@ -46,8 +46,8 @@ import net.sf.jabref.JabRefException;
 import net.sf.jabref.logic.l10n.Localization;
 import net.sf.jabref.model.database.BibDatabaseMode;
 import net.sf.jabref.model.database.DatabaseLocation;
-import net.sf.jabref.remote.DBMSConnector;
-import net.sf.jabref.remote.DBMSType;
+import net.sf.jabref.shared.DBMSConnector;
+import net.sf.jabref.shared.DBMSType;
 
 import com.jgoodies.forms.builder.ButtonBarBuilder;
 

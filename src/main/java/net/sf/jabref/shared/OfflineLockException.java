@@ -1,4 +1,4 @@
-package net.sf.jabref.remote;
+package net.sf.jabref.shared;
 
 import net.sf.jabref.logic.l10n.Localization;
 import net.sf.jabref.model.entry.BibEntry;

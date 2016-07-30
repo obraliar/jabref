@@ -11,7 +11,7 @@ import net.sf.jabref.model.database.BibDatabaseMode;
 import net.sf.jabref.model.database.BibDatabaseModeDetection;
 import net.sf.jabref.model.database.DatabaseLocation;
 import net.sf.jabref.preferences.JabRefPreferences;
-import net.sf.jabref.remote.DBMSSynchronizer;
+import net.sf.jabref.shared.DBMSSynchronizer;
 
 /**
  * Represents everything related to a .bib file.

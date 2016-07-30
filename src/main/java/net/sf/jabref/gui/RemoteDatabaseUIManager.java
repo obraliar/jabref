@@ -8,7 +8,7 @@ import net.sf.jabref.event.RemoteUpdateLockEvent;
 import net.sf.jabref.logic.l10n.Localization;
 import net.sf.jabref.model.database.DatabaseLocation;
 import net.sf.jabref.model.entry.BibEntry;
-import net.sf.jabref.remote.DBMSSynchronizer;
+import net.sf.jabref.shared.DBMSSynchronizer;
 
 import com.google.common.eventbus.Subscribe;
 

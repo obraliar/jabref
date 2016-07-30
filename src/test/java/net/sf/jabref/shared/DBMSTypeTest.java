@@ -1,6 +1,8 @@
-package net.sf.jabref.remote;
+package net.sf.jabref.shared;
 
 import java.util.Optional;
+
+import net.sf.jabref.shared.DBMSType;
 
 import org.junit.Assert;
 import org.junit.Test;

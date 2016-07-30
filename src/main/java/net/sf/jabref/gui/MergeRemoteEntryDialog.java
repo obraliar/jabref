@@ -16,7 +16,7 @@ import net.sf.jabref.gui.mergeentries.MergeEntries;
 import net.sf.jabref.logic.l10n.Localization;
 import net.sf.jabref.model.database.BibDatabaseMode;
 import net.sf.jabref.model.entry.BibEntry;
-import net.sf.jabref.remote.DBMSSynchronizer;
+import net.sf.jabref.shared.DBMSSynchronizer;
 
 public class MergeRemoteEntryDialog {
 

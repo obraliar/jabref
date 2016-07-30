@@ -1,7 +1,10 @@
-package net.sf.jabref.remote;
+package net.sf.jabref.shared;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+
+import net.sf.jabref.shared.DBMSConnector;
+import net.sf.jabref.shared.DBMSType;
 
 public class TestConnector {
 

@@ -1,4 +1,4 @@
-package net.sf.jabref.remote;
+package net.sf.jabref.shared;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -15,6 +15,11 @@ import net.sf.jabref.event.source.EntryEventSource;
 import net.sf.jabref.model.database.BibDatabase;
 import net.sf.jabref.model.entry.BibEntry;
 import net.sf.jabref.preferences.JabRefPreferences;
+import net.sf.jabref.shared.DBMSConnector;
+import net.sf.jabref.shared.DBMSHelper;
+import net.sf.jabref.shared.DBMSProcessor;
+import net.sf.jabref.shared.DBMSSynchronizer;
+import net.sf.jabref.shared.DBMSType;
 
 import org.junit.After;
 import org.junit.Assert;

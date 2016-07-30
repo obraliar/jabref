@@ -1,4 +1,4 @@
-package net.sf.jabref.remote;
+package net.sf.jabref.shared;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -9,6 +9,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import net.sf.jabref.model.entry.BibEntry;
+import net.sf.jabref.shared.DBMSConnector;
+import net.sf.jabref.shared.DBMSHelper;
+import net.sf.jabref.shared.DBMSProcessor;
+import net.sf.jabref.shared.DBMSType;
 
 import org.junit.After;
 import org.junit.Assert;
