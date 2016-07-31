@@ -1,15 +1,14 @@
 package net.sf.jabref.shared;
 
-import net.sf.jabref.logic.l10n.Localization;
 import net.sf.jabref.model.entry.BibEntry;
 
-public class RemoteEntryNotPresentException extends Exception {
+public class SharedEntryNotPresentException extends Exception {
 
     private final BibEntry nonPresentbibEntry;
 
 
-    public RemoteEntryNotPresentException(BibEntry nonPresentbibEntry) {
-        super(Localization.lang("Required BibEntry is not present on remote database."));
+    public SharedEntryNotPresentException(BibEntry nonPresentbibEntry) {
+        super("Required BibEntry is not present on shared database.");
         this.nonPresentbibEntry = nonPresentbibEntry;
     }
 

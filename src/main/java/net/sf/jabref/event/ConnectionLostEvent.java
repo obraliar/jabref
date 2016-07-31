@@ -3,16 +3,16 @@ package net.sf.jabref.event;
 import net.sf.jabref.BibDatabaseContext;
 
 /**
- * A new {@link RemoteConnectionLostEvent} is fired, when the connection to the remote database gets lost.
+ * A new {@link ConnectionLostEvent} is fired, when the connection to the shared database gets lost.
  */
-public class RemoteConnectionLostEvent {
+public class ConnectionLostEvent {
 
     private final BibDatabaseContext bibDatabaseContext;
 
     /**
      * @param bibDatabaseContext Affected {@link BibDatabaseContext}
      */
-    public RemoteConnectionLostEvent(BibDatabaseContext bibDatabaseContext) {
+    public ConnectionLostEvent(BibDatabaseContext bibDatabaseContext) {
         this.bibDatabaseContext = bibDatabaseContext;
     }
 

@@ -204,12 +204,12 @@ public class BibDatabaseContext {
 
     public void updateDatabaseLocation(DatabaseLocation newLocation) {
 
-        if ((this.location == DatabaseLocation.REMOTE) && (newLocation == DatabaseLocation.LOCAL)) {
+        if ((this.location == DatabaseLocation.SHARED) && (newLocation == DatabaseLocation.LOCAL)) {
             this.database.unregisterListener(dbmsSynchronizer);
             this.metaData.unregisterListener(dbmsSynchronizer);
         }
 
-        if (newLocation == DatabaseLocation.REMOTE) {
+        if (newLocation == DatabaseLocation.SHARED) {
             this.dbmsSynchronizer = new DBMSSynchronizer(this);
             this.database.registerListener(dbmsSynchronizer);
             this.metaData.registerListener(dbmsSynchronizer);

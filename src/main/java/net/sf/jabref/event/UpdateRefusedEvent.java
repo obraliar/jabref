@@ -4,23 +4,23 @@ import net.sf.jabref.BibDatabaseContext;
 import net.sf.jabref.model.entry.BibEntry;
 
 /**
- * A new {@link RemoteUpdateLockEvent} is fired, when the user tries to push changes of an obsolete
+ * A new {@link UpdateRefusedEvent} is fired, when the user tries to push changes of an obsolete
  * {@link BibEntry} to the server.
  */
-public class RemoteUpdateLockEvent {
+public class UpdateRefusedEvent {
 
     private final BibDatabaseContext bibDatabaseContext;
     private final BibEntry localBibEntry;
-    private final BibEntry remoteBibEntry;
+    private final BibEntry sharedBibEntry;
 
     /**
      * @param bibDatabaseContext Affected {@link BibDatabaseContext}
      * @param bibEntry Affected {@link BibEntry}
      */
-    public RemoteUpdateLockEvent(BibDatabaseContext bibDatabaseContext, BibEntry localBibEntry, BibEntry remoteBibEntry) {
+    public UpdateRefusedEvent(BibDatabaseContext bibDatabaseContext, BibEntry localBibEntry, BibEntry sharedBibEntry) {
         this.bibDatabaseContext = bibDatabaseContext;
         this.localBibEntry = localBibEntry;
-        this.remoteBibEntry = remoteBibEntry;
+        this.sharedBibEntry = sharedBibEntry;
     }
 
     public BibDatabaseContext getBibDatabaseContext() {
@@ -31,7 +31,7 @@ public class RemoteUpdateLockEvent {
         return localBibEntry;
     }
 
-    public BibEntry getRemoteBibEntry() {
-        return remoteBibEntry;
+    public BibEntry getSharedBibEntry() {
+        return sharedBibEntry;
     }
 }

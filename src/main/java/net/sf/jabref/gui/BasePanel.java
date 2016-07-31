@@ -283,8 +283,8 @@ public class BasePanel extends JPanel implements ClipboardOwner, FileUpdateListe
                 String changeFlag = isModified() ? "*" : "";
                 title.append(this.bibDatabaseContext.getDatabaseFile().getName()).append(changeFlag);
             }
-        } else if (databaseLocation == DatabaseLocation.REMOTE) {
-            title.append(this.bibDatabaseContext.getDBSynchronizer().getDBName() + " (remote)");
+        } else if (databaseLocation == DatabaseLocation.SHARED) {
+            title.append(this.bibDatabaseContext.getDBSynchronizer().getDBName() + " [shared]");
         }
 
         return title.toString();
@@ -558,7 +558,7 @@ public class BasePanel extends JPanel implements ClipboardOwner, FileUpdateListe
         actions.put(Actions.OPEN_CONSOLE, (BaseAction) () -> JabRefDesktop
                 .openConsole(frame.getCurrentBasePanel().getBibDatabaseContext().getDatabaseFile()));
 
-        actions.put(Actions.PULL_REMOTE_CHANGES, (BaseAction) () -> {
+        actions.put(Actions.PULL_CHANGES_FROM_SHARED_DATABASE, (BaseAction) () -> {
             DBMSSynchronizer dbmsSynchronizer = frame.getCurrentBasePanel().getBibDatabaseContext().getDBSynchronizer();
             dbmsSynchronizer.pullChanges();
         });

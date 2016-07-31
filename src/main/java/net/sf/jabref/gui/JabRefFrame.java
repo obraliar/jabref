@@ -86,7 +86,7 @@ import net.sf.jabref.gui.actions.NewDatabaseAction;
 import net.sf.jabref.gui.actions.NewEntryAction;
 import net.sf.jabref.gui.actions.NewSubDatabaseAction;
 import net.sf.jabref.gui.actions.OpenBrowserAction;
-import net.sf.jabref.gui.actions.OpenRemoteDatabaseAction;
+import net.sf.jabref.gui.actions.OpenSharedDatabaseAction;
 import net.sf.jabref.gui.actions.SearchForUpdateAction;
 import net.sf.jabref.gui.actions.SortTabsAction;
 import net.sf.jabref.gui.dbproperties.DatabasePropertiesDialog;
@@ -213,7 +213,7 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
     private final AbstractAction selectKeys = new SelectKeysAction();
     private final AbstractAction newBibtexDatabaseAction = new NewDatabaseAction(this, BibDatabaseMode.BIBTEX);
     private final AbstractAction newBiblatexDatabaseAction = new NewDatabaseAction(this, BibDatabaseMode.BIBLATEX);
-    private final AbstractAction openRemoteDatabaseAction = new OpenRemoteDatabaseAction(this);
+    private final AbstractAction openSharedDatabaseAction = new OpenSharedDatabaseAction(this);
     private final AbstractAction newSubDatabaseAction = new NewSubDatabaseAction(this);
     private final AbstractAction forkMeOnGitHubAction = new OpenBrowserAction("https://github.com/JabRef/jabref",
             Localization.menuTitle("Fork me on GitHub"), Localization.lang("Opens JabRef's GitHub page"), IconTheme.JabRefIcon.GITHUB.getSmallIcon(), IconTheme.JabRefIcon.GITHUB.getIcon());
@@ -270,10 +270,10 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
             Globals.getKeyPrefs().getKey(KeyBinding.OPEN_CONSOLE),
             IconTheme.JabRefIcon.CONSOLE.getIcon());
 
-    private final AbstractAction pullRemoteChanges = new GeneralAction(Actions.PULL_REMOTE_CHANGES,
-            Localization.menuTitle("Pull remote changes"),
-            Localization.lang("Pull remote changes"),
-            Globals.getKeyPrefs().getKey(KeyBinding.PULL_REMOTE_CHANGES),
+    private final AbstractAction pullChangesFromSharedDatabase = new GeneralAction(Actions.PULL_CHANGES_FROM_SHARED_DATABASE,
+            Localization.menuTitle("Pull_changes_from_shared_database"),
+            Localization.lang("Pull_changes_from_shared_database"),
+            Globals.getKeyPrefs().getKey(KeyBinding.PULL_CHANGES_FROM_SHARED_DATABASE),
             IconTheme.JabRefIcon.PULL.getIcon());
 
     private final AbstractAction mark = new GeneralAction(Actions.MARK_ENTRIES, Localization.menuTitle("Mark entries"),
@@ -487,8 +487,8 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
     private final List<Object> openDatabaseOnlyActions = new LinkedList<>();
     private final List<Object> severalDatabasesOnlyActions = new LinkedList<>();
     private final List<Object> openAndSavedDatabasesOnlyActions = new LinkedList<>();
-    private final List<Object> remoteDatabasesOnlyActions = new LinkedList<>();
-    private final List<Object> noRemoteDatabasesActions = new LinkedList<>();
+    private final List<Object> sharedDatabaseOnlyActions = new LinkedList<>();
+    private final List<Object> noSharedDatabaseActions = new LinkedList<>();
 
 
     private class EditModeAction extends AbstractAction {
@@ -691,8 +691,8 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
                 String databaseFile = panel.getBibDatabaseContext().getDatabaseFile().getPath();
                 setTitle(FRAME_TITLE + " - " + databaseFile + changeFlag + modeInfo);
             }
-        } else if (panel.getBibDatabaseContext().getLocation() == DatabaseLocation.REMOTE) {
-            setTitle(FRAME_TITLE + " - " + panel.getBibDatabaseContext().getDBSynchronizer().getDBName() + " (remote)"
+        } else if (panel.getBibDatabaseContext().getLocation() == DatabaseLocation.SHARED) {
+            setTitle(FRAME_TITLE + " - " + panel.getBibDatabaseContext().getDBSynchronizer().getDBName() + " [shared]"
                     + modeInfo);
         }
     }
@@ -1162,8 +1162,8 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
         file.add(exportAll);
         file.add(exportSelected);
         file.addSeparator();
-        file.add(openRemoteDatabaseAction);
-        file.add(pullRemoteChanges);
+        file.add(openSharedDatabaseAction);
+        file.add(pullChangesFromSharedDatabase);
 
         file.addSeparator();
         file.add(databaseProperties);
@@ -1434,7 +1434,7 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
         tlb.addAction(makeKeyAction);
         tlb.addAction(cleanupEntries);
         tlb.addAction(mergeEntries);
-        tlb.addAction(pullRemoteChanges);
+        tlb.addAction(pullChangesFromSharedDatabase);
         tlb.addAction(openConsole);
 
         tlb.addSeparator();
@@ -1521,8 +1521,8 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
                 .asList(nextTab, prevTab, sortTabs));
 
         openAndSavedDatabasesOnlyActions.addAll(Collections.singletonList(openConsole));
-        remoteDatabasesOnlyActions.addAll(Collections.singletonList(pullRemoteChanges));
-        noRemoteDatabasesActions.addAll(Arrays.asList(save, saveAll));
+        sharedDatabaseOnlyActions.addAll(Collections.singletonList(pullChangesFromSharedDatabase));
+        noSharedDatabaseActions.addAll(Arrays.asList(save, saveAll));
 
         tabbedPane.addChangeListener(event -> updateEnabledState());
 
@@ -1561,7 +1561,7 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
             getBackAction().setEnabled(false);
             getForwardAction().setEnabled(false);
             setEnabled(openAndSavedDatabasesOnlyActions, false);
-            setEnabled(remoteDatabasesOnlyActions, false);
+            setEnabled(sharedDatabaseOnlyActions, false);
         }
 
 
@@ -1571,9 +1571,9 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
                 boolean saved = current.getBibDatabaseContext().getDatabaseFile() != null;
                 setEnabled(openAndSavedDatabasesOnlyActions, saved);
             }
-            boolean isRemote = current.getBibDatabaseContext().getLocation() == DatabaseLocation.REMOTE;
-            setEnabled(remoteDatabasesOnlyActions, isRemote);
-            setEnabled(noRemoteDatabasesActions, !isRemote);
+            boolean isShared = current.getBibDatabaseContext().getLocation() == DatabaseLocation.SHARED;
+            setEnabled(sharedDatabaseOnlyActions, isShared);
+            setEnabled(noSharedDatabaseActions, !isShared);
         }
     }
 

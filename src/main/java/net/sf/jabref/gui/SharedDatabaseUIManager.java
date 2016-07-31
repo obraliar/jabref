@@ -2,9 +2,9 @@ package net.sf.jabref.gui;
 
 import javax.swing.JOptionPane;
 
-import net.sf.jabref.event.RemoteConnectionLostEvent;
-import net.sf.jabref.event.RemoteEntryNotPresentEvent;
-import net.sf.jabref.event.RemoteUpdateLockEvent;
+import net.sf.jabref.event.ConnectionLostEvent;
+import net.sf.jabref.event.SharedEntryNotPresentEvent;
+import net.sf.jabref.event.UpdateRefusedEvent;
 import net.sf.jabref.logic.l10n.Localization;
 import net.sf.jabref.model.database.DatabaseLocation;
 import net.sf.jabref.model.entry.BibEntry;
@@ -12,18 +12,18 @@ import net.sf.jabref.shared.DBMSSynchronizer;
 
 import com.google.common.eventbus.Subscribe;
 
-public class RemoteDatabaseUIManager {
+public class SharedDatabaseUIManager {
 
     private final JabRefFrame jabRefFrame;
     private final DBMSSynchronizer dbmsSynchronizer;
 
-    public RemoteDatabaseUIManager(JabRefFrame jabRefFrame) {
+    public SharedDatabaseUIManager(JabRefFrame jabRefFrame) {
         this.jabRefFrame = jabRefFrame;
         this.dbmsSynchronizer = jabRefFrame.getCurrentBasePanel().getBibDatabaseContext().getDBSynchronizer();
     }
 
     @Subscribe
-    public void listen(RemoteConnectionLostEvent connectionLostEvent) {
+    public void listen(ConnectionLostEvent connectionLostEvent) {
 
         jabRefFrame.output(Localization.lang("Connection lost."));
 
@@ -37,8 +37,8 @@ public class RemoteDatabaseUIManager {
 
         if (answer == 0) {
             jabRefFrame.closeCurrentTab();
-            OpenRemoteDatabaseDialog openRemoteDBDialog = new OpenRemoteDatabaseDialog(jabRefFrame);
-            openRemoteDBDialog.setVisible(true);
+            OpenSharedDatabaseDialog openSharedDatabaseDialog = new OpenSharedDatabaseDialog(jabRefFrame);
+            openSharedDatabaseDialog.setVisible(true);
         } else if (answer == 1) {
             connectionLostEvent.getBibDatabaseContext().updateDatabaseLocation(DatabaseLocation.LOCAL);
             jabRefFrame.refreshTitleAndTabs();
@@ -50,23 +50,23 @@ public class RemoteDatabaseUIManager {
     }
 
     @Subscribe
-    public void listen(RemoteUpdateLockEvent remoteUpdateLockEvent) {
+    public void listen(UpdateRefusedEvent updateRefusedEvent) {
 
         jabRefFrame.output(Localization.lang("Update refused."));
 
-        new MergeRemoteEntryDialog(jabRefFrame, dbmsSynchronizer, remoteUpdateLockEvent.getLocalBibEntry(),
-                remoteUpdateLockEvent.getRemoteBibEntry(),
-                    remoteUpdateLockEvent.getBibDatabaseContext().getMode()).showMergeDialog();
+        new MergeSharedEntryDialog(jabRefFrame, dbmsSynchronizer, updateRefusedEvent.getLocalBibEntry(),
+                updateRefusedEvent.getSharedBibEntry(),
+                    updateRefusedEvent.getBibDatabaseContext().getMode()).showMergeDialog();
     }
 
     @Subscribe
-    public void listen(RemoteEntryNotPresentEvent remoteEntryNotPresentEvent) {
-        BibEntry bibEntry = remoteEntryNotPresentEvent.getBibEntry();
+    public void listen(SharedEntryNotPresentEvent sharedEntryNotPresentEvent) {
+        BibEntry bibEntry = sharedEntryNotPresentEvent.getBibEntry();
 
         String[] options = {Localization.lang("Keep"), Localization.lang("Close")};
 
         int answer = JOptionPane.showOptionDialog(jabRefFrame,
-                Localization.lang("The BibEntry you currently work on has been deleted on the remote side. "
+                Localization.lang("The BibEntry you currently work on has been deleted on the shared side. "
                         + "Hit \"Keep\" to recover the entry.") + "\n\n",
                 Localization.lang("Update refused"), JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.INFORMATION_MESSAGE,
                 null, options, options[0]);

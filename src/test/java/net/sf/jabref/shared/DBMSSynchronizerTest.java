@@ -62,7 +62,7 @@ public class DBMSSynchronizerTest {
 
         bibDatabase.registerListener(dbmsSynchronizer);
 
-        dbmsSynchronizer.openRemoteDatabase(connection, dbmsType, "TEST");
+        dbmsSynchronizer.openSharedDatabase(connection, dbmsType, "TEST");
     }
 
     @Parameters(name = "Test with {0} database system")
@@ -76,10 +76,10 @@ public class DBMSSynchronizerTest {
         BibEntry furtherEntry = getBibEntryExample(1);
 
         bibDatabase.insertEntry(expectedEntry);
-        // should not add remotely.
-        bibDatabase.insertEntry(furtherEntry, EntryEventSource.REMOTE);
+        // should not add into shared database.
+        bibDatabase.insertEntry(furtherEntry, EntryEventSource.SHARED);
 
-        List<BibEntry> actualEntries = dbmsProcessor.getRemoteEntries();
+        List<BibEntry> actualEntries = dbmsProcessor.getSharedEntries();
 
         Assert.assertEquals(1, actualEntries.size());
         Assert.assertEquals(expectedEntry, actualEntries.get(0));
@@ -92,9 +92,9 @@ public class DBMSSynchronizerTest {
 
         bibDatabase.insertEntry(expectedEntry);
         expectedEntry.setField("author", "Brad L and Gilson");
-        expectedEntry.setField("title", "The micro multiplexer", EntryEventSource.REMOTE);
+        expectedEntry.setField("title", "The micro multiplexer", EntryEventSource.SHARED);
 
-        List<BibEntry> actualEntries = dbmsProcessor.getRemoteEntries();
+        List<BibEntry> actualEntries = dbmsProcessor.getSharedEntries();
         Assert.assertEquals(1, actualEntries.size());
         Assert.assertEquals(expectedEntry.getFieldOptional("author"), actualEntries.get(0).getFieldOptional("author"));
         Assert.assertEquals("The nano processor1", actualEntries.get(0).getFieldOptional("title").get());
@@ -106,19 +106,19 @@ public class DBMSSynchronizerTest {
         BibEntry bibEntry = getBibEntryExample(1);
         bibDatabase.insertEntry(bibEntry);
 
-        List<BibEntry> actualEntries = dbmsProcessor.getRemoteEntries();
+        List<BibEntry> actualEntries = dbmsProcessor.getSharedEntries();
         Assert.assertEquals(1, actualEntries.size());
         Assert.assertEquals(bibEntry, actualEntries.get(0));
 
         bibDatabase.removeEntry(bibEntry);
-        actualEntries = dbmsProcessor.getRemoteEntries();
+        actualEntries = dbmsProcessor.getSharedEntries();
 
         Assert.assertEquals(0, actualEntries.size());
 
         bibDatabase.insertEntry(bibEntry);
-        bibDatabase.removeEntry(bibEntry, EntryEventSource.REMOTE);
+        bibDatabase.removeEntry(bibEntry, EntryEventSource.SHARED);
 
-        actualEntries = dbmsProcessor.getRemoteEntries();
+        actualEntries = dbmsProcessor.getSharedEntries();
         Assert.assertEquals(1, actualEntries.size());
         Assert.assertEquals(bibEntry, actualEntries.get(0));
     }
@@ -131,7 +131,7 @@ public class DBMSSynchronizerTest {
         testMetaData.putData("databaseType", Arrays.asList("bibtex"));
 
         Map<String, String> expectedMap = testMetaData.getAsStringMap();
-        Map<String, String> actualMap = dbmsProcessor.getRemoteMetaData();
+        Map<String, String> actualMap = dbmsProcessor.getSharedMetaData();
 
         Assert.assertEquals(expectedMap, actualMap);
     }
@@ -187,7 +187,7 @@ public class DBMSSynchronizerTest {
         bibEntry.setType("book");
         bibEntry.setField("author", "Wirthlin, Michael J" + index);
         bibEntry.setField("title", "The nano processor" + index);
-        bibEntry.setRemoteId(index);
+        bibEntry.setSharedID(index);
         return bibEntry;
     }
 

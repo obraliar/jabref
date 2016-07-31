@@ -51,7 +51,7 @@ import net.sf.jabref.shared.DBMSType;
 
 import com.jgoodies.forms.builder.ButtonBarBuilder;
 
-public class OpenRemoteDatabaseDialog extends JDialog {
+public class OpenSharedDatabaseDialog extends JDialog {
 
     private final JabRefFrame frame;
 
@@ -77,18 +77,18 @@ public class OpenRemoteDatabaseDialog extends JDialog {
     private final JButton connectButton = new JButton(Localization.lang("Connect"));
     private final JButton cancelButton = new JButton(Localization.lang("Cancel"));
 
-    private static final String REMOTE_DATABASE_TYPE = "remoteDatabaseType";
-    private static final String REMOTE_HOST = "remoteHost";
-    private static final String REMOTE_PORT = "remotePort";
-    private static final String REMOTE_DATABASE = "remoteDatabase";
-    private static final String REMOTE_USER = "remoteUser";
+    private static final String SHARED_DATABASE_TYPE = "sharedDatabaseType";
+    private static final String SHARED_DATABASE_HOST = "sharedDatabaseHost";
+    private static final String SHARED_DATABASE_PORT = "sharedDatabasePort";
+    private static final String SHARED_DATABASE_NAME = "sharedDatabaseName";
+    private static final String SHARED_DATABASE_USER = "sharedDatabaseUser";
 
 
     /**
      * @param frame the JabRef Frame
      */
-    public OpenRemoteDatabaseDialog(JabRefFrame frame) {
-        super(frame, Localization.lang("Open remote database"));
+    public OpenSharedDatabaseDialog(JabRefFrame frame) {
+        super(frame, Localization.lang("Open shared database"));
         this.frame = frame;
         initLayout();
         applyGlobalPrefs();
@@ -110,7 +110,7 @@ public class OpenRemoteDatabaseDialog extends JDialog {
                     BibDatabaseMode selectedMode = Globals.prefs.getDefaultBibDatabaseMode();
 
                     BibDatabaseContext bibDatabaseContext = new BibDatabaseContext(new Defaults(selectedMode),
-                            DatabaseLocation.REMOTE);
+                            DatabaseLocation.SHARED);
 
                     DBMSType selectedType = (DBMSType) dbmsTypeDropDown.getSelectedItem();
                     String host = hostField.getText();
@@ -120,23 +120,23 @@ public class OpenRemoteDatabaseDialog extends JDialog {
                     String password = new String(passwordField.getPassword()); //JPasswordField.getPassword() does not return a String, but a char array.
 
                     bibDatabaseContext.getDBSynchronizer()
-                            .openRemoteDatabase(selectedType, host, port, database, user, password);
+                            .openSharedDatabase(selectedType, host, port, database, user, password);
 
                     frame.addTab(bibDatabaseContext, true);
 
                     setGlobalPrefs();
 
-                    bibDatabaseContext.getDBSynchronizer().registerListener(new RemoteDatabaseUIManager(frame));
-                    frame.output(Localization.lang("Remote_connection_to_%0_server_stablished.", selectedType.toString()));
+                    bibDatabaseContext.getDBSynchronizer().registerListener(new SharedDatabaseUIManager(frame));
+                    frame.output(Localization.lang("Connection_to_%0_server_stablished.", selectedType.toString()));
                     dispose();
                 } catch (ClassNotFoundException exception) {
-                    JOptionPane.showMessageDialog(OpenRemoteDatabaseDialog.this, exception.getMessage(), Localization.lang("Driver error"),
+                    JOptionPane.showMessageDialog(OpenSharedDatabaseDialog.this, exception.getMessage(), Localization.lang("Driver error"),
                             JOptionPane.ERROR_MESSAGE);
                 } catch (SQLException exception) {
-                    JOptionPane.showMessageDialog(OpenRemoteDatabaseDialog.this, exception.getMessage(),
+                    JOptionPane.showMessageDialog(OpenSharedDatabaseDialog.this, exception.getMessage(),
                             Localization.lang("Connection error"), JOptionPane.ERROR_MESSAGE);
                 } catch (JabRefException exception) {
-                    JOptionPane.showMessageDialog(OpenRemoteDatabaseDialog.this, exception.getMessage(),
+                    JOptionPane.showMessageDialog(OpenSharedDatabaseDialog.this, exception.getMessage(),
                             Localization.lang("Warning"), JOptionPane.WARNING_MESSAGE);
                 }
             }
@@ -173,35 +173,35 @@ public class OpenRemoteDatabaseDialog extends JDialog {
      * Fetches possibly saved data and configures the control elements respectively.
      */
     private void applyGlobalPrefs() {
-        Optional<String> remoteDatabaseType = Globals.prefs.getAsOptional(REMOTE_DATABASE_TYPE);
-        Optional<String> remoteHost = Globals.prefs.getAsOptional(REMOTE_HOST);
-        Optional<String> remotePort = Globals.prefs.getAsOptional(REMOTE_PORT);
-        Optional<String> remoteDatabase = Globals.prefs.getAsOptional(REMOTE_DATABASE);
-        Optional<String> remoteUser = Globals.prefs.getAsOptional(REMOTE_USER);
+        Optional<String> sharedDatabaseType = Globals.prefs.getAsOptional(SHARED_DATABASE_TYPE);
+        Optional<String> sharedDatabaseHost = Globals.prefs.getAsOptional(SHARED_DATABASE_HOST);
+        Optional<String> sharedDatabasePort = Globals.prefs.getAsOptional(SHARED_DATABASE_PORT);
+        Optional<String> sharedDatabaseName = Globals.prefs.getAsOptional(SHARED_DATABASE_NAME);
+        Optional<String> sharedDatabaseUser = Globals.prefs.getAsOptional(SHARED_DATABASE_USER);
 
-        if (remoteDatabaseType.isPresent()) {
-            Optional<DBMSType> dbmsType = DBMSType.fromString(remoteDatabaseType.get());
+        if (sharedDatabaseType.isPresent()) {
+            Optional<DBMSType> dbmsType = DBMSType.fromString(sharedDatabaseType.get());
             if (dbmsType.isPresent()) {
                 dbmsTypeDropDown.setSelectedItem(dbmsType.get());
             }
         }
 
-        if (remoteHost.isPresent()) {
-            hostField.setText(remoteHost.get());
+        if (sharedDatabaseHost.isPresent()) {
+            hostField.setText(sharedDatabaseHost.get());
         }
 
-        if (remotePort.isPresent()) {
-            portField.setText(remotePort.get());
+        if (sharedDatabasePort.isPresent()) {
+            portField.setText(sharedDatabasePort.get());
         } else {
             portField.setText(Integer.toString(((DBMSType) dbmsTypeDropDown.getSelectedItem()).getDefaultPort()));
         }
 
-        if (remoteDatabase.isPresent()) {
-            databaseField.setText(remoteDatabase.get());
+        if (sharedDatabaseName.isPresent()) {
+            databaseField.setText(sharedDatabaseName.get());
         }
 
-        if (remoteUser.isPresent()) {
-            userField.setText(remoteUser.get());
+        if (sharedDatabaseUser.isPresent()) {
+            userField.setText(sharedDatabaseUser.get());
         }
     }
 
@@ -300,11 +300,11 @@ public class OpenRemoteDatabaseDialog extends JDialog {
      * Saves the data from this dialog persistently to facilitate the usage.
      */
     public void setGlobalPrefs() {
-        Globals.prefs.put(REMOTE_DATABASE_TYPE, ((DBMSType) dbmsTypeDropDown.getSelectedItem()).toString());
-        Globals.prefs.put(REMOTE_HOST, hostField.getText());
-        Globals.prefs.put(REMOTE_PORT, portField.getText());
-        Globals.prefs.put(REMOTE_DATABASE, databaseField.getText());
-        Globals.prefs.put(REMOTE_USER, userField.getText());
+        Globals.prefs.put(SHARED_DATABASE_TYPE, ((DBMSType) dbmsTypeDropDown.getSelectedItem()).toString());
+        Globals.prefs.put(SHARED_DATABASE_HOST, hostField.getText());
+        Globals.prefs.put(SHARED_DATABASE_PORT, portField.getText());
+        Globals.prefs.put(SHARED_DATABASE_NAME, databaseField.getText());
+        Globals.prefs.put(SHARED_DATABASE_USER, userField.getText());
     }
 
     private boolean isEmptyField(JTextField field) {

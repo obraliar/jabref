@@ -18,24 +18,25 @@ import net.sf.jabref.model.database.BibDatabaseMode;
 import net.sf.jabref.model.entry.BibEntry;
 import net.sf.jabref.shared.DBMSSynchronizer;
 
-public class MergeRemoteEntryDialog {
+public class MergeSharedEntryDialog {
 
     private final JabRefFrame jabRefFrame;
     private final DBMSSynchronizer dbmsSynchronizer;
     private final BibEntry localBibEntry;
-    private final BibEntry remoteBibEntry;
+    private final BibEntry sharedBibEntry;
     private final JDialog mergeDialog;
     private final MergeEntries mergeEntries;
 
 
-    public MergeRemoteEntryDialog(JabRefFrame jabRefFrame, DBMSSynchronizer dbmsSynchronizer, BibEntry localBibEntry,
-            BibEntry remoteBibEntry, BibDatabaseMode bibDatabaseMode) {
+    public MergeSharedEntryDialog(JabRefFrame jabRefFrame, DBMSSynchronizer dbmsSynchronizer, BibEntry localBibEntry,
+            BibEntry sharedBibEntry, BibDatabaseMode bibDatabaseMode) {
         this.jabRefFrame = jabRefFrame;
         this.dbmsSynchronizer = dbmsSynchronizer;
         this.localBibEntry = localBibEntry;
-        this.remoteBibEntry = remoteBibEntry;
+        this.sharedBibEntry = sharedBibEntry;
         this.mergeDialog = new JDialog(jabRefFrame, Localization.lang("Update refused"), true);
-        this.mergeEntries = new MergeEntries(localBibEntry, remoteBibEntry, "Local BibEntry", "Remote BibEntry", bibDatabaseMode);
+        this.mergeEntries = new MergeEntries(localBibEntry, sharedBibEntry, Localization.lang("Local entry"),
+                Localization.lang("Shared entry"), bibDatabaseMode);
     }
 
     public void showMergeDialog() {
@@ -44,12 +45,18 @@ public class MergeRemoteEntryDialog {
 
         StringBuilder message = new StringBuilder();
         message.append("<html>");
-        message.append("<b>Update could not be performed due to existing change conflicts.</b>");
+        message.append("<b>");
+        message.append(Localization.lang("Update could not be performed due to existing change conflicts."));
+        message.append("</b>");
         message.append("<br/><br/>");
-        message.append("You are not working on the newest version of BibEntry.<br/><br/>"
-                + "Your version: " + localBibEntry.getVersion() + "<br/>"
-                + "Remote version: " + remoteBibEntry.getVersion() + "<br/><br/>"
-                + "Please merge the remote version with yours and press \"Merge entries\" to resolve this problem.<br/>");
+        message.append(Localization.lang("You are not working on the newest version of BibEntry."));
+        message.append("<br/><br/>");
+        message.append(Localization.lang("Local version: %0", String.valueOf(localBibEntry.getVersion())));
+        message.append("<br/>");
+        message.append(Localization.lang("Shared version: %0", String.valueOf(sharedBibEntry.getVersion())));
+        message.append("<br/><br/>");
+        message.append(Localization.lang("Please merge the shared entry with yours and press \"Merge entries\" to resolve this problem."));
+        message.append("<br/>");
 
         JLabel mergeInnformation = new JLabel(message.toString());
         mergeInnformation.setBorder(new EmptyBorder(9, 9, 9, 9));
@@ -82,12 +89,10 @@ public class MergeRemoteEntryDialog {
     }
 
     private void showConfirmationDialog() {
-        String[] options = {Localization.lang("Yes"), Localization.lang("No")};
-
-        int answer = JOptionPane.showOptionDialog(mergeDialog,
+        int answer = JOptionPane.showConfirmDialog(mergeDialog,
                 Localization.lang("Canceling this operation will leave your changes unsynchronized. Cancel anyway?"),
-                Localization.lang("Warning"), JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE,
-                null, options, options[1]);
+                Localization.lang("Warning"), JOptionPane.YES_NO_OPTION);
+
         if (answer == 0) {
             mergeDialog.dispose();
         }
@@ -95,12 +100,12 @@ public class MergeRemoteEntryDialog {
 
     private void mergeEntries() {
         BibEntry mergedBibEntry = mergeEntries.getMergeEntry();
-        mergedBibEntry.setRemoteId(remoteBibEntry.getRemoteId());
-        mergedBibEntry.setVersion(remoteBibEntry.getVersion());
+        mergedBibEntry.setSharedID(sharedBibEntry.getSharedID());
+        mergedBibEntry.setVersion(sharedBibEntry.getVersion());
 
         mergeDialog.dispose(); // dispose before synchronizing to avoid multiple merge windows in case of new conflict.
 
-        dbmsSynchronizer.synchrnizeRemoteEntry(mergedBibEntry);
+        dbmsSynchronizer.synchrnizeSharedEntry(mergedBibEntry);
         dbmsSynchronizer.synchronizeLocalDatabase();
     }
 }

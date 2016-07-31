@@ -83,20 +83,20 @@ public class DBMSProcessor {
     /**
      * Creates and sets up the needed tables and columns according to the database type.
      */
-    public void setUpRemoteDatabase() {
+    public void setUpSharedDatabase() {
         if (dbmsType == DBMSType.MYSQL) {
             dbmsHelper.executeUpdate(
                 "CREATE TABLE IF NOT EXISTS `ENTRY` (" +
-                "`REMOTE_ID` INT(11) NOT NULL PRIMARY KEY AUTO_INCREMENT, " +
+                "`SHARED_ID` INT(11) NOT NULL PRIMARY KEY AUTO_INCREMENT, " +
                 "`TYPE` VARCHAR(255) NOT NULL, " +
                 "`VERSION` INT(11) DEFAULT 1)");
 
             dbmsHelper.executeUpdate(
                 "CREATE TABLE IF NOT EXISTS `FIELD` (" +
-                "`ENTRY_REMOTE_ID` INT(11) NOT NULL, " +
+                "`ENTRY_SHARED_ID` INT(11) NOT NULL, " +
                 "`NAME` VARCHAR(255) NOT NULL, " +
                 "`VALUE` TEXT DEFAULT NULL, " +
-                "FOREIGN KEY (`ENTRY_REMOTE_ID`) REFERENCES `ENTRY`(`REMOTE_ID`) ON DELETE CASCADE)");
+                "FOREIGN KEY (`ENTRY_SHARED_ID`) REFERENCES `ENTRY`(`SHARED_ID`) ON DELETE CASCADE)");
 
             dbmsHelper.executeUpdate("CREATE TABLE IF NOT EXISTS `METADATA` (" +
                     "`KEY` varchar(255) NOT NULL," +
@@ -105,13 +105,13 @@ public class DBMSProcessor {
         } else if (dbmsType == DBMSType.POSTGRESQL) {
             dbmsHelper.executeUpdate(
                 "CREATE TABLE IF NOT EXISTS \"ENTRY\" (" +
-                "\"REMOTE_ID\" SERIAL PRIMARY KEY, " +
+                "\"SHARED_ID\" SERIAL PRIMARY KEY, " +
                 "\"TYPE\" VARCHAR, " +
                 "\"VERSION\" INTEGER DEFAULT 1)");
 
             dbmsHelper.executeUpdate(
                 "CREATE TABLE IF NOT EXISTS \"FIELD\" (" +
-                "\"ENTRY_REMOTE_ID\" INTEGER REFERENCES \"ENTRY\"(\"REMOTE_ID\") ON DELETE CASCADE, " +
+                "\"ENTRY_SHARED_ID\" INTEGER REFERENCES \"ENTRY\"(\"SHARED_ID\") ON DELETE CASCADE, " +
                 "\"NAME\" VARCHAR, " +
                 "\"VALUE\" TEXT)");
 
@@ -122,23 +122,23 @@ public class DBMSProcessor {
         } else if (dbmsType == DBMSType.ORACLE) {
             dbmsHelper.executeUpdate(
                 "CREATE TABLE \"ENTRY\" (" +
-                "\"REMOTE_ID\" NUMBER NOT NULL, " +
+                "\"SHARED_ID\" NUMBER NOT NULL, " +
                 "\"TYPE\" VARCHAR2(255) NULL, " +
                 "\"VERSION\" NUMBER DEFAULT 1, " +
-                "CONSTRAINT \"ENTRY_PK\" PRIMARY KEY (\"REMOTE_ID\"))");
+                "CONSTRAINT \"ENTRY_PK\" PRIMARY KEY (\"SHARED_ID\"))");
 
             dbmsHelper.executeUpdate("CREATE SEQUENCE \"ENTRY_SEQ\"");
 
             dbmsHelper.executeUpdate("CREATE TRIGGER \"ENTRY_T\" BEFORE INSERT ON \"ENTRY\" " +
-                "FOR EACH ROW BEGIN SELECT \"ENTRY_SEQ\".NEXTVAL INTO :NEW.remote_id FROM DUAL; END;");
+                "FOR EACH ROW BEGIN SELECT \"ENTRY_SEQ\".NEXTVAL INTO :NEW.shared_id FROM DUAL; END;");
 
             dbmsHelper.executeUpdate(
                 "CREATE TABLE \"FIELD\" (" +
-                "\"ENTRY_REMOTE_ID\" NUMBER NOT NULL, " +
+                "\"ENTRY_SHARED_ID\" NUMBER NOT NULL, " +
                 "\"NAME\" VARCHAR2(255) NOT NULL, " +
                 "\"VALUE\" CLOB NULL, " +
-                "CONSTRAINT \"ENTRY_REMOTE_ID_FK\" FOREIGN KEY (\"ENTRY_REMOTE_ID\") " +
-                "REFERENCES \"ENTRY\"(\"REMOTE_ID\") ON DELETE CASCADE)");
+                "CONSTRAINT \"ENTRY_SHARED_ID_FK\" FOREIGN KEY (\"ENTRY_SHARED_ID\") " +
+                "REFERENCES \"ENTRY\"(\"SHARED_ID\") ON DELETE CASCADE)");
 
             dbmsHelper.executeUpdate("CREATE TABLE \"METADATA\" (" +
                     "\"KEY\"  VARCHAR2(255) NULL," +
@@ -146,21 +146,21 @@ public class DBMSProcessor {
 
         }
         if (!checkBaseIntegrity()) {
-            // can only happen with users direct intervention in remote database
-            LOGGER.error(Localization.lang("Corrupt_remote_database_structure."));
+            // can only happen with users direct intervention on shared database
+            LOGGER.error(Localization.lang("Corrupt_shared_database_structure."));
         }
     }
 
     /**
-     * Inserts the given bibEntry into remote database.
+     * Inserts the given bibEntry into shared database.
      * @param bibEntry {@link BibEntry} to be inserted
      */
     public void insertEntry(BibEntry bibEntry) {
 
         // Check if already exists
-        int remote_id = bibEntry.getRemoteId();
-        if (remote_id != -1) {
-            try (ResultSet resultSet = selectFromEntryTable(remote_id)) {
+        int sharedID = bibEntry.getSharedID();
+        if (sharedID != -1) {
+            try (ResultSet resultSet = selectFromEntryTable(sharedID)) {
                 if (resultSet.next()) {
                     return;
                 }
@@ -179,14 +179,14 @@ public class DBMSProcessor {
 
         // This is the only method to get generated keys which is accepted by MySQL, PostgreSQL and Oracle.
         try (PreparedStatement preparedEntryStatement = dbmsHelper.prepareStatement(insertIntoEntryQuery.toString(),
-                "REMOTE_ID")) {
+                "SHARED_ID")) {
 
             preparedEntryStatement.setString(1, bibEntry.getType());
             preparedEntryStatement.executeUpdate();
 
             try (ResultSet generatedKeys = preparedEntryStatement.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
-                    bibEntry.setRemoteId(generatedKeys.getInt(1)); // set generated ID locally
+                    bibEntry.setSharedID(generatedKeys.getInt(1)); // set generated ID locally
                 }
             }
 
@@ -196,7 +196,7 @@ public class DBMSProcessor {
                 insertFieldQuery.append("INSERT INTO ");
                 insertFieldQuery.append(escape("FIELD"));
                 insertFieldQuery.append("(");
-                insertFieldQuery.append(escape("ENTRY_REMOTE_ID"));
+                insertFieldQuery.append(escape("ENTRY_SHARED_ID"));
                 insertFieldQuery.append(", ");
                 insertFieldQuery.append(escape("NAME"));
                 insertFieldQuery.append(", ");
@@ -205,7 +205,7 @@ public class DBMSProcessor {
 
                 try (PreparedStatement preparedFieldStatement = dbmsHelper.prepareStatement(insertFieldQuery.toString())) {
                     // columnIndex starts with 1
-                    preparedFieldStatement.setInt(1, bibEntry.getRemoteId());
+                    preparedFieldStatement.setInt(1, bibEntry.getSharedID());
                     preparedFieldStatement.setString(2, fieldName);
                     preparedFieldStatement.setString(3, bibEntry.getFieldOptional(fieldName).get());
                     preparedFieldStatement.executeUpdate();
@@ -218,24 +218,24 @@ public class DBMSProcessor {
     }
 
     /**
-     * Updates the whole {@link BibEntry} remotely.
+     * Updates the whole {@link BibEntry} on shared database.
      *
      * @param localBibEntry {@link BibEntry} affected by changes
      */
-    public void updateEntry(BibEntry localBibEntry) throws OfflineLockException, RemoteEntryNotPresentException {
+    public void updateEntry(BibEntry localBibEntry) throws OfflineLockException, SharedEntryNotPresentException {
         dbmsHelper.setAutoCommit(false); // disable auto commit due to transaction
 
         try {
-            Optional<BibEntry> remoteEntryOptional = getRemoteEntry(localBibEntry.getRemoteId());
+            Optional<BibEntry> sharedEntryOptional = getSharedEntry(localBibEntry.getSharedID());
 
-            if (!remoteEntryOptional.isPresent()) {
-                throw new RemoteEntryNotPresentException(localBibEntry);
+            if (!sharedEntryOptional.isPresent()) {
+                throw new SharedEntryNotPresentException(localBibEntry);
             }
 
-            BibEntry remoteBibEntry = remoteEntryOptional.get();
+            BibEntry sharedBibEntry = sharedEntryOptional.get();
 
-            // remove remote fields which does not exist locally
-            Set<String> nullFields = new HashSet<>(remoteBibEntry.getFieldNames());
+            // remove shared fields which does not exist locally
+            Set<String> nullFields = new HashSet<>(sharedBibEntry.getFieldNames());
             nullFields.removeAll(localBibEntry.getFieldNames());
             for (String nullField : nullFields) {
                 StringBuilder deleteFieldQuery = new StringBuilder();
@@ -244,17 +244,17 @@ public class DBMSProcessor {
                 deleteFieldQuery.append(" WHERE ");
                 deleteFieldQuery.append(escape("NAME"));
                 deleteFieldQuery.append(" = ? AND ");
-                deleteFieldQuery.append(escape("ENTRY_REMOTE_ID"));
+                deleteFieldQuery.append(escape("ENTRY_SHARED_ID"));
                 deleteFieldQuery.append(" = ?");
 
                 try (PreparedStatement preparedDeleteFieldStatement = dbmsHelper.prepareStatement(deleteFieldQuery.toString())) {
                     preparedDeleteFieldStatement.setString(1, nullField);
-                    preparedDeleteFieldStatement.setInt(2, localBibEntry.getRemoteId());
+                    preparedDeleteFieldStatement.setInt(2, localBibEntry.getSharedID());
                     preparedDeleteFieldStatement.executeUpdate();
                 }
             }
 
-            if (localBibEntry.getVersion() >= remoteBibEntry.getVersion()) {
+            if (localBibEntry.getVersion() >= sharedBibEntry.getVersion()) {
 
                 for (String fieldName : localBibEntry.getFieldNames()) {
                     // avoiding to use deprecated BibEntry.getField() method. null values are accepted by PreparedStatement!
@@ -270,12 +270,12 @@ public class DBMSProcessor {
                     selectFieldQuery.append(" WHERE ");
                     selectFieldQuery.append(escape("NAME"));
                     selectFieldQuery.append(" = ? AND ");
-                    selectFieldQuery.append(escape("ENTRY_REMOTE_ID"));
+                    selectFieldQuery.append(escape("ENTRY_SHARED_ID"));
                     selectFieldQuery.append(" = ?");
 
                     try (PreparedStatement preparedSelectFieldStatement = dbmsHelper.prepareStatement(selectFieldQuery.toString())) {
                         preparedSelectFieldStatement.setString(1, fieldName);
-                        preparedSelectFieldStatement.setInt(2, localBibEntry.getRemoteId());
+                        preparedSelectFieldStatement.setInt(2, localBibEntry.getSharedID());
 
                         try (ResultSet selectFieldResultSet = preparedSelectFieldStatement.executeQuery()) {
                             if (selectFieldResultSet.next()) { // check if field already exists
@@ -287,14 +287,14 @@ public class DBMSProcessor {
                                 updateFieldQuery.append(" = ? WHERE ");
                                 updateFieldQuery.append(escape("NAME"));
                                 updateFieldQuery.append(" = ? AND ");
-                                updateFieldQuery.append(escape("ENTRY_REMOTE_ID"));
+                                updateFieldQuery.append(escape("ENTRY_SHARED_ID"));
                                 updateFieldQuery.append(" = ?");
 
                                 try (PreparedStatement preparedUpdateFieldStatement = dbmsHelper
                                         .prepareStatement(updateFieldQuery.toString())) {
                                     preparedUpdateFieldStatement.setString(1, value);
                                     preparedUpdateFieldStatement.setString(2, fieldName);
-                                    preparedUpdateFieldStatement.setInt(3, localBibEntry.getRemoteId());
+                                    preparedUpdateFieldStatement.setInt(3, localBibEntry.getSharedID());
                                     preparedUpdateFieldStatement.executeUpdate();
                                 }
                             } else {
@@ -302,7 +302,7 @@ public class DBMSProcessor {
                                 insertFieldQuery.append("INSERT INTO ");
                                 insertFieldQuery.append(escape("FIELD"));
                                 insertFieldQuery.append("(");
-                                insertFieldQuery.append(escape("ENTRY_REMOTE_ID"));
+                                insertFieldQuery.append(escape("ENTRY_SHARED_ID"));
                                 insertFieldQuery.append(", ");
                                 insertFieldQuery.append(escape("NAME"));
                                 insertFieldQuery.append(", ");
@@ -311,7 +311,7 @@ public class DBMSProcessor {
 
                                 try (PreparedStatement preparedFieldStatement = dbmsHelper
                                         .prepareStatement(insertFieldQuery.toString())) {
-                                    preparedFieldStatement.setInt(1, localBibEntry.getRemoteId());
+                                    preparedFieldStatement.setInt(1, localBibEntry.getSharedID());
                                     preparedFieldStatement.setString(2, fieldName);
                                     preparedFieldStatement.setString(3, value);
                                     preparedFieldStatement.executeUpdate();
@@ -332,18 +332,18 @@ public class DBMSProcessor {
                 updateEntryTypeQuery.append(" = ");
                 updateEntryTypeQuery.append(escape("VERSION"));
                 updateEntryTypeQuery.append(" + 1 WHERE ");
-                updateEntryTypeQuery.append(escape("REMOTE_ID"));
+                updateEntryTypeQuery.append(escape("SHARED_ID"));
                 updateEntryTypeQuery.append(" = ?");
                 try (PreparedStatement preparedUpdateEntryTypeStatement = dbmsHelper.prepareStatement(updateEntryTypeQuery.toString())) {
                     preparedUpdateEntryTypeStatement.setString(1, localBibEntry.getType());
-                    preparedUpdateEntryTypeStatement.setInt(2, localBibEntry.getRemoteId());
+                    preparedUpdateEntryTypeStatement.setInt(2, localBibEntry.getSharedID());
                     preparedUpdateEntryTypeStatement.executeUpdate();
                 }
 
                 dbmsHelper.commit(); // apply all changes in current transaction
 
             } else {
-                throw new OfflineLockException(localBibEntry, remoteBibEntry);
+                throw new OfflineLockException(localBibEntry, sharedBibEntry);
             }
         } catch (SQLException e) {
             LOGGER.error("SQL Error: ", e);
@@ -354,7 +354,7 @@ public class DBMSProcessor {
     }
 
     /**
-     * Removes the remote existing bibEntry
+     * Removes the shared bibEntry.
      * @param bibEntry {@link BibEntry} to be deleted
      */
     public void removeEntry(BibEntry bibEntry) {
@@ -362,11 +362,11 @@ public class DBMSProcessor {
         query.append("DELETE FROM ");
         query.append(escape("ENTRY"));
         query.append(" WHERE ");
-        query.append(escape("REMOTE_ID"));
+        query.append(escape("SHARED_ID"));
         query.append(" = ?");
 
         try (PreparedStatement preparedStatement = dbmsHelper.prepareStatement(query.toString())) {
-            preparedStatement.setInt(1, bibEntry.getRemoteId());
+            preparedStatement.setInt(1, bibEntry.getSharedID());
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             LOGGER.error("SQL Error: ", e);
@@ -375,47 +375,47 @@ public class DBMSProcessor {
     }
 
     /**
-     * @param remoteId Entry ID
+     * @param sharedID Entry ID
      * @return instance of {@link BibEntry}
      */
-    public Optional<BibEntry> getRemoteEntry(int remoteId) {
-        List<BibEntry> remoteEntries = getRemoteEntryList(remoteId);
-        if (!remoteEntries.isEmpty()) {
-            return Optional.of(remoteEntries.get(0));
+    public Optional<BibEntry> getSharedEntry(int sharedID) {
+        List<BibEntry> sharedEntries = getSharedEntryList(sharedID);
+        if (!sharedEntries.isEmpty()) {
+            return Optional.of(sharedEntries.get(0));
         }
         return Optional.empty();
     }
 
-    public List<BibEntry> getRemoteEntries() {
-        return getRemoteEntryList(0);
+    public List<BibEntry> getSharedEntries() {
+        return getSharedEntryList(0);
     }
 
     /**
-     * @param remoteId Entry ID. If 0, all entries are going to be fetched.
+     * @param sharedID Entry ID. If 0, all entries are going to be fetched.
      * @return List of {@link BibEntry} instances
      */
-    private List<BibEntry> getRemoteEntryList(int remoteId) {
-        List<BibEntry> remoteEntries = new ArrayList<>();
+    private List<BibEntry> getSharedEntryList(int sharedID) {
+        List<BibEntry> sharedEntries = new ArrayList<>();
 
         StringBuilder selectEntryQuery = new StringBuilder();
         selectEntryQuery.append("SELECT * FROM ");
         selectEntryQuery.append(escape("ENTRY"));
 
-        if (remoteId != 0) {
+        if (sharedID != 0) {
             selectEntryQuery.append(" WHERE ");
-            selectEntryQuery.append(escape("REMOTE_ID"));
+            selectEntryQuery.append(escape("SHARED_ID"));
             selectEntryQuery.append(" = ");
-            selectEntryQuery.append(remoteId);
+            selectEntryQuery.append(sharedID);
         }
 
         selectEntryQuery.append(" ORDER BY ");
-        selectEntryQuery.append(escape("REMOTE_ID"));
+        selectEntryQuery.append(escape("SHARED_ID"));
 
         try (ResultSet selectEntryResultSet = dbmsHelper.query(selectEntryQuery.toString())) {
             while (selectEntryResultSet.next()) {
                 BibEntry bibEntry = new BibEntry();
                 // setting the base attributes once
-                bibEntry.setRemoteId(selectEntryResultSet.getInt("REMOTE_ID"));
+                bibEntry.setSharedID(selectEntryResultSet.getInt("SHARED_ID"));
                 bibEntry.setType(selectEntryResultSet.getString("TYPE"));
                 bibEntry.setVersion(selectEntryResultSet.getInt("VERSION"));
 
@@ -423,51 +423,51 @@ public class DBMSProcessor {
                 selectFieldQuery.append("SELECT * FROM ");
                 selectFieldQuery.append(escape("FIELD"));
                 selectFieldQuery.append(" WHERE ");
-                selectFieldQuery.append(escape("ENTRY_REMOTE_ID"));
+                selectFieldQuery.append(escape("ENTRY_SHARED_ID"));
                 selectFieldQuery.append(" = ");
-                selectFieldQuery.append(selectEntryResultSet.getInt("REMOTE_ID"));
+                selectFieldQuery.append(selectEntryResultSet.getInt("SHARED_ID"));
 
                 try (ResultSet selectFieldResultSet = dbmsHelper.query(selectFieldQuery.toString())) {
                     while (selectFieldResultSet.next()) {
                         bibEntry.setField(selectFieldResultSet.getString("NAME"),
-                                Optional.ofNullable(selectFieldResultSet.getString("VALUE")), EntryEventSource.REMOTE);
+                                Optional.ofNullable(selectFieldResultSet.getString("VALUE")), EntryEventSource.SHARED);
                     }
                 }
-                remoteEntries.add(bibEntry);
+                sharedEntries.add(bibEntry);
             }
         } catch (SQLException e) {
             LOGGER.error("SQL Error", e);
         }
 
-        return remoteEntries;
+        return sharedEntries;
     }
 
     /**
-     * Retrieves a mapping between the columns REMOTE_ID and VERSION.
+     * Retrieves a mapping between the columns SHARED_ID and VERSION.
      */
-    public Map<Integer, Integer> getRemoteIdVersionMapping() {
-        Map<Integer, Integer> remoteIdVersionMapping = new HashMap<>();
+    public Map<Integer, Integer> getSharedIDVersionMapping() {
+        Map<Integer, Integer> sharedIDVersionMapping = new HashMap<>();
         StringBuilder selectEntryQuery = new StringBuilder();
         selectEntryQuery.append("SELECT * FROM ");
         selectEntryQuery.append(escape("ENTRY"));
         selectEntryQuery.append(" ORDER BY ");
-        selectEntryQuery.append(escape("REMOTE_ID"));
+        selectEntryQuery.append(escape("SHARED_ID"));
 
         try (ResultSet selectEntryResultSet = dbmsHelper.query(selectEntryQuery.toString())) {
             while (selectEntryResultSet.next()) {
-                remoteIdVersionMapping.put(selectEntryResultSet.getInt("REMOTE_ID"), selectEntryResultSet.getInt("VERSION"));
+                sharedIDVersionMapping.put(selectEntryResultSet.getInt("SHARED_ID"), selectEntryResultSet.getInt("VERSION"));
             }
         } catch (SQLException e) {
             LOGGER.error("SQL Error", e);
         }
 
-        return remoteIdVersionMapping;
+        return sharedIDVersionMapping;
     }
 
     /**
-     * Fetches and returns all remotely present meta data.
+     * Fetches and returns all shared meta data.
      */
-    public Map<String, String> getRemoteMetaData() {
+    public Map<String, String> getSharedMetaData() {
         Map<String, String> data = new HashMap<>();
 
         try (ResultSet resultSet = dbmsHelper.query("SELECT * FROM " + escape("METADATA"))) {
@@ -482,10 +482,10 @@ public class DBMSProcessor {
     }
 
     /**
-     * Clears and sets all meta data remotely.
+     * Clears and sets all shared meta data.
      * @param metaData JabRef meta data.
      */
-    public void setRemoteMetaData(Map<String, String> data) {
+    public void setSharedMetaData(Map<String, String> data) {
         dbmsHelper.executeUpdate("TRUNCATE TABLE " + escape("METADATA")); // delete data all data from table
 
         for (Map.Entry<String, String> metaEntry : data.entrySet()) {
@@ -511,17 +511,17 @@ public class DBMSProcessor {
 
     /**
      * Helping method for SQL selection retrieving a {@link ResultSet}
-     * @param remoteId Remote existent ID of {@link BibEntry}
+     * @param sharedID Existent ID of {@link BibEntry} on shared database
      */
-    private ResultSet selectFromEntryTable(int remoteId) throws SQLException {
+    private ResultSet selectFromEntryTable(int sharedID) throws SQLException {
         StringBuilder query = new StringBuilder();
 
         query.append("SELECT * FROM ");
         query.append(escape("ENTRY"));
         query.append(" WHERE ");
-        query.append(escape("REMOTE_ID"));
+        query.append(escape("SHARED_ID"));
         query.append(" = ");
-        query.append(remoteId);
+        query.append(sharedID);
 
         return dbmsHelper.query(query.toString());
     }

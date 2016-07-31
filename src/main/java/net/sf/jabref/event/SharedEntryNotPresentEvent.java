@@ -3,17 +3,17 @@ package net.sf.jabref.event;
 import net.sf.jabref.model.entry.BibEntry;
 
 /**
- * A new {@link RemoteEntryNotPresentEvent} is fired, when the user tries to push changes of an obsolete
+ * A new {@link SharedEntryNotPresentEvent} is fired, when the user tries to push changes of an obsolete
  * {@link BibEntry} to the server.
  */
-public class RemoteEntryNotPresentEvent {
+public class SharedEntryNotPresentEvent {
 
     private final BibEntry bibEntry;
 
     /**
      * @param bibEntry Affected {@link BibEntry}
      */
-    public RemoteEntryNotPresentEvent(BibEntry bibEntry) {
+    public SharedEntryNotPresentEvent(BibEntry bibEntry) {
         this.bibEntry = bibEntry;
     }
 

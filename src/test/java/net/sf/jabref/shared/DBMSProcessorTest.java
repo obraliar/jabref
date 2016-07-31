@@ -47,7 +47,7 @@ public class DBMSProcessorTest {
         }
         dbmsHelper = new DBMSHelper(connection);
         dbmsProcessor = new DBMSProcessor(dbmsHelper, dbmsType);
-        dbmsProcessor.setUpRemoteDatabase();
+        dbmsProcessor.setUpSharedDatabase();
 
     }
 
@@ -64,9 +64,9 @@ public class DBMSProcessorTest {
     }
 
     @Test
-    public void testSetUpRemoteDatabase() {
+    public void testSetUpSharedDatabase() {
         clear();
-        dbmsProcessor.setUpRemoteDatabase();
+        dbmsProcessor.setUpSharedDatabase();
         Assert.assertTrue(dbmsProcessor.checkBaseIntegrity());
     }
 
@@ -80,13 +80,13 @@ public class DBMSProcessorTest {
         realEntry.setField("booktitle", "FPGAs for Custom Computing Machines, 1994. Proceedings. IEEE Workshop on");
         realEntry.setField("year", "1994");
         realEntry.setCiteKey("nanoproc1994");
-        realEntry.setRemoteId(1);
+        realEntry.setSharedID(1);
 
         dbmsProcessor.insertEntry(realEntry);
 
         BibEntry emptyEntry = new BibEntry();
-        emptyEntry.setRemoteId(1);
-        dbmsProcessor.insertEntry(emptyEntry); // does not insert, due to same remoteId.
+        emptyEntry.setSharedID(1);
+        dbmsProcessor.insertEntry(emptyEntry); // does not insert, due to same sharedID.
 
         try (ResultSet resultSet = selectFrom("ENTRY")) {
 
@@ -118,37 +118,37 @@ public class DBMSProcessorTest {
     }
 
     @Test
-    public void testGetRemoteEntries() {
+    public void testGetSharedEntries() {
         BibEntry bibEntry = getBibEntryExampleWithEmptyFields();
 
         dbmsProcessor.insertEntry(bibEntry);
 
         List<BibEntry> expectedEntries = Arrays.asList(bibEntry);
-        List<BibEntry> actualEntries = dbmsProcessor.getRemoteEntries();
+        List<BibEntry> actualEntries = dbmsProcessor.getSharedEntries();
 
         Assert.assertEquals(expectedEntries, actualEntries);
     }
 
     @Test
-    public void testGetRemoteMetaData() {
+    public void testGetSharedMetaData() {
         insertMetaData("databaseType", "bibtex;");
         insertMetaData("protectedFlag", "true;");
         insertMetaData("saveActions", "enabled;\nauthor[capitalize,html_to_latex]\ntitle[title_case]\n;");
         insertMetaData("saveOrderConfig", "specified;author;false;title;false;year;true;");
 
         Map<String, String> expectedMetaData = getMetaDataExample();
-        Map<String, String> actualMetaData = dbmsProcessor.getRemoteMetaData();
+        Map<String, String> actualMetaData = dbmsProcessor.getSharedMetaData();
 
         Assert.assertEquals(expectedMetaData, actualMetaData);
 
     }
 
     @Test
-    public void testSetRemoteMetaData() {
+    public void testSetSharedMetaData() {
         Map<String, String> expectedMetaData = getMetaDataExample();
-        dbmsProcessor.setRemoteMetaData(expectedMetaData);
+        dbmsProcessor.setSharedMetaData(expectedMetaData);
 
-        Map<String, String> actualMetaData = dbmsProcessor.getRemoteMetaData();
+        Map<String, String> actualMetaData = dbmsProcessor.getSharedMetaData();
 
         Assert.assertEquals(expectedMetaData, actualMetaData);
     }
@@ -186,7 +186,7 @@ public class DBMSProcessorTest {
         bibEntry.setField("author", "Author");
         bibEntry.setField("title", "");
         bibEntry.setField("year", "");
-        bibEntry.setRemoteId(1);
+        bibEntry.setSharedID(1);
         return bibEntry;
     }
 
