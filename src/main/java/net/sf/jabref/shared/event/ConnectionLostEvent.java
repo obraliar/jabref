@@ -1,4 +1,4 @@
-package net.sf.jabref.event;
+package net.sf.jabref.shared.event;
 
 import net.sf.jabref.BibDatabaseContext;
 

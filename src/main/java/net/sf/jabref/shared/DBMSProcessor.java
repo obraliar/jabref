@@ -31,6 +31,8 @@ import java.util.Set;
 import net.sf.jabref.event.source.EntryEventSource;
 import net.sf.jabref.logic.l10n.Localization;
 import net.sf.jabref.model.entry.BibEntry;
+import net.sf.jabref.shared.exception.OfflineLockException;
+import net.sf.jabref.shared.exception.SharedEntryNotPresentException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

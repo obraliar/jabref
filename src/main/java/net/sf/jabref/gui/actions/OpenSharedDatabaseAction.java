@@ -5,7 +5,7 @@ import java.awt.event.ActionEvent;
 import javax.swing.Action;
 
 import net.sf.jabref.gui.JabRefFrame;
-import net.sf.jabref.gui.OpenSharedDatabaseDialog;
+import net.sf.jabref.gui.shared.OpenSharedDatabaseDialog;
 import net.sf.jabref.logic.l10n.Localization;
 
 /**

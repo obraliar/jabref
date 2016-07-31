@@ -1,14 +1,15 @@
-package net.sf.jabref.gui;
+package net.sf.jabref.gui.shared;
 
 import javax.swing.JOptionPane;
 
-import net.sf.jabref.event.ConnectionLostEvent;
-import net.sf.jabref.event.SharedEntryNotPresentEvent;
-import net.sf.jabref.event.UpdateRefusedEvent;
+import net.sf.jabref.gui.JabRefFrame;
 import net.sf.jabref.logic.l10n.Localization;
 import net.sf.jabref.model.database.DatabaseLocation;
 import net.sf.jabref.model.entry.BibEntry;
 import net.sf.jabref.shared.DBMSSynchronizer;
+import net.sf.jabref.shared.event.ConnectionLostEvent;
+import net.sf.jabref.shared.event.SharedEntryNotPresentEvent;
+import net.sf.jabref.shared.event.UpdateRefusedEvent;
 
 import com.google.common.eventbus.Subscribe;
 
