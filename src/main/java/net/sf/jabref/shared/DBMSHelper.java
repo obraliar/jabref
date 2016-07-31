@@ -19,13 +19,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -44,45 +38,12 @@ public class DBMSHelper {
     }
 
     /**
-     * Retrieves all present columns of the given relational table.
-     * @param table Name of the table
-     * @return Set of column names.
-     */
-    public Set<String> getColumnNames(String table) {
-        Set<String> columnNames = new HashSet<>();
-        try (ResultSet resultSet = query("SELECT * FROM " + table)) {
-            ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
-            int count = resultSetMetaData.getColumnCount();
-
-            for (int i = 0; i < count; i++) {
-                columnNames.add(resultSetMetaData.getColumnName(i + 1));
-            }
-
-
-        } catch (SQLException e) {
-            LOGGER.error("SQL Error: ", e);
-        }
-        return columnNames;
-    }
-
-    /**
      * Executes the given query and retrieves the {@link ResultSet}
      * @param query SQL Query
      * @return Instance of {@link ResultSet}
      */
     public ResultSet query(String query) throws SQLException {
         return connection.createStatement().executeQuery(query);
-    }
-
-    /**
-     * Executes the given query and retrieves the {@link ResultSet}
-     * @param query SQL Query
-     * @param resultSetType
-     * @param resultSetConcurrency
-     * @return Instance of {@link ResultSet}
-     */
-    public ResultSet query(String query, int resultSetType, int resultSetConcurrency) throws SQLException {
-        return connection.createStatement(resultSetType, resultSetConcurrency).executeQuery(query);
     }
 
     /**
@@ -119,14 +80,6 @@ public class DBMSHelper {
      */
     public PreparedStatement prepareStatement(String query, String... columnNames) throws SQLException {
         return connection.prepareStatement(query, columnNames);
-    }
-
-    /**
-     *  Converts even String value to uppercase representation.
-     *  Useful to harmonize character case for different database systems (see {@link DBMSType}).
-     */
-    public Set<String> allToUpperCase(Set<String> stringSet) {
-        return stringSet.stream().map(n -> n.toUpperCase(Locale.ENGLISH)).collect(Collectors.toSet());
     }
 
     /**

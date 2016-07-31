@@ -180,10 +180,10 @@ public class BibDatabase {
      * use Util.createId(...) to make up a unique ID for an entry.
      *
      * @param entry BibEntry to insert
-     * @param eventLocation Event location which is affected by inserting a new entry
+     * @param eventSource Source the event is sent from
      * @return false if the insert was done without a duplicate warning
      */
-    public synchronized boolean insertEntry(BibEntry entry, EntryEventSource eventLocation)
+    public synchronized boolean insertEntry(BibEntry entry, EntryEventSource eventSource)
             throws KeyCollisionException {
         Objects.requireNonNull(entry);
 
@@ -195,7 +195,7 @@ public class BibDatabase {
         internalIDs.add(id);
         entries.add(entry);
         entry.registerListener(this);
-        eventBus.post(new EntryAddedEvent(entry, eventLocation));
+        eventBus.post(new EntryAddedEvent(entry, eventSource));
         return duplicationChecker.checkForDuplicateKeyAndAdd(null, entry.getCiteKey());
     }
 
@@ -212,16 +212,16 @@ public class BibDatabase {
      * Removes the given entry.
      * The Entry is removed based on the id {@link BibEntry#id}
      * @param toBeDeleted Entry to delete
-     * @param eventLocation Event location which is affected by deleting the entry
+     * @param eventSource Source the event is sent from
      */
-    public synchronized void removeEntry(BibEntry toBeDeleted, EntryEventSource eventLocation) {
+    public synchronized void removeEntry(BibEntry toBeDeleted, EntryEventSource eventSource) {
         Objects.requireNonNull(toBeDeleted);
 
         boolean anyRemoved =  entries.removeIf(entry -> entry.getId().equals(toBeDeleted.getId()));
         if (anyRemoved) {
             internalIDs.remove(toBeDeleted.getId());
             duplicationChecker.removeKeyFromSet(toBeDeleted.getCiteKey());
-            eventBus.post(new EntryRemovedEvent(toBeDeleted, eventLocation));
+            eventBus.post(new EntryRemovedEvent(toBeDeleted, eventSource));
         }
     }
 

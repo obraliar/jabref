@@ -175,7 +175,7 @@ public class BibEntry implements Cloneable {
     /**
      * Sets this entry's type.
      */
-    public void setType(String type, EntryEventSource eventLocation) {
+    public void setType(String type, EntryEventSource eventSource) {
         String newType;
         if (Strings.isNullOrEmpty(type)) {
             newType = DEFAULT_TYPE;
@@ -188,7 +188,7 @@ public class BibEntry implements Cloneable {
         // sets off a change in database sorting etc.
         this.type = newType.toLowerCase(Locale.ENGLISH);
         changed = true;
-        eventBus.post(new FieldChangedEvent(this, TYPE_HEADER, newType, eventLocation));
+        eventBus.post(new FieldChangedEvent(this, TYPE_HEADER, newType, eventSource));
     }
 
     /**
@@ -361,11 +361,11 @@ public class BibEntry implements Cloneable {
 
     /**
      * Set a field, and notify listeners about the change.
-     * @param name  The field to set.
-     * @param value The value to set.
-     * @param eventLocation Event location affected while setting the field
+     * @param name  The field to set
+     * @param value The value to set
+     * @param eventSource Source the event is sent from
      */
-    public Optional<FieldChange> setField(String name, String value, EntryEventSource eventLocation) {
+    public Optional<FieldChange> setField(String name, String value, EntryEventSource eventSource) {
         Objects.requireNonNull(name, "field name must not be null");
         Objects.requireNonNull(value, "field value must not be null");
 
@@ -390,13 +390,13 @@ public class BibEntry implements Cloneable {
         fieldsAsWords.remove(fieldName);
 
         FieldChange change = new FieldChange(this, fieldName, oldValue, value);
-        eventBus.post(new FieldChangedEvent(change, eventLocation));
+        eventBus.post(new FieldChangedEvent(change, eventSource));
         return Optional.of(change);
     }
 
-    public Optional<FieldChange> setField(String name, Optional<String> value, EntryEventSource eventLocation) {
+    public Optional<FieldChange> setField(String name, Optional<String> value, EntryEventSource eventSource) {
         if (value.isPresent()) {
-            return setField(name, value.get(), eventLocation);
+            return setField(name, value.get(), eventSource);
         }
         return Optional.empty();
     }

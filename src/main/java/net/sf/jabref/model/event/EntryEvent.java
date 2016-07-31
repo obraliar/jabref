@@ -33,7 +33,7 @@ public abstract class EntryEvent {
         return this.bibEntry;
     }
 
-    public EntryEventSource getEntryEventLocation() {
+    public EntryEventSource getEntryEventSource() {
         return this.location;
     }
 }

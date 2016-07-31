@@ -79,7 +79,7 @@ public class DBMSSynchronizer {
     public void listen(EntryAddedEvent event) {
         // While synchronizing the local database (see synchronizeLocalDatabase() below), some EntryEvents may be posted.
         // In this case DBSynchronizer should not try to insert the bibEntry entry again (but it would not harm).
-        if (isInEventLocation(event) && checkCurrentConnection()) {
+        if (isEventSourceAccepted(event) && checkCurrentConnection()) {
             dbmsProcessor.insertEntry(event.getBibEntry());
             synchronizeLocalMetaData();
             synchronizeLocalDatabase(); // Pull changes for the case that there were some
@@ -94,7 +94,7 @@ public class DBMSSynchronizer {
     public void listen(FieldChangedEvent event) {
         // While synchronizing the local database (see synchronizeLocalDatabase() below), some EntryEvents may be posted.
         // In this case DBSynchronizer should not try to update the bibEntry entry again (but it would not harm).
-        if (isInEventLocation(event) && checkCurrentConnection()) {
+        if (isEventSourceAccepted(event) && checkCurrentConnection()) {
             synchronizeLocalMetaData();
             try {
                 BibEntry bibEntry = event.getBibEntry();
@@ -119,7 +119,7 @@ public class DBMSSynchronizer {
     public void listen(EntryRemovedEvent event) {
         // While synchronizing the local database (see synchronizeLocalDatabase() below), some EntryEvents may be posted.
         // In this case DBSynchronizer should not try to delete the bibEntry entry again (but it would not harm).
-        if (isInEventLocation(event) && checkCurrentConnection()) {
+        if (isEventSourceAccepted(event) && checkCurrentConnection()) {
             dbmsProcessor.removeEntry(event.getBibEntry());
             synchronizeLocalMetaData();
             synchronizeLocalDatabase(); // Pull changes for the case that there where some
@@ -311,9 +311,9 @@ public class DBMSSynchronizer {
      * @param event An {@link EntryEvent}
      * @return <code>true</code> if the event is able to trigger operations in {@link DBMSSynchronizer}, else <code>false</code>
      */
-    public boolean isInEventLocation(EntryEvent event) {
-        EntryEventSource eventLocation = event.getEntryEventLocation();
-        return ((eventLocation == EntryEventSource.LOCAL) || (eventLocation == EntryEventSource.UNDO));
+    public boolean isEventSourceAccepted(EntryEvent event) {
+        EntryEventSource eventSource = event.getEntryEventSource();
+        return ((eventSource == EntryEventSource.LOCAL) || (eventSource == EntryEventSource.UNDO));
     }
 
     public void openSharedDatabase(Connection connection, DBMSType type, String name) {

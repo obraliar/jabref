@@ -1200,7 +1200,7 @@ public class BasePanel extends JPanel implements ClipboardOwner, FileUpdateListe
         @Subscribe
         public void listen(EntryAddedEvent addedEntryEvent) {
             // if the added entry is an undo don't add it to the current group
-            if (addedEntryEvent.getEntryEventLocation() == EntryEventSource.UNDO) {
+            if (addedEntryEvent.getEntryEventSource() == EntryEventSource.UNDO) {
                 scheduleUpdate();
                 return;
             }
