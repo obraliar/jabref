@@ -129,6 +129,10 @@ public class DBMSHelper {
         return stringSet.stream().map(n -> n.toUpperCase(Locale.ENGLISH)).collect(Collectors.toSet());
     }
 
+    /**
+     * Sets whether the SQL queries should be committed automatically or not.
+     * See <code>setsetAutoCommit(...)</code> in {@link Connection}
+     */
     public void setAutoCommit(boolean autoCommit) {
         try {
             this.connection.setAutoCommit(autoCommit);
@@ -137,6 +141,10 @@ public class DBMSHelper {
         }
     }
 
+    /**
+     * Commit and execute all remaining SQL queries.
+     * See <code>commit()</code> in {@link Connection}
+     */
     public void commit() {
         try {
             this.connection.commit();
@@ -145,6 +153,10 @@ public class DBMSHelper {
         }
     }
 
+    /**
+     * Undoes made commit and rolls the database back to the previous state.
+     * See <code>rollback()</code> in {@link Connection}
+     */
     public void rollback() {
         try {
             this.connection.rollback();
