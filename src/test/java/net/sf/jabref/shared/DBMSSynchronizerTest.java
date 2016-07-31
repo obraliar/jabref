@@ -15,6 +15,8 @@ import net.sf.jabref.event.source.EntryEventSource;
 import net.sf.jabref.model.database.BibDatabase;
 import net.sf.jabref.model.entry.BibEntry;
 import net.sf.jabref.preferences.JabRefPreferences;
+import net.sf.jabref.shared.exception.OfflineLockException;
+import net.sf.jabref.shared.exception.SharedEntryNotPresentException;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -141,7 +143,7 @@ public class DBMSSynchronizerTest {
     }
 
     @Test
-    public void testSynchronizeLocalDatabase() {
+    public void testSynchronizeLocalDatabaseWithEntryRemoval() {
         List<BibEntry> expectedBibEntries = Arrays.asList(getBibEntryExample(1), getBibEntryExample(2));
 
         dbmsProcessor.insertEntry(expectedBibEntries.get(0));
@@ -155,11 +157,34 @@ public class DBMSSynchronizerTest {
 
         dbmsProcessor.removeEntry(expectedBibEntries.get(0));
         dbmsProcessor.removeEntry(expectedBibEntries.get(1));
+
         expectedBibEntries = new ArrayList<>();
 
         dbmsSynchronizer.synchronizeLocalDatabase();
 
         Assert.assertEquals(expectedBibEntries, bibDatabase.getEntries());
+    }
+
+    @Test
+    public void testSynchronizeLocalDatabaseWithEntryUpdate() {
+        BibEntry bibEntry = getBibEntryExample(1);
+        bibDatabase.insertEntry(bibEntry);
+        Assert.assertEquals(1, bibDatabase.getEntries().size());
+
+        BibEntry modifiedBibEntry = getBibEntryExample(1);
+        modifiedBibEntry.setField("custom", "custom value");
+        modifiedBibEntry.clearField("title");
+        modifiedBibEntry.setType("article");
+
+        try {
+            dbmsProcessor.updateEntry(modifiedBibEntry);
+        } catch (OfflineLockException | SharedEntryNotPresentException e) {
+            Assert.fail(e.getMessage());
+        }
+
+        dbmsSynchronizer.synchronizeLocalDatabase(); // testing point
+
+        Assert.assertEquals(bibDatabase.getEntries(), dbmsProcessor.getSharedEntries());
     }
 
     @Test
@@ -194,15 +219,22 @@ public class DBMSSynchronizerTest {
     public void clear() {
         try {
             if ((dbmsType == DBMSType.MYSQL) || (dbmsType == DBMSType.POSTGRESQL)) {
+                connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape("FIELD"));
                 connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape("ENTRY"));
                 connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape("METADATA"));
             } else if (dbmsType == DBMSType.ORACLE) {
-                connection.createStatement()
-                        .executeUpdate("BEGIN\n" + "EXECUTE IMMEDIATE 'DROP TABLE " + escape("ENTRY") + "';\n"
-                                + "EXECUTE IMMEDIATE 'DROP TABLE " + escape("METADATA") + "';\n"
-                                + "EXECUTE IMMEDIATE 'DROP SEQUENCE " + escape("ENTRY_SEQ") + "';\n"
-                                + "EXCEPTION\n" + "WHEN OTHERS THEN\n" + "IF SQLCODE != -942 THEN\n" + "RAISE;\n"
-                                + "END IF;\n" + "END;");
+                connection.createStatement().executeUpdate(
+                            "BEGIN\n" +
+                            "EXECUTE IMMEDIATE 'DROP TABLE " + escape("FIELD") + "';\n" +
+                            "EXECUTE IMMEDIATE 'DROP TABLE " + escape("ENTRY") + "';\n" +
+                            "EXECUTE IMMEDIATE 'DROP TABLE " + escape("METADATA") + "';\n" +
+                            "EXECUTE IMMEDIATE 'DROP SEQUENCE " + escape("ENTRY_SEQ") + "';\n" +
+                            "EXCEPTION\n" +
+                            "WHEN OTHERS THEN\n" +
+                            "IF SQLCODE != -942 THEN\n" +
+                            "RAISE;\n" +
+                            "END IF;\n" +
+                            "END;");
             }
         } catch (SQLException e) {
             Assert.fail(e.getMessage());
