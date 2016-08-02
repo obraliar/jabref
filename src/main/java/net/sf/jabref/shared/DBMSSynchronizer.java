@@ -167,20 +167,8 @@ public class DBMSSynchronizer {
         Map<Integer, Integer> idVersionMap = dbmsProcessor.getSharedIDVersionMapping();
 
         // remove old entries locally
-        for (int i = 0; i < localEntries.size(); i++) {
-            BibEntry localEntry = localEntries.get(i);
-            boolean match = false;
-            for (int sharedID : idVersionMap.keySet()) {
-                if (localEntry.getSharedID() == sharedID) {
-                    match = true;
-                    break;
-                }
-            }
-            if (!match) {
-                bibDatabase.removeEntry(localEntry, EntryEventSource.SHARED); // Should not reach the listeners above.
-                i--; // due to index shift on localEntries
-            }
-        }
+        removeNotSharedEntries(localEntries, idVersionMap.keySet());
+
         // compare versions and update local entry if needed
         for (Map.Entry<Integer, Integer> idVersionEntry : idVersionMap.entrySet()) {
             boolean match = false;
@@ -213,6 +201,29 @@ public class DBMSSynchronizer {
                 if (bibEntry.isPresent()) {
                     bibDatabase.insertEntry(bibEntry.get(), EntryEventSource.SHARED);
                 }
+            }
+        }
+    }
+
+    /**
+     * Removes all local entries which are not present on shared database.
+     *
+     * @param localEntries List of {@link BibEntry} the entries should be removed from
+     * @param sharedIDs Set of all IDs which are present on shared database
+     */
+    private void removeNotSharedEntries(List<BibEntry> localEntries, Set<Integer> sharedIDs) {
+        for (int i = 0; i < localEntries.size(); i++) {
+            BibEntry localEntry = localEntries.get(i);
+            boolean match = false;
+            for (int sharedID : sharedIDs) {
+                if (localEntry.getSharedID() == sharedID) {
+                    match = true;
+                    break;
+                }
+            }
+            if (!match) {
+                bibDatabase.removeEntry(localEntry, EntryEventSource.SHARED); // Should not reach the listeners above.
+                i--; // due to index shift on localEntries
             }
         }
     }
