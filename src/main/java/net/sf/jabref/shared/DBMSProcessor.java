@@ -60,26 +60,20 @@ public class DBMSProcessor {
     /**
      * Scans the database for required tables.
      * @return <code>true</code> if the structure matches the requirements, <code>false</code> if not.
+     * @throws SQLException
      */
-    public boolean checkBaseIntegrity() {
+    public boolean checkBaseIntegrity() throws SQLException {
         List<String> requiredTables = new ArrayList<>(Arrays.asList("ENTRY", "FIELD", "METADATA")); // the list should be dynamic
-        try {
-            DatabaseMetaData databaseMetaData = connection.getMetaData();
+        DatabaseMetaData databaseMetaData = connection.getMetaData();
 
-            // ...getTables(null, ...): no restrictions
-            try (ResultSet databaseMetaDataResultSet = databaseMetaData.getTables(null, null, null, null)) {
-
-                while (databaseMetaDataResultSet.next()) {
-                    String tableName = databaseMetaDataResultSet.getString("TABLE_NAME").toUpperCase();
-                    requiredTables.remove(tableName); // Remove matching tables to check requiredTables for emptiness
-                }
-
-                return requiredTables.isEmpty();
+        // ...getTables(null, ...): no restrictions
+        try (ResultSet databaseMetaDataResultSet = databaseMetaData.getTables(null, null, null, null)) {
+            while (databaseMetaDataResultSet.next()) {
+                String tableName = databaseMetaDataResultSet.getString("TABLE_NAME").toUpperCase();
+                requiredTables.remove(tableName); // Remove matching tables to check requiredTables for emptiness
             }
-        } catch (SQLException e) {
-            LOGGER.error("SQL Error: ", e);
+            return requiredTables.isEmpty();
         }
-        return false;
     }
 
 
