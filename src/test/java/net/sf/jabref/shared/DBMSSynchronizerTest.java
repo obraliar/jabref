@@ -212,7 +212,7 @@ public class DBMSSynchronizerTest {
     }
 
     private String escape(String expression) {
-        return dbmsProcessor.escape(expression);
+        return dbmsType.escape(expression);
     }
 
     @After

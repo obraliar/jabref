@@ -173,11 +173,11 @@ public class DBMSProcessor {
 
         // Inserting into ENTRY table
         StringBuilder insertIntoEntryQuery = new StringBuilder()
-        .append("INSERT INTO ")
-        .append(escape("ENTRY"))
-        .append("(")
-        .append(escape("TYPE"))
-        .append(") VALUES(?)");
+            .append("INSERT INTO ")
+            .append(escape("ENTRY"))
+            .append("(")
+            .append(escape("TYPE"))
+            .append(") VALUES(?)");
 
         // This is the only method to get generated keys which is accepted by MySQL, PostgreSQL and Oracle.
         try (PreparedStatement preparedEntryStatement = dbmsHelper.prepareStatement(insertIntoEntryQuery.toString(),
@@ -195,15 +195,15 @@ public class DBMSProcessor {
             // Inserting into FIELD table
             for (String fieldName : bibEntry.getFieldNames()) {
                 StringBuilder insertFieldQuery = new StringBuilder()
-                .append("INSERT INTO ")
-                .append(escape("FIELD"))
-                .append("(")
-                .append(escape("ENTRY_SHARED_ID"))
-                .append(", ")
-                .append(escape("NAME"))
-                .append(", ")
-                .append(escape("VALUE"))
-                .append(") VALUES(?, ?, ?)");
+                    .append("INSERT INTO ")
+                    .append(escape("FIELD"))
+                    .append("(")
+                    .append(escape("ENTRY_SHARED_ID"))
+                    .append(", ")
+                    .append(escape("NAME"))
+                    .append(", ")
+                    .append(escape("VALUE"))
+                    .append(") VALUES(?, ?, ?)");
 
                 try (PreparedStatement preparedFieldStatement = dbmsHelper.prepareStatement(insertFieldQuery.toString())) {
                     // columnIndex starts with 1
@@ -246,17 +246,18 @@ public class DBMSProcessor {
 
                 // updating entry type
                 StringBuilder updateEntryTypeQuery = new StringBuilder()
-                .append("UPDATE ")
-                .append(escape("ENTRY"))
-                .append(" SET ")
-                .append(escape("TYPE"))
-                .append(" = ?, ")
-                .append(escape("VERSION"))
-                .append(" = ")
-                .append(escape("VERSION"))
-                .append(" + 1 WHERE ")
-                .append(escape("SHARED_ID"))
-                .append(" = ?");
+                    .append("UPDATE ")
+                    .append(escape("ENTRY"))
+                    .append(" SET ")
+                    .append(escape("TYPE"))
+                    .append(" = ?, ")
+                    .append(escape("VERSION"))
+                    .append(" = ")
+                    .append(escape("VERSION"))
+                    .append(" + 1 WHERE ")
+                    .append(escape("SHARED_ID"))
+                    .append(" = ?");
+
                 try (PreparedStatement preparedUpdateEntryTypeStatement = dbmsHelper.prepareStatement(updateEntryTypeQuery.toString())) {
                     preparedUpdateEntryTypeStatement.setString(1, localBibEntry.getType());
                     preparedUpdateEntryTypeStatement.setInt(2, localBibEntry.getSharedID());
@@ -284,13 +285,13 @@ public class DBMSProcessor {
         nullFields.removeAll(localBibEntry.getFieldNames());
         for (String nullField : nullFields) {
             StringBuilder deleteFieldQuery = new StringBuilder()
-            .append("DELETE FROM ")
-            .append(escape("FIELD"))
-            .append(" WHERE ")
-            .append(escape("NAME"))
-            .append(" = ? AND ")
-            .append(escape("ENTRY_SHARED_ID"))
-            .append(" = ?");
+                .append("DELETE FROM ")
+                .append(escape("FIELD"))
+                .append(" WHERE ")
+                .append(escape("NAME"))
+                .append(" = ? AND ")
+                .append(escape("ENTRY_SHARED_ID"))
+                .append(" = ?");
 
             try (PreparedStatement preparedDeleteFieldStatement = dbmsHelper.prepareStatement(deleteFieldQuery.toString())) {
                 preparedDeleteFieldStatement.setString(1, nullField);
@@ -312,8 +313,13 @@ public class DBMSProcessor {
                 value = valueOptional.get();
             }
 
-            StringBuilder selectFieldQuery = new StringBuilder().append("SELECT * FROM ").append(escape("FIELD"))
-                    .append(" WHERE ").append(escape("NAME")).append(" = ? AND ").append(escape("ENTRY_SHARED_ID"))
+            StringBuilder selectFieldQuery = new StringBuilder()
+                    .append("SELECT * FROM ")
+                    .append(escape("FIELD"))
+                    .append(" WHERE ")
+                    .append(escape("NAME"))
+                    .append(" = ? AND ")
+                    .append(escape("ENTRY_SHARED_ID"))
                     .append(" = ?");
 
             try (PreparedStatement preparedSelectFieldStatement = dbmsHelper
@@ -323,9 +329,16 @@ public class DBMSProcessor {
 
                 try (ResultSet selectFieldResultSet = preparedSelectFieldStatement.executeQuery()) {
                     if (selectFieldResultSet.next()) { // check if field already exists
-                        StringBuilder updateFieldQuery = new StringBuilder().append("UPDATE ").append(escape("FIELD"))
-                                .append(" SET ").append(escape("VALUE")).append(" = ? WHERE ").append(escape("NAME"))
-                                .append(" = ? AND ").append(escape("ENTRY_SHARED_ID")).append(" = ?");
+                        StringBuilder updateFieldQuery = new StringBuilder()
+                                .append("UPDATE ")
+                                .append(escape("FIELD"))
+                                .append(" SET ")
+                                .append(escape("VALUE"))
+                                .append(" = ? WHERE ")
+                                .append(escape("NAME"))
+                                .append(" = ? AND ")
+                                .append(escape("ENTRY_SHARED_ID"))
+                                .append(" = ?");
 
                         try (PreparedStatement preparedUpdateFieldStatement = dbmsHelper
                                 .prepareStatement(updateFieldQuery.toString())) {
@@ -335,9 +348,15 @@ public class DBMSProcessor {
                             preparedUpdateFieldStatement.executeUpdate();
                         }
                     } else {
-                        StringBuilder insertFieldQuery = new StringBuilder().append("INSERT INTO ")
-                                .append(escape("FIELD")).append("(").append(escape("ENTRY_SHARED_ID")).append(", ")
-                                .append(escape("NAME")).append(", ").append(escape("VALUE"))
+                        StringBuilder insertFieldQuery = new StringBuilder()
+                                .append("INSERT INTO ")
+                                .append(escape("FIELD"))
+                                .append("(")
+                                .append(escape("ENTRY_SHARED_ID"))
+                                .append(", ")
+                                .append(escape("NAME"))
+                                .append(", ")
+                                .append(escape("VALUE"))
                                 .append(") VALUES(?, ?, ?)");
 
                         try (PreparedStatement preparedFieldStatement = dbmsHelper
@@ -359,11 +378,11 @@ public class DBMSProcessor {
      */
     public void removeEntry(BibEntry bibEntry) {
         StringBuilder query = new StringBuilder()
-        .append("DELETE FROM ")
-        .append(escape("ENTRY"))
-        .append(" WHERE ")
-        .append(escape("SHARED_ID"))
-        .append(" = ?");
+                .append("DELETE FROM ")
+                .append(escape("ENTRY"))
+                .append(" WHERE ")
+                .append(escape("SHARED_ID"))
+                .append(" = ?");
 
         try (PreparedStatement preparedStatement = dbmsHelper.prepareStatement(query.toString())) {
             preparedStatement.setInt(1, bibEntry.getSharedID());
@@ -420,17 +439,19 @@ public class DBMSProcessor {
                 bibEntry.setVersion(selectEntryResultSet.getInt("VERSION"));
 
                 StringBuilder selectFieldQuery = new StringBuilder()
-                .append("SELECT * FROM ")
-                .append(escape("FIELD"))
-                .append(" WHERE ")
-                .append(escape("ENTRY_SHARED_ID"))
-                .append(" = ")
-                .append(selectEntryResultSet.getInt("SHARED_ID"));
+                    .append("SELECT * FROM ")
+                    .append(escape("FIELD"))
+                    .append(" WHERE ")
+                    .append(escape("ENTRY_SHARED_ID"))
+                    .append(" = ?");
 
-                try (ResultSet selectFieldResultSet = dbmsHelper.query(selectFieldQuery.toString())) {
-                    while (selectFieldResultSet.next()) {
-                        bibEntry.setField(selectFieldResultSet.getString("NAME"),
-                                Optional.ofNullable(selectFieldResultSet.getString("VALUE")), EntryEventSource.SHARED);
+                try (PreparedStatement preparedSelectFieldStatement = dbmsHelper.prepareStatement(selectFieldQuery.toString())) {
+                    preparedSelectFieldStatement.setInt(1, selectEntryResultSet.getInt("SHARED_ID"));
+                    try (ResultSet selectFieldResultSet = preparedSelectFieldStatement.executeQuery()) {
+                        while (selectFieldResultSet.next()) {
+                            bibEntry.setField(selectFieldResultSet.getString("NAME"),
+                                    Optional.ofNullable(selectFieldResultSet.getString("VALUE")), EntryEventSource.SHARED);
+                        }
                     }
                 }
                 sharedEntries.add(bibEntry);
@@ -448,10 +469,10 @@ public class DBMSProcessor {
     public Map<Integer, Integer> getSharedIDVersionMapping() {
         Map<Integer, Integer> sharedIDVersionMapping = new HashMap<>();
         StringBuilder selectEntryQuery = new StringBuilder()
-        .append("SELECT * FROM ")
-        .append(escape("ENTRY"))
-        .append(" ORDER BY ")
-        .append(escape("SHARED_ID"));
+            .append("SELECT * FROM ")
+            .append(escape("ENTRY"))
+            .append(" ORDER BY ")
+            .append(escape("SHARED_ID"));
 
         try (ResultSet selectEntryResultSet = dbmsHelper.query(selectEntryQuery.toString())) {
             while (selectEntryResultSet.next()) {
@@ -491,13 +512,13 @@ public class DBMSProcessor {
         for (Map.Entry<String, String> metaEntry : data.entrySet()) {
 
             StringBuilder query = new StringBuilder()
-            .append("INSERT INTO ")
-            .append(escape("METADATA"))
-            .append("(")
-            .append(escape("KEY"))
-            .append(", ")
-            .append(escape("VALUE"))
-            .append(") VALUES(?, ?)");
+                .append("INSERT INTO ")
+                .append(escape("METADATA"))
+                .append("(")
+                .append(escape("KEY"))
+                .append(", ")
+                .append(escape("VALUE"))
+                .append(") VALUES(?, ?)");
 
             try (PreparedStatement preparedStatement = dbmsHelper.prepareStatement(query.toString())) {
                 preparedStatement.setString(1, metaEntry.getKey());
@@ -515,40 +536,26 @@ public class DBMSProcessor {
      */
     private ResultSet selectFromEntryTable(int sharedID) throws SQLException {
         StringBuilder query = new StringBuilder()
-        .append("SELECT * FROM ")
-        .append(escape("ENTRY"))
-        .append(" WHERE ")
-        .append(escape("SHARED_ID"))
-        .append(" = ")
-        .append(sharedID);
+            .append("SELECT * FROM ")
+            .append(escape("ENTRY"))
+            .append(" WHERE ")
+            .append(escape("SHARED_ID"))
+            .append(" = ?");
 
-        return dbmsHelper.query(query.toString());
-    }
-
-    /**
-     * Escapes parts of SQL expressions like table or field name to match the conventions
-     * of the database system.
-     * @param expression Table or field name
-     * @param type Type of database system
-     * @return Correctly escape expression
-     */
-    public static String escape(String expression, DBMSType type) {
-        if (type == DBMSType.MYSQL) {
-            return "`" + expression + "`";
-        } else if ((type == DBMSType.ORACLE) || (type == DBMSType.POSTGRESQL)) {
-            return "\"" + expression + "\"";
+        try (PreparedStatement preparedStatement = dbmsHelper.prepareStatement(query.toString())) {
+            preparedStatement.setInt(1, sharedID);
+            return preparedStatement.executeQuery();
         }
-        return expression;
     }
 
     /**
      * Escapes parts of SQL expressions like table or field name to match the conventions
      * of the database system using the current dbmsType.
      * @param expression Table or field name
-     * @return Correctly escape expression
+     * @return Correctly escaped expression
      */
-    public String escape(String expression) {
-        return escape(expression, dbmsType);
+    private String escape(String expression) {
+        return dbmsType.escape(expression);
     }
 
     public void setDBType(DBMSType dbmsType) {

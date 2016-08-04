@@ -268,20 +268,6 @@ public class DBMSProcessorTest {
         Assert.assertEquals(expectedMetaData, actualMetaData);
     }
 
-    @Test
-    public void testEscape() {
-
-        if (dbmsType == DBMSType.MYSQL) {
-            Assert.assertEquals("`TABLE`", dbmsProcessor.escape("TABLE"));
-            Assert.assertEquals("`TABLE`", DBMSProcessor.escape("TABLE", dbmsType));
-        } else if ((dbmsType == DBMSType.ORACLE) || (dbmsType == DBMSType.POSTGRESQL)) {
-            Assert.assertEquals("\"TABLE\"", dbmsProcessor.escape("TABLE"));
-            Assert.assertEquals("\"TABLE\"", DBMSProcessor.escape("TABLE", dbmsType));
-        }
-
-        Assert.assertEquals("TABLE", DBMSProcessor.escape("TABLE", null));
-    }
-
     private Map<String, String> getMetaDataExample() {
         Map<String, String> expectedMetaData = new HashMap<>();
 
@@ -335,7 +321,7 @@ public class DBMSProcessorTest {
     }
 
     private String escape(String expression) {
-        return dbmsProcessor.escape(expression);
+        return dbmsType.escape(expression);
     }
 
     private String escapeValue(String value) {

@@ -15,7 +15,6 @@
 */
 package net.sf.jabref.shared;
 
-import java.util.EnumSet;
 import java.util.Optional;
 
 /**
@@ -36,10 +35,10 @@ public enum DBMSType {
             "org.postgresql.Driver",
             "jdbc:postgresql://%s:%d/%s", 5432);
 
-    private String type;
-    private String driverPath;
-    private String urlPattern;
-    private int defaultPort;
+    private final String type;
+    private final String driverPath;
+    private final String urlPattern;
+    private final int defaultPort;
 
 
     private DBMSType(String type, String driverPath, String urlPattern, int defaultPort) {
@@ -76,13 +75,26 @@ public enum DBMSType {
     }
 
     public static Optional<DBMSType> fromString(String typeName) {
-        for (DBMSType dbmsType : EnumSet.allOf(DBMSType.class)) {
-            if (typeName.equals(dbmsType.toString())) {
-                return Optional.ofNullable(dbmsType);
-            }
+        try {
+            return Optional.of(Enum.valueOf(DBMSType.class, typeName.toUpperCase()));
+        } catch (IllegalArgumentException exception) {
+            return Optional.empty();
         }
-        return Optional.empty();
     }
 
+    /**
+     * Escapes parts of SQL expressions like table or field name to match the conventions
+     * of the current database system type.
+     * @param expression Table or field name
+     * @return Correctly escaped expression
+     */
+    public String escape(String expression) {
+        if (this == DBMSType.MYSQL) {
+            return "`" + expression + "`";
+        } else if ((this == DBMSType.ORACLE) || (this == DBMSType.POSTGRESQL)) {
+            return "\"" + expression + "\"";
+        }
+        return expression;
+    }
 
 }

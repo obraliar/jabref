@@ -1,7 +1,6 @@
 package net.sf.jabref.shared;
 
-import java.util.Optional;
-
+import java.util.EnumSet;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -26,7 +25,7 @@ public class DBMSTypeTest {
         Assert.assertEquals(DBMSType.MYSQL, DBMSType.fromString("MySQL").get());
         Assert.assertEquals(DBMSType.ORACLE, DBMSType.fromString("Oracle").get());
         Assert.assertEquals(DBMSType.POSTGRESQL, DBMSType.fromString("PostgreSQL").get());
-        Assert.assertEquals(Optional.empty(), DBMSType.fromString("XXX"));
+        Assert.assertFalse(DBMSType.fromString("XXX").isPresent());
     }
 
     @Test
@@ -41,5 +40,17 @@ public class DBMSTypeTest {
         Assert.assertEquals(3306, DBMSType.MYSQL.getDefaultPort());
         Assert.assertEquals(5432, DBMSType.POSTGRESQL.getDefaultPort());
         Assert.assertEquals(1521, DBMSType.ORACLE.getDefaultPort());
+    }
+
+    @Test
+    public void testEscape() {
+
+        for (DBMSType dbmsType : EnumSet.allOf(DBMSType.class)) {
+            if (dbmsType == DBMSType.MYSQL) {
+                Assert.assertEquals("`TABLE`", dbmsType.escape("TABLE"));
+            } else if ((dbmsType == DBMSType.ORACLE) || (dbmsType == DBMSType.POSTGRESQL)) {
+                Assert.assertEquals("\"TABLE\"", dbmsType.escape("TABLE"));
+            }
+        }
     }
 }

@@ -90,7 +90,7 @@ public class DBMSHelperTest {
     }
 
     public String escape(String expression) {
-        return DBMSProcessor.escape(expression, dbmsType);
+        return dbmsType.escape(expression);
     }
 
 }
