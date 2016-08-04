@@ -36,14 +36,10 @@ public class SynchronizationTestSimulator {
 
 
     @Before
-    public void setUp() {
+    public void setUp() throws ClassNotFoundException, SQLException {
         // Get only one connection for each parameter
         if (TestConnector.currentConnectionType != dbmsType) {
-            try {
-                connection = TestConnector.getTestConnection(dbmsType);
-            } catch (Exception e) {
-                Assert.fail(e.getMessage());
-            }
+            connection = TestConnector.getTestConnection(dbmsType);
         }
 
         Globals.prefs = JabRefPreferences.getInstance();
@@ -162,21 +158,24 @@ public class SynchronizationTestSimulator {
     }
 
     @After
-    public void clear() {
-        try {
-            if ((dbmsType == DBMSType.MYSQL) || (dbmsType == DBMSType.POSTGRESQL)) {
-                connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape("FIELD"));
-                connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape("ENTRY"));
-                connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape("METADATA"));
-            } else if (dbmsType == DBMSType.ORACLE) {
-                connection.createStatement().executeUpdate("BEGIN\n" + "EXECUTE IMMEDIATE 'DROP TABLE "
-                        + escape("FIELD") + "';\n" + "EXECUTE IMMEDIATE 'DROP TABLE " + escape("ENTRY") + "';\n"
-                        + "EXECUTE IMMEDIATE 'DROP TABLE " + escape("METADATA") + "';\n"
-                        + "EXECUTE IMMEDIATE 'DROP SEQUENCE " + escape("ENTRY_SEQ") + "';\n" + "EXCEPTION\n"
-                        + "WHEN OTHERS THEN\n" + "IF SQLCODE != -942 THEN\n" + "RAISE;\n" + "END IF;\n" + "END;");
-            }
-        } catch (SQLException e) {
-            Assert.fail(e.getMessage());
+    public void clear() throws SQLException {
+        if ((dbmsType == DBMSType.MYSQL) || (dbmsType == DBMSType.POSTGRESQL)) {
+            connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape("FIELD"));
+            connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape("ENTRY"));
+            connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape("METADATA"));
+        } else if (dbmsType == DBMSType.ORACLE) {
+            connection.createStatement().executeUpdate(
+                    "BEGIN\n" +
+                    "EXECUTE IMMEDIATE 'DROP TABLE " + escape("FIELD") + "';\n" +
+                    "EXECUTE IMMEDIATE 'DROP TABLE " + escape("ENTRY") + "';\n" +
+                    "EXECUTE IMMEDIATE 'DROP TABLE " + escape("METADATA") + "';\n" +
+                    "EXECUTE IMMEDIATE 'DROP SEQUENCE " + escape("ENTRY_SEQ") + "';\n" +
+                    "EXCEPTION\n" +
+                    "WHEN OTHERS THEN\n" +
+                    "IF SQLCODE != -942 THEN\n" +
+                    "RAISE;\n" +
+                    "END IF;\n" +
+                    "END;");
         }
     }
 }

@@ -40,15 +40,11 @@ public class DBMSSynchronizerTest {
 
 
     @Before
-    public void setUp() {
+    public void setUp() throws ClassNotFoundException, SQLException {
 
         Globals.prefs = JabRefPreferences.getInstance();
 
-        try {
-            connection = TestConnector.getTestConnection(dbmsType);
-        } catch (Exception e) {
-            Assert.fail(e.getMessage());
-        }
+        connection = TestConnector.getTestConnection(dbmsType);
 
         bibDatabase = new BibDatabase();
         BibDatabaseContext context = new BibDatabaseContext(bibDatabase);
@@ -134,7 +130,7 @@ public class DBMSSynchronizerTest {
     }
 
     @Test
-    public void testInitializeDatabases() {
+    public void testInitializeDatabases() throws SQLException {
         clear();
         dbmsSynchronizer.initializeDatabases();
         Assert.assertTrue(dbmsProcessor.checkBaseIntegrity());
@@ -166,7 +162,7 @@ public class DBMSSynchronizerTest {
     }
 
     @Test
-    public void testSynchronizeLocalDatabaseWithEntryUpdate() {
+    public void testSynchronizeLocalDatabaseWithEntryUpdate() throws OfflineLockException, SharedEntryNotPresentException {
         BibEntry bibEntry = getBibEntryExample(1);
         bibDatabase.insertEntry(bibEntry);
         Assert.assertEquals(1, bibDatabase.getEntries().size());
@@ -176,11 +172,7 @@ public class DBMSSynchronizerTest {
         modifiedBibEntry.clearField("title");
         modifiedBibEntry.setType("article");
 
-        try {
-            dbmsProcessor.updateEntry(modifiedBibEntry);
-        } catch (OfflineLockException | SharedEntryNotPresentException e) {
-            Assert.fail(e.getMessage());
-        }
+        dbmsProcessor.updateEntry(modifiedBibEntry);
 
         dbmsSynchronizer.synchronizeLocalDatabase(); // testing point
 
@@ -216,28 +208,24 @@ public class DBMSSynchronizerTest {
     }
 
     @After
-    public void clear() {
-        try {
-            if ((dbmsType == DBMSType.MYSQL) || (dbmsType == DBMSType.POSTGRESQL)) {
-                connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape("FIELD"));
-                connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape("ENTRY"));
-                connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape("METADATA"));
-            } else if (dbmsType == DBMSType.ORACLE) {
-                connection.createStatement().executeUpdate(
-                            "BEGIN\n" +
-                            "EXECUTE IMMEDIATE 'DROP TABLE " + escape("FIELD") + "';\n" +
-                            "EXECUTE IMMEDIATE 'DROP TABLE " + escape("ENTRY") + "';\n" +
-                            "EXECUTE IMMEDIATE 'DROP TABLE " + escape("METADATA") + "';\n" +
-                            "EXECUTE IMMEDIATE 'DROP SEQUENCE " + escape("ENTRY_SEQ") + "';\n" +
-                            "EXCEPTION\n" +
-                            "WHEN OTHERS THEN\n" +
-                            "IF SQLCODE != -942 THEN\n" +
-                            "RAISE;\n" +
-                            "END IF;\n" +
-                            "END;");
-            }
-        } catch (SQLException e) {
-            Assert.fail(e.getMessage());
+    public void clear() throws SQLException {
+        if ((dbmsType == DBMSType.MYSQL) || (dbmsType == DBMSType.POSTGRESQL)) {
+            connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape("FIELD"));
+            connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape("ENTRY"));
+            connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape("METADATA"));
+        } else if (dbmsType == DBMSType.ORACLE) {
+            connection.createStatement().executeUpdate(
+                    "BEGIN\n" +
+                    "EXECUTE IMMEDIATE 'DROP TABLE " + escape("FIELD") + "';\n" +
+                    "EXECUTE IMMEDIATE 'DROP TABLE " + escape("ENTRY") + "';\n" +
+                    "EXECUTE IMMEDIATE 'DROP TABLE " + escape("METADATA") + "';\n" +
+                    "EXECUTE IMMEDIATE 'DROP SEQUENCE " + escape("ENTRY_SEQ") + "';\n" +
+                    "EXCEPTION\n" +
+                    "WHEN OTHERS THEN\n" +
+                    "IF SQLCODE != -942 THEN\n" +
+                    "RAISE;\n" +
+                    "END IF;\n" +
+                    "END;");
         }
     }
 

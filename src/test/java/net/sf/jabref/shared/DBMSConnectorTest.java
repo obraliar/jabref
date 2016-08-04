@@ -3,7 +3,6 @@ package net.sf.jabref.shared;
 import java.sql.SQLException;
 import java.util.Collection;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -23,23 +22,15 @@ public class DBMSConnectorTest {
     }
 
     @Test
-    public void testGetNewConnection() {
+    public void testGetNewConnection() throws ClassNotFoundException, SQLException {
         TestConnectionData connectionData = TestConnector.getTestConnectionData(dbmsType);
 
-        try {
-            DBMSConnector.getNewConnection(dbmsType, connectionData.getHost(), connectionData.getDatabase(),
-                    connectionData.getUser(), connectionData.getPassord());
-        } catch (Exception e) {
-            Assert.fail(e.getMessage());
-        }
+        DBMSConnector.getNewConnection(dbmsType, connectionData.getHost(), connectionData.getDatabase(),
+                connectionData.getUser(), connectionData.getPassord());
     }
 
     @Test(expected = SQLException.class)
-    public void testGetNewConnectionFail() throws SQLException {
-        try {
-            DBMSConnector.getNewConnection(dbmsType, "XXXX", "XXXX", "XXXX", "XXXX");
-        } catch (ClassNotFoundException e) {
-            Assert.fail(e.getMessage());
-        }
+    public void testGetNewConnectionFail() throws SQLException, ClassNotFoundException {
+        DBMSConnector.getNewConnection(dbmsType, "XXXX", "XXXX", "XXXX", "XXXX");
     }
 }

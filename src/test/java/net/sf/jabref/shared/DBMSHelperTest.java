@@ -25,24 +25,20 @@ public class DBMSHelperTest {
 
 
     @Before
-    public void setUp() {
-        try {
-            StringBuilder createTableQuery = new StringBuilder()
-                    .append("CREATE TABLE ")
-                    .append(escape("TEST"))
-                    .append(" (")
-                    .append(escape("A"))
-                    .append(" INT, ")
-                    .append(escape("B"))
-                    .append((dbmsType == DBMSType.ORACLE ? " CLOB" : " TEXT"))
-                    .append(")");
+    public void setUp() throws ClassNotFoundException, SQLException {
+        StringBuilder createTableQuery = new StringBuilder()
+                .append("CREATE TABLE ")
+                .append(escape("TEST"))
+                .append(" (")
+                .append(escape("A"))
+                .append(" INT, ")
+                .append(escape("B"))
+                .append((dbmsType == DBMSType.ORACLE ? " CLOB" : " TEXT"))
+                .append(")");
 
-            connection = TestConnector.getTestConnection(dbmsType);
-            dbmsHelper = new DBMSHelper(connection);
-            connection.createStatement().executeUpdate(createTableQuery.toString());
-        } catch (Exception e) {
-            Assert.fail(e.getMessage());
-        }
+        connection = TestConnector.getTestConnection(dbmsType);
+        dbmsHelper = new DBMSHelper(connection);
+        connection.createStatement().executeUpdate(createTableQuery.toString());
     }
 
     @Parameters(name = "Test with {0} database system")
@@ -51,42 +47,33 @@ public class DBMSHelperTest {
     }
 
     @Test
-    public void testQuery() {
-        try {
-            StringBuilder insertQuery = new StringBuilder()
-                    .append("INSERT INTO ")
-                    .append(escape("TEST"))
-                    .append("(")
-                    .append(escape("A"))
-                    .append(", ")
-                    .append(escape("B"))
-                    .append(") VALUES(0, 'b')");
-            connection.createStatement().executeUpdate(insertQuery.toString());
+    public void testQuery() throws SQLException {
+        StringBuilder insertQuery = new StringBuilder()
+                .append("INSERT INTO ")
+                .append(escape("TEST"))
+                .append("(")
+                .append(escape("A"))
+                .append(", ")
+                .append(escape("B"))
+                .append(") VALUES(0, 'b')");
+        connection.createStatement().executeUpdate(insertQuery.toString());
 
 
-            StringBuilder selectQuery = new StringBuilder()
-                    .append("SELECT * FROM ")
-                    .append(escape("TEST"));
+        StringBuilder selectQuery = new StringBuilder()
+                .append("SELECT * FROM ")
+                .append(escape("TEST"));
 
-            try (ResultSet resultSet = dbmsHelper.query(selectQuery.toString())) {
-                Assert.assertTrue(resultSet.next());
-                Assert.assertEquals(0, resultSet.getInt("A"));
-                Assert.assertEquals("b", resultSet.getString("B"));
-                Assert.assertFalse(resultSet.next());
-            }
-
-        } catch (SQLException e) {
-            Assert.fail(e.getMessage());
+        try (ResultSet resultSet = dbmsHelper.query(selectQuery.toString())) {
+            Assert.assertTrue(resultSet.next());
+            Assert.assertEquals(0, resultSet.getInt("A"));
+            Assert.assertEquals("b", resultSet.getString("B"));
+            Assert.assertFalse(resultSet.next());
         }
     }
 
     @After
-    public void clear() {
-        try {
-            connection.createStatement().executeUpdate("DROP TABLE " + escape("TEST"));
-        } catch (SQLException e) {
-            Assert.fail(e.getMessage());
-        }
+    public void clear() throws SQLException {
+        connection.createStatement().executeUpdate("DROP TABLE " + escape("TEST"));
     }
 
     public String escape(String expression) {

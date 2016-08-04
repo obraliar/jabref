@@ -34,14 +34,10 @@ public class DBMSProcessorTest {
 
 
     @Before
-    public void setUp() {
+    public void setUp() throws ClassNotFoundException, SQLException {
         // Get only one connection for each parameter
         if (TestConnector.currentConnectionType != dbmsType) {
-            try {
-                connection = TestConnector.getTestConnection(dbmsType);
-            } catch (Exception e) {
-                Assert.fail(e.getMessage());
-            }
+            connection = TestConnector.getTestConnection(dbmsType);
         }
         dbmsProcessor = new DBMSProcessor(new DBMSHelper(connection), dbmsType);
         dbmsProcessor.setUpSharedDatabase();
@@ -53,21 +49,21 @@ public class DBMSProcessorTest {
     }
 
     @Test
-    public void testCheckBaseIntegrity() {
+    public void testCheckBaseIntegrity() throws SQLException {
         Assert.assertTrue(dbmsProcessor.checkBaseIntegrity());
         clear();
         Assert.assertFalse(dbmsProcessor.checkBaseIntegrity());
     }
 
     @Test
-    public void testSetUpSharedDatabase() {
+    public void testSetUpSharedDatabase() throws SQLException {
         clear();
         dbmsProcessor.setUpSharedDatabase();
         Assert.assertTrue(dbmsProcessor.checkBaseIntegrity());
     }
 
     @Test
-    public void testInsertEntry() {
+    public void testInsertEntry() throws SQLException {
         BibEntry expectedEntry = getBibEntryExample();
 
         dbmsProcessor.insertEntry(expectedEntry);
@@ -90,8 +86,6 @@ public class DBMSProcessorTest {
                     actualFieldMap.put(fieldResultSet.getString("NAME"), fieldResultSet.getString("VALUE"));
                 }
             }
-        } catch (SQLException e) {
-            Assert.fail(e.getMessage());
         }
 
         Map<String, String> expectedFieldMap = expectedEntry.getFieldMap();
@@ -100,7 +94,7 @@ public class DBMSProcessorTest {
     }
 
     @Test
-    public void testUpdateEntry() {
+    public void testUpdateEntry() throws OfflineLockException, SharedEntryNotPresentException {
         BibEntry expectedEntry = getBibEntryExample();
 
         dbmsProcessor.insertEntry(expectedEntry);
@@ -110,11 +104,7 @@ public class DBMSProcessorTest {
         expectedEntry.setField("customField", "custom value");
         expectedEntry.clearField("booktitle");
 
-        try {
-            dbmsProcessor.updateEntry(expectedEntry);
-        } catch (OfflineLockException | SharedEntryNotPresentException e) {
-            Assert.fail(e.getMessage());
-        }
+        dbmsProcessor.updateEntry(expectedEntry);
 
         Optional<BibEntry> actualEntryOptional = dbmsProcessor.getSharedEntry(expectedEntry.getSharedID());
 
@@ -126,20 +116,13 @@ public class DBMSProcessorTest {
     }
 
     @Test(expected = SharedEntryNotPresentException.class)
-    public void testUpdateNotExistingEntry() throws SharedEntryNotPresentException {
+    public void testUpdateNotExistingEntry() throws SharedEntryNotPresentException, OfflineLockException {
         BibEntry expectedEntry = getBibEntryExample();
-
-        try {
-            dbmsProcessor.updateEntry(expectedEntry);
-        } catch (SharedEntryNotPresentException e) {
-            throw e; // should happen
-        } catch (OfflineLockException e) {
-            Assert.fail(e.getMessage());
-        }
+        dbmsProcessor.updateEntry(expectedEntry);
     }
 
     @Test(expected = OfflineLockException.class)
-    public void testUpdateNewerEntry() throws OfflineLockException {
+    public void testUpdateNewerEntry() throws OfflineLockException, SharedEntryNotPresentException {
         BibEntry bibEntry = getBibEntryExample();
 
         dbmsProcessor.insertEntry(bibEntry);
@@ -147,28 +130,18 @@ public class DBMSProcessorTest {
         bibEntry.setVersion(0); // simulate older version
         bibEntry.setField("year", "1993");
 
-        try {
-            dbmsProcessor.updateEntry(bibEntry);
-        } catch (SharedEntryNotPresentException e) {
-            Assert.fail(e.getMessage());
-        } catch (OfflineLockException e) {
-            throw e; // should happen
-        }
+        dbmsProcessor.updateEntry(bibEntry);
     }
 
     @Test
-    public void testUpdateEqualEntry() {
+    public void testUpdateEqualEntry() throws OfflineLockException, SharedEntryNotPresentException {
         BibEntry expectedBibEntry = getBibEntryExample();
 
         dbmsProcessor.insertEntry(expectedBibEntry);
 
         expectedBibEntry.setVersion(0); // simulate older version
 
-        try {
-            dbmsProcessor.updateEntry(expectedBibEntry);
-        } catch (SharedEntryNotPresentException | OfflineLockException e) {
-            Assert.fail(e.getMessage());
-        }
+        dbmsProcessor.updateEntry(expectedBibEntry);
 
         Optional<BibEntry> actualBibEntryOptional = dbmsProcessor.getSharedEntry(expectedBibEntry.getSharedID());
 
@@ -180,15 +153,13 @@ public class DBMSProcessorTest {
     }
 
     @Test
-    public void testRemoveEntry() {
+    public void testRemoveEntry() throws SQLException {
         BibEntry bibEntry = getBibEntryExample();
         dbmsProcessor.insertEntry(bibEntry);
         dbmsProcessor.removeEntry(bibEntry);
 
         try (ResultSet resultSet = selectFrom("ENTRY")) {
             Assert.assertFalse(resultSet.next());
-        } catch (SQLException e) {
-            Assert.fail(e.getMessage());
         }
     }
 
@@ -329,28 +300,24 @@ public class DBMSProcessorTest {
     }
 
     @After
-    public void clear() {
-        try {
-            if ((dbmsType == DBMSType.MYSQL) || (dbmsType == DBMSType.POSTGRESQL)) {
-                connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape("FIELD"));
-                connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape("ENTRY"));
-                connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape("METADATA"));
-            } else if (dbmsType == DBMSType.ORACLE) {
-                connection.createStatement().executeUpdate(
-                            "BEGIN\n" +
-                            "EXECUTE IMMEDIATE 'DROP TABLE " + escape("FIELD") + "';\n" +
-                            "EXECUTE IMMEDIATE 'DROP TABLE " + escape("ENTRY") + "';\n" +
-                            "EXECUTE IMMEDIATE 'DROP TABLE " + escape("METADATA") + "';\n" +
-                            "EXECUTE IMMEDIATE 'DROP SEQUENCE " + escape("ENTRY_SEQ") + "';\n" +
-                            "EXCEPTION\n" +
-                            "WHEN OTHERS THEN\n" +
-                            "IF SQLCODE != -942 THEN\n" +
-                            "RAISE;\n" +
-                            "END IF;\n" +
-                            "END;");
-            }
-        } catch (SQLException e) {
-            Assert.fail(e.getMessage());
+    public void clear() throws SQLException {
+        if ((dbmsType == DBMSType.MYSQL) || (dbmsType == DBMSType.POSTGRESQL)) {
+            connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape("FIELD"));
+            connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape("ENTRY"));
+            connection.createStatement().executeUpdate("DROP TABLE IF EXISTS " + escape("METADATA"));
+        } else if (dbmsType == DBMSType.ORACLE) {
+            connection.createStatement().executeUpdate(
+                    "BEGIN\n" +
+                    "EXECUTE IMMEDIATE 'DROP TABLE " + escape("FIELD") + "';\n" +
+                    "EXECUTE IMMEDIATE 'DROP TABLE " + escape("ENTRY") + "';\n" +
+                    "EXECUTE IMMEDIATE 'DROP TABLE " + escape("METADATA") + "';\n" +
+                    "EXECUTE IMMEDIATE 'DROP SEQUENCE " + escape("ENTRY_SEQ") + "';\n" +
+                    "EXCEPTION\n" +
+                    "WHEN OTHERS THEN\n" +
+                    "IF SQLCODE != -942 THEN\n" +
+                    "RAISE;\n" +
+                    "END IF;\n" +
+                    "END;");
         }
     }
 }
