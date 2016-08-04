@@ -159,61 +159,71 @@ public class DBMSProcessor {
      */
     public void insertEntry(BibEntry bibEntry) {
 
-        // Check if already exists
-        int sharedID = bibEntry.getSharedID();
-        if (sharedID != -1) {
-            try (ResultSet resultSet = selectFromEntryTable(sharedID)) {
-                if (resultSet.next()) {
-                    return;
-                }
-            } catch (SQLException e) {
-                LOGGER.error("SQL Error: ", e);
-            }
-        }
 
-        // Inserting into ENTRY table
-        StringBuilder insertIntoEntryQuery = new StringBuilder()
-            .append("INSERT INTO ")
-            .append(escape("ENTRY"))
-            .append("(")
-            .append(escape("TYPE"))
-            .append(") VALUES(?)");
+        try {
+            // Check if already exists
+            int sharedID = bibEntry.getSharedID();
+            if (sharedID != -1) {
+                StringBuilder selectQuery = new StringBuilder()
+                        .append("SELECT * FROM ")
+                        .append(escape("ENTRY"))
+                        .append(" WHERE ")
+                        .append(escape("SHARED_ID"))
+                        .append(" = ?");
 
-        // This is the only method to get generated keys which is accepted by MySQL, PostgreSQL and Oracle.
-        try (PreparedStatement preparedEntryStatement = dbmsHelper.prepareStatement(insertIntoEntryQuery.toString(),
-                "SHARED_ID")) {
-
-            preparedEntryStatement.setString(1, bibEntry.getType());
-            preparedEntryStatement.executeUpdate();
-
-            try (ResultSet generatedKeys = preparedEntryStatement.getGeneratedKeys()) {
-                if (generatedKeys.next()) {
-                    bibEntry.setSharedID(generatedKeys.getInt(1)); // set generated ID locally
+                try (PreparedStatement preparedSelectStatement = dbmsHelper.prepareStatement(selectQuery.toString())) {
+                    preparedSelectStatement.setInt(1, sharedID);
+                    try (ResultSet resultSet = preparedSelectStatement.executeQuery()) {
+                        if (resultSet.next()) {
+                            return;
+                        }
+                    }
                 }
             }
 
-            // Inserting into FIELD table
-            for (String fieldName : bibEntry.getFieldNames()) {
-                StringBuilder insertFieldQuery = new StringBuilder()
-                    .append("INSERT INTO ")
-                    .append(escape("FIELD"))
-                    .append("(")
-                    .append(escape("ENTRY_SHARED_ID"))
-                    .append(", ")
-                    .append(escape("NAME"))
-                    .append(", ")
-                    .append(escape("VALUE"))
-                    .append(") VALUES(?, ?, ?)");
+            // Inserting into ENTRY table
+            StringBuilder insertIntoEntryQuery = new StringBuilder()
+                .append("INSERT INTO ")
+                .append(escape("ENTRY"))
+                .append("(")
+                .append(escape("TYPE"))
+                .append(") VALUES(?)");
 
-                try (PreparedStatement preparedFieldStatement = dbmsHelper.prepareStatement(insertFieldQuery.toString())) {
-                    // columnIndex starts with 1
-                    preparedFieldStatement.setInt(1, bibEntry.getSharedID());
-                    preparedFieldStatement.setString(2, fieldName);
-                    preparedFieldStatement.setString(3, bibEntry.getFieldOptional(fieldName).get());
-                    preparedFieldStatement.executeUpdate();
+            // This is the only method to get generated keys which is accepted by MySQL, PostgreSQL and Oracle.
+            try (PreparedStatement preparedEntryStatement = dbmsHelper.prepareStatement(insertIntoEntryQuery.toString(),
+                    "SHARED_ID")) {
+
+                preparedEntryStatement.setString(1, bibEntry.getType());
+                preparedEntryStatement.executeUpdate();
+
+                try (ResultSet generatedKeys = preparedEntryStatement.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        bibEntry.setSharedID(generatedKeys.getInt(1)); // set generated ID locally
+                    }
+                }
+
+                // Inserting into FIELD table
+                for (String fieldName : bibEntry.getFieldNames()) {
+                    StringBuilder insertFieldQuery = new StringBuilder()
+                        .append("INSERT INTO ")
+                        .append(escape("FIELD"))
+                        .append("(")
+                        .append(escape("ENTRY_SHARED_ID"))
+                        .append(", ")
+                        .append(escape("NAME"))
+                        .append(", ")
+                        .append(escape("VALUE"))
+                        .append(") VALUES(?, ?, ?)");
+
+                    try (PreparedStatement preparedFieldStatement = dbmsHelper.prepareStatement(insertFieldQuery.toString())) {
+                        // columnIndex starts with 1
+                        preparedFieldStatement.setInt(1, bibEntry.getSharedID());
+                        preparedFieldStatement.setString(2, fieldName);
+                        preparedFieldStatement.setString(3, bibEntry.getFieldOptional(fieldName).get());
+                        preparedFieldStatement.executeUpdate();
+                    }
                 }
             }
-
         } catch (SQLException e) {
             LOGGER.error("SQL Error: ", e);
         }
@@ -527,24 +537,6 @@ public class DBMSProcessor {
             } catch (SQLException e) {
                 LOGGER.error("SQL Error: ", e);
             }
-        }
-    }
-
-    /**
-     * Helping method for SQL selection retrieving a {@link ResultSet}
-     * @param sharedID Existent ID of {@link BibEntry} on shared database
-     */
-    private ResultSet selectFromEntryTable(int sharedID) throws SQLException {
-        StringBuilder query = new StringBuilder()
-            .append("SELECT * FROM ")
-            .append(escape("ENTRY"))
-            .append(" WHERE ")
-            .append(escape("SHARED_ID"))
-            .append(" = ?");
-
-        try (PreparedStatement preparedStatement = dbmsHelper.prepareStatement(query.toString())) {
-            preparedStatement.setInt(1, sharedID);
-            return preparedStatement.executeQuery();
         }
     }
 
