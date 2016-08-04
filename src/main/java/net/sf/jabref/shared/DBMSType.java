@@ -15,6 +15,7 @@
 */
 package net.sf.jabref.shared;
 
+import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -76,7 +77,7 @@ public enum DBMSType {
 
     public static Optional<DBMSType> fromString(String typeName) {
         try {
-            return Optional.of(Enum.valueOf(DBMSType.class, typeName.toUpperCase()));
+            return Optional.of(Enum.valueOf(DBMSType.class, typeName.toUpperCase(Locale.ENGLISH)));
         } catch (IllegalArgumentException exception) {
             return Optional.empty();
         }
