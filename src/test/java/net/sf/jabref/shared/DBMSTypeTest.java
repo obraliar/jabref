@@ -1,6 +1,7 @@
 package net.sf.jabref.shared;
 
 import java.util.EnumSet;
+
 import org.junit.Assert;
 import org.junit.Test;
 
