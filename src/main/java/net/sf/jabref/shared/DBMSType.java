@@ -82,19 +82,4 @@ public enum DBMSType {
         }
     }
 
-    /**
-     * Escapes parts of SQL expressions like table or field name to match the conventions
-     * of the current database system type.
-     * @param expression Table or field name
-     * @return Correctly escaped expression
-     */
-    public String escape(String expression) {
-        if (this == DBMSType.MYSQL) {
-            return "`" + expression + "`";
-        } else if ((this == DBMSType.ORACLE) || (this == DBMSType.POSTGRESQL)) {
-            return "\"" + expression + "\"";
-        }
-        return expression;
-    }
-
 }

@@ -1,7 +1,5 @@
 package net.sf.jabref.shared;
 
-import java.util.EnumSet;
-
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -43,15 +41,4 @@ public class DBMSTypeTest {
         Assert.assertEquals(1521, DBMSType.ORACLE.getDefaultPort());
     }
 
-    @Test
-    public void testEscape() {
-
-        for (DBMSType dbmsType : EnumSet.allOf(DBMSType.class)) {
-            if (dbmsType == DBMSType.MYSQL) {
-                Assert.assertEquals("`TABLE`", dbmsType.escape("TABLE"));
-            } else if ((dbmsType == DBMSType.ORACLE) || (dbmsType == DBMSType.POSTGRESQL)) {
-                Assert.assertEquals("\"TABLE\"", dbmsType.escape("TABLE"));
-            }
-        }
-    }
 }

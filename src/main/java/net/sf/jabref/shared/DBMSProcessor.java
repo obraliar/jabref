@@ -41,19 +41,17 @@ import org.apache.commons.logging.LogFactory;
 /**
  * Processes all incoming or outgoing bib data to external SQL Database and manages its structure.
  */
-public class DBMSProcessor {
+public abstract class DBMSProcessor {
 
-    private static final Log LOGGER = LogFactory.getLog(DBMSConnector.class);
+    protected static final Log LOGGER = LogFactory.getLog(DBMSConnector.class);
 
-    private DBMSType dbmsType;
-    private final Connection connection;
+    protected final Connection connection;
 
     /**
      * @param connection Working SQL connection
      * @param dbmsType Instance of {@link DBMSType}
      */
-    public DBMSProcessor(Connection connection, DBMSType dbmsType) {
-        this.dbmsType = dbmsType;
+    public DBMSProcessor(Connection connection) {
         this.connection = connection;
     }
 
@@ -78,77 +76,34 @@ public class DBMSProcessor {
 
 
     /**
-     * Creates and sets up the needed tables and columns according to the database type.
+     * Creates and sets up the needed tables and columns according to the database type and
+     * performs a check whether the needed tables are present.
+     *
      * @throws SQLException
      */
     public void setUpSharedDatabase() throws SQLException {
-        if (dbmsType == DBMSType.MYSQL) {
-            connection.createStatement().executeUpdate(
-                "CREATE TABLE IF NOT EXISTS `ENTRY` (" +
-                "`SHARED_ID` INT(11) NOT NULL PRIMARY KEY AUTO_INCREMENT, " +
-                "`TYPE` VARCHAR(255) NOT NULL, " +
-                "`VERSION` INT(11) DEFAULT 1)");
-
-            connection.createStatement().executeUpdate(
-                "CREATE TABLE IF NOT EXISTS `FIELD` (" +
-                "`ENTRY_SHARED_ID` INT(11) NOT NULL, " +
-                "`NAME` VARCHAR(255) NOT NULL, " +
-                "`VALUE` TEXT DEFAULT NULL, " +
-                "FOREIGN KEY (`ENTRY_SHARED_ID`) REFERENCES `ENTRY`(`SHARED_ID`) ON DELETE CASCADE)");
-
-            connection.createStatement().executeUpdate("CREATE TABLE IF NOT EXISTS `METADATA` (" +
-                    "`KEY` varchar(255) NOT NULL," +
-                    "`VALUE` text NOT NULL)");
-
-        } else if (dbmsType == DBMSType.POSTGRESQL) {
-            connection.createStatement().executeUpdate(
-                "CREATE TABLE IF NOT EXISTS \"ENTRY\" (" +
-                "\"SHARED_ID\" SERIAL PRIMARY KEY, " +
-                "\"TYPE\" VARCHAR, " +
-                "\"VERSION\" INTEGER DEFAULT 1)");
-
-            connection.createStatement().executeUpdate(
-                "CREATE TABLE IF NOT EXISTS \"FIELD\" (" +
-                "\"ENTRY_SHARED_ID\" INTEGER REFERENCES \"ENTRY\"(\"SHARED_ID\") ON DELETE CASCADE, " +
-                "\"NAME\" VARCHAR, " +
-                "\"VALUE\" TEXT)");
-
-            connection.createStatement().executeUpdate("CREATE TABLE IF NOT EXISTS \"METADATA\" ("
-                    + "\"KEY\" VARCHAR,"
-                    + "\"VALUE\" TEXT)");
-
-        } else if (dbmsType == DBMSType.ORACLE) {
-            connection.createStatement().executeUpdate(
-                "CREATE TABLE \"ENTRY\" (" +
-                "\"SHARED_ID\" NUMBER NOT NULL, " +
-                "\"TYPE\" VARCHAR2(255) NULL, " +
-                "\"VERSION\" NUMBER DEFAULT 1, " +
-                "CONSTRAINT \"ENTRY_PK\" PRIMARY KEY (\"SHARED_ID\"))");
-
-            connection.createStatement().executeUpdate("CREATE SEQUENCE \"ENTRY_SEQ\"");
-
-            connection.createStatement().executeUpdate("CREATE TRIGGER \"ENTRY_T\" BEFORE INSERT ON \"ENTRY\" " +
-                "FOR EACH ROW BEGIN SELECT \"ENTRY_SEQ\".NEXTVAL INTO :NEW.shared_id FROM DUAL; END;");
-
-            connection.createStatement().executeUpdate(
-                "CREATE TABLE \"FIELD\" (" +
-                "\"ENTRY_SHARED_ID\" NUMBER NOT NULL, " +
-                "\"NAME\" VARCHAR2(255) NOT NULL, " +
-                "\"VALUE\" CLOB NULL, " +
-                "CONSTRAINT \"ENTRY_SHARED_ID_FK\" FOREIGN KEY (\"ENTRY_SHARED_ID\") " +
-                "REFERENCES \"ENTRY\"(\"SHARED_ID\") ON DELETE CASCADE)");
-
-            connection.createStatement().executeUpdate("CREATE TABLE \"METADATA\" (" +
-                    "\"KEY\"  VARCHAR2(255) NULL," +
-                    "\"VALUE\"  CLOB NOT NULL)");
-
-        }
+        setUp();
 
         if (!checkBaseIntegrity()) {
             // can only happen with users direct intervention on shared database
             LOGGER.error(Localization.lang("Corrupt_shared_database_structure."));
         }
     }
+
+    /**
+     * Creates and sets up the needed tables and columns according to the database type.
+     * @throws SQLException
+     */
+    protected abstract void setUp() throws SQLException;
+
+    /**
+     * Escapes parts of SQL expressions like table or field name to match the conventions
+     * of the database system using the current dbmsType.
+     * @param expression Table or field name
+     * @return Correctly escaped expression
+     */
+    public abstract String escape(String expression);
+
 
     /**
      * Inserts the given bibEntry into shared database.
@@ -541,21 +496,17 @@ public class DBMSProcessor {
     }
 
     /**
-     * Escapes parts of SQL expressions like table or field name to match the conventions
-     * of the database system using the current dbmsType.
-     * @param expression Table or field name
-     * @return Correctly escaped expression
+     *  Returns a new instance of the abstract type {@link DBMSProcessor}
      */
-    private String escape(String expression) {
-        return dbmsType.escape(expression);
-    }
-
-    public void setDBType(DBMSType dbmsType) {
-        this.dbmsType = dbmsType;
-    }
-
-    public DBMSType getDBType() {
-        return this.dbmsType;
+    public static DBMSProcessor getProcessorInstance(Connection connection, DBMSType type) {
+        if (type == DBMSType.MYSQL) {
+            return new MySQLProcessor(connection);
+        } else if (type == DBMSType.POSTGRESQL) {
+            return new PostgreSQLProcessor(connection);
+        } else if (type == DBMSType.ORACLE) {
+            return new OracleProcessor(connection);
+        }
+        return null; // can never happen except new types were added without updating this method.
     }
 
 }

@@ -39,7 +39,7 @@ public class DBMSProcessorTest {
         if (TestConnector.currentConnectionType != dbmsType) {
             connection = TestConnector.getTestConnection(dbmsType);
         }
-        dbmsProcessor = new DBMSProcessor(connection, dbmsType);
+        dbmsProcessor = DBMSProcessor.getProcessorInstance(connection, dbmsType);
         dbmsProcessor.setUpSharedDatabase();
     }
 
@@ -292,7 +292,7 @@ public class DBMSProcessorTest {
     }
 
     private String escape(String expression) {
-        return dbmsType.escape(expression);
+        return dbmsProcessor.escape(expression);
     }
 
     private String escapeValue(String value) {

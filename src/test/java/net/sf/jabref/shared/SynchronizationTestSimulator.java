@@ -154,7 +154,7 @@ public class SynchronizationTestSimulator {
     }
 
     private String escape(String expression) {
-        return dbmsType.escape(expression);
+        return DBMSProcessor.getProcessorInstance(connection, dbmsType).escape(expression);
     }
 
     @After

@@ -340,8 +340,8 @@ public class DBMSSynchronizer {
     public void openSharedDatabase(Connection connection, DBMSType type, String name) {
         this.dbmsType = type;
         this.dbName = name;
-        this.dbmsProcessor = new DBMSProcessor(connection, type);
         this.currentConnection = connection;
+        this.dbmsProcessor = DBMSProcessor.getProcessorInstance(connection, type);
         initializeDatabases();
     }
 

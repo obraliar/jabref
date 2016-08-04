@@ -51,7 +51,7 @@ public class DBMSSynchronizerTest {
 
 
         dbmsSynchronizer = new DBMSSynchronizer(context);
-        dbmsProcessor = new DBMSProcessor(connection, dbmsType);
+        dbmsProcessor = DBMSProcessor.getProcessorInstance(connection, dbmsType);
 
         bibDatabase.registerListener(dbmsSynchronizer);
 
@@ -204,7 +204,7 @@ public class DBMSSynchronizerTest {
     }
 
     private String escape(String expression) {
-        return dbmsType.escape(expression);
+        return dbmsProcessor.escape(expression);
     }
 
     @After
