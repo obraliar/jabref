@@ -39,7 +39,7 @@ public class DBMSProcessorTest {
         if (TestConnector.currentConnectionType != dbmsType) {
             connection = TestConnector.getTestConnection(dbmsType);
         }
-        dbmsProcessor = new DBMSProcessor(new DBMSHelper(connection), dbmsType);
+        dbmsProcessor = new DBMSProcessor(connection, dbmsType);
         dbmsProcessor.setUpSharedDatabase();
     }
 
@@ -94,7 +94,7 @@ public class DBMSProcessorTest {
     }
 
     @Test
-    public void testUpdateEntry() throws OfflineLockException, SharedEntryNotPresentException {
+    public void testUpdateEntry() throws OfflineLockException, SharedEntryNotPresentException, SQLException {
         BibEntry expectedEntry = getBibEntryExample();
 
         dbmsProcessor.insertEntry(expectedEntry);
@@ -116,13 +116,13 @@ public class DBMSProcessorTest {
     }
 
     @Test(expected = SharedEntryNotPresentException.class)
-    public void testUpdateNotExistingEntry() throws SharedEntryNotPresentException, OfflineLockException {
+    public void testUpdateNotExistingEntry() throws SharedEntryNotPresentException, OfflineLockException, SQLException {
         BibEntry expectedEntry = getBibEntryExample();
         dbmsProcessor.updateEntry(expectedEntry);
     }
 
     @Test(expected = OfflineLockException.class)
-    public void testUpdateNewerEntry() throws OfflineLockException, SharedEntryNotPresentException {
+    public void testUpdateNewerEntry() throws OfflineLockException, SharedEntryNotPresentException, SQLException {
         BibEntry bibEntry = getBibEntryExample();
 
         dbmsProcessor.insertEntry(bibEntry);
@@ -134,7 +134,7 @@ public class DBMSProcessorTest {
     }
 
     @Test
-    public void testUpdateEqualEntry() throws OfflineLockException, SharedEntryNotPresentException {
+    public void testUpdateEqualEntry() throws OfflineLockException, SharedEntryNotPresentException, SQLException {
         BibEntry expectedBibEntry = getBibEntryExample();
 
         dbmsProcessor.insertEntry(expectedBibEntry);
@@ -197,7 +197,7 @@ public class DBMSProcessorTest {
     }
 
     @Test
-    public void testGetSharedIDVersionMapping() throws OfflineLockException, SharedEntryNotPresentException {
+    public void testGetSharedIDVersionMapping() throws OfflineLockException, SharedEntryNotPresentException, SQLException {
         BibEntry firstEntry = getBibEntryExample();
         BibEntry secondEntry = getBibEntryExample();
 
@@ -230,7 +230,7 @@ public class DBMSProcessorTest {
     }
 
     @Test
-    public void testSetSharedMetaData() {
+    public void testSetSharedMetaData() throws SQLException {
         Map<String, String> expectedMetaData = getMetaDataExample();
         dbmsProcessor.setSharedMetaData(expectedMetaData);
 

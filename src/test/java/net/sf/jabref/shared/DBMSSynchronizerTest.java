@@ -51,7 +51,7 @@ public class DBMSSynchronizerTest {
 
 
         dbmsSynchronizer = new DBMSSynchronizer(context);
-        dbmsProcessor = new DBMSProcessor(new DBMSHelper(connection), dbmsType);
+        dbmsProcessor = new DBMSProcessor(connection, dbmsType);
 
         bibDatabase.registerListener(dbmsSynchronizer);
 
@@ -162,7 +162,7 @@ public class DBMSSynchronizerTest {
     }
 
     @Test
-    public void testSynchronizeLocalDatabaseWithEntryUpdate() throws OfflineLockException, SharedEntryNotPresentException {
+    public void testSynchronizeLocalDatabaseWithEntryUpdate() throws OfflineLockException, SharedEntryNotPresentException, SQLException {
         BibEntry bibEntry = getBibEntryExample(1);
         bibDatabase.insertEntry(bibEntry);
         Assert.assertEquals(1, bibDatabase.getEntries().size());

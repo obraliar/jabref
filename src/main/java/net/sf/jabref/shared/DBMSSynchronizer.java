@@ -107,6 +107,8 @@ public class DBMSSynchronizer {
                 eventBus.post(new UpdateRefusedEvent(bibDatabaseContext, exception.getLocalBibEntry(), exception.getSharedBibEntry()));
             } catch (SharedEntryNotPresentException exception) {
                 eventBus.post(new SharedEntryNotPresentEvent(exception.getNonPresentBibEntry()));
+            } catch (SQLException e) {
+                LOGGER.error("SQL Error: ", e);
             }
         }
     }
@@ -145,10 +147,13 @@ public class DBMSSynchronizer {
      * @param bibDatabase Local {@link BibDatabase}
      */
     public void initializeDatabases() {
-
-        if (!dbmsProcessor.checkBaseIntegrity()) {
-            LOGGER.info(Localization.lang("Integrity check failed. Fixing..."));
-            dbmsProcessor.setUpSharedDatabase();
+        try {
+            if (!dbmsProcessor.checkBaseIntegrity()) {
+                LOGGER.info(Localization.lang("Integrity check failed. Fixing..."));
+                dbmsProcessor.setUpSharedDatabase();
+            }
+        } catch (SQLException e) {
+            LOGGER.error("SQL Error: ", e);
         }
         synchronizeLocalMetaData();
         synchronizeLocalDatabase();
@@ -243,6 +248,8 @@ public class DBMSSynchronizer {
             eventBus.post(new UpdateRefusedEvent(bibDatabaseContext, exception.getLocalBibEntry(), exception.getSharedBibEntry()));
         } catch (SharedEntryNotPresentException exception) {
             eventBus.post(new SharedEntryNotPresentEvent(exception.getNonPresentBibEntry()));
+        } catch (SQLException e) {
+            LOGGER.error("SQL Error: ", e);
         }
     }
 
@@ -269,8 +276,11 @@ public class DBMSSynchronizer {
         if (!checkCurrentConnection()) {
             return;
         }
-
-        dbmsProcessor.setSharedMetaData(data.getAsStringMap());
+        try {
+            dbmsProcessor.setSharedMetaData(data.getAsStringMap());
+        } catch (SQLException e) {
+            LOGGER.error("SQL Error: ", e);
+        }
     }
 
     /**
@@ -330,7 +340,7 @@ public class DBMSSynchronizer {
     public void openSharedDatabase(Connection connection, DBMSType type, String name) {
         this.dbmsType = type;
         this.dbName = name;
-        this.dbmsProcessor = new DBMSProcessor(new DBMSHelper(connection), type);
+        this.dbmsProcessor = new DBMSProcessor(connection, type);
         this.currentConnection = connection;
         initializeDatabases();
     }

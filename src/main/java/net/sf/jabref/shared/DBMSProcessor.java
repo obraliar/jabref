@@ -15,6 +15,7 @@
 */
 package net.sf.jabref.shared;
 
+import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -45,15 +46,15 @@ public class DBMSProcessor {
     private static final Log LOGGER = LogFactory.getLog(DBMSConnector.class);
 
     private DBMSType dbmsType;
-    private final DBMSHelper dbmsHelper;
+    private final Connection connection;
 
     /**
      * @param connection Working SQL connection
      * @param dbmsType Instance of {@link DBMSType}
      */
-    public DBMSProcessor(DBMSHelper dbmsHelper, DBMSType dbmsType) {
+    public DBMSProcessor(Connection connection, DBMSType dbmsType) {
         this.dbmsType = dbmsType;
-        this.dbmsHelper = dbmsHelper;
+        this.connection = connection;
     }
 
     /**
@@ -63,7 +64,7 @@ public class DBMSProcessor {
     public boolean checkBaseIntegrity() {
         List<String> requiredTables = new ArrayList<>(Arrays.asList("ENTRY", "FIELD", "METADATA")); // the list should be dynamic
         try {
-            DatabaseMetaData databaseMetaData = dbmsHelper.getMetaData();
+            DatabaseMetaData databaseMetaData = connection.getMetaData();
 
             // ...getTables(null, ...): no restrictions
             try (ResultSet databaseMetaDataResultSet = databaseMetaData.getTables(null, null, null, null)) {
@@ -84,57 +85,58 @@ public class DBMSProcessor {
 
     /**
      * Creates and sets up the needed tables and columns according to the database type.
+     * @throws SQLException
      */
-    public void setUpSharedDatabase() {
+    public void setUpSharedDatabase() throws SQLException {
         if (dbmsType == DBMSType.MYSQL) {
-            dbmsHelper.executeUpdate(
+            connection.createStatement().executeUpdate(
                 "CREATE TABLE IF NOT EXISTS `ENTRY` (" +
                 "`SHARED_ID` INT(11) NOT NULL PRIMARY KEY AUTO_INCREMENT, " +
                 "`TYPE` VARCHAR(255) NOT NULL, " +
                 "`VERSION` INT(11) DEFAULT 1)");
 
-            dbmsHelper.executeUpdate(
+            connection.createStatement().executeUpdate(
                 "CREATE TABLE IF NOT EXISTS `FIELD` (" +
                 "`ENTRY_SHARED_ID` INT(11) NOT NULL, " +
                 "`NAME` VARCHAR(255) NOT NULL, " +
                 "`VALUE` TEXT DEFAULT NULL, " +
                 "FOREIGN KEY (`ENTRY_SHARED_ID`) REFERENCES `ENTRY`(`SHARED_ID`) ON DELETE CASCADE)");
 
-            dbmsHelper.executeUpdate("CREATE TABLE IF NOT EXISTS `METADATA` (" +
+            connection.createStatement().executeUpdate("CREATE TABLE IF NOT EXISTS `METADATA` (" +
                     "`KEY` varchar(255) NOT NULL," +
                     "`VALUE` text NOT NULL)");
 
         } else if (dbmsType == DBMSType.POSTGRESQL) {
-            dbmsHelper.executeUpdate(
+            connection.createStatement().executeUpdate(
                 "CREATE TABLE IF NOT EXISTS \"ENTRY\" (" +
                 "\"SHARED_ID\" SERIAL PRIMARY KEY, " +
                 "\"TYPE\" VARCHAR, " +
                 "\"VERSION\" INTEGER DEFAULT 1)");
 
-            dbmsHelper.executeUpdate(
+            connection.createStatement().executeUpdate(
                 "CREATE TABLE IF NOT EXISTS \"FIELD\" (" +
                 "\"ENTRY_SHARED_ID\" INTEGER REFERENCES \"ENTRY\"(\"SHARED_ID\") ON DELETE CASCADE, " +
                 "\"NAME\" VARCHAR, " +
                 "\"VALUE\" TEXT)");
 
-            dbmsHelper.executeUpdate("CREATE TABLE IF NOT EXISTS \"METADATA\" ("
+            connection.createStatement().executeUpdate("CREATE TABLE IF NOT EXISTS \"METADATA\" ("
                     + "\"KEY\" VARCHAR,"
                     + "\"VALUE\" TEXT)");
 
         } else if (dbmsType == DBMSType.ORACLE) {
-            dbmsHelper.executeUpdate(
+            connection.createStatement().executeUpdate(
                 "CREATE TABLE \"ENTRY\" (" +
                 "\"SHARED_ID\" NUMBER NOT NULL, " +
                 "\"TYPE\" VARCHAR2(255) NULL, " +
                 "\"VERSION\" NUMBER DEFAULT 1, " +
                 "CONSTRAINT \"ENTRY_PK\" PRIMARY KEY (\"SHARED_ID\"))");
 
-            dbmsHelper.executeUpdate("CREATE SEQUENCE \"ENTRY_SEQ\"");
+            connection.createStatement().executeUpdate("CREATE SEQUENCE \"ENTRY_SEQ\"");
 
-            dbmsHelper.executeUpdate("CREATE TRIGGER \"ENTRY_T\" BEFORE INSERT ON \"ENTRY\" " +
+            connection.createStatement().executeUpdate("CREATE TRIGGER \"ENTRY_T\" BEFORE INSERT ON \"ENTRY\" " +
                 "FOR EACH ROW BEGIN SELECT \"ENTRY_SEQ\".NEXTVAL INTO :NEW.shared_id FROM DUAL; END;");
 
-            dbmsHelper.executeUpdate(
+            connection.createStatement().executeUpdate(
                 "CREATE TABLE \"FIELD\" (" +
                 "\"ENTRY_SHARED_ID\" NUMBER NOT NULL, " +
                 "\"NAME\" VARCHAR2(255) NOT NULL, " +
@@ -142,11 +144,12 @@ public class DBMSProcessor {
                 "CONSTRAINT \"ENTRY_SHARED_ID_FK\" FOREIGN KEY (\"ENTRY_SHARED_ID\") " +
                 "REFERENCES \"ENTRY\"(\"SHARED_ID\") ON DELETE CASCADE)");
 
-            dbmsHelper.executeUpdate("CREATE TABLE \"METADATA\" (" +
+            connection.createStatement().executeUpdate("CREATE TABLE \"METADATA\" (" +
                     "\"KEY\"  VARCHAR2(255) NULL," +
                     "\"VALUE\"  CLOB NOT NULL)");
 
         }
+
         if (!checkBaseIntegrity()) {
             // can only happen with users direct intervention on shared database
             LOGGER.error(Localization.lang("Corrupt_shared_database_structure."));
@@ -171,7 +174,7 @@ public class DBMSProcessor {
                         .append(escape("SHARED_ID"))
                         .append(" = ?");
 
-                try (PreparedStatement preparedSelectStatement = dbmsHelper.prepareStatement(selectQuery.toString())) {
+                try (PreparedStatement preparedSelectStatement = connection.prepareStatement(selectQuery.toString())) {
                     preparedSelectStatement.setInt(1, sharedID);
                     try (ResultSet resultSet = preparedSelectStatement.executeQuery()) {
                         if (resultSet.next()) {
@@ -190,8 +193,8 @@ public class DBMSProcessor {
                 .append(") VALUES(?)");
 
             // This is the only method to get generated keys which is accepted by MySQL, PostgreSQL and Oracle.
-            try (PreparedStatement preparedEntryStatement = dbmsHelper.prepareStatement(insertIntoEntryQuery.toString(),
-                    "SHARED_ID")) {
+            try (PreparedStatement preparedEntryStatement = connection.prepareStatement(insertIntoEntryQuery.toString(),
+                    new String[] {"SHARED_ID"})) {
 
                 preparedEntryStatement.setString(1, bibEntry.getType());
                 preparedEntryStatement.executeUpdate();
@@ -215,7 +218,7 @@ public class DBMSProcessor {
                         .append(escape("VALUE"))
                         .append(") VALUES(?, ?, ?)");
 
-                    try (PreparedStatement preparedFieldStatement = dbmsHelper.prepareStatement(insertFieldQuery.toString())) {
+                    try (PreparedStatement preparedFieldStatement = connection.prepareStatement(insertFieldQuery.toString())) {
                         // columnIndex starts with 1
                         preparedFieldStatement.setInt(1, bibEntry.getSharedID());
                         preparedFieldStatement.setString(2, fieldName);
@@ -233,9 +236,10 @@ public class DBMSProcessor {
      * Updates the whole {@link BibEntry} on shared database.
      *
      * @param localBibEntry {@link BibEntry} affected by changes
+     * @throws SQLException
      */
-    public void updateEntry(BibEntry localBibEntry) throws OfflineLockException, SharedEntryNotPresentException {
-        dbmsHelper.setAutoCommit(false); // disable auto commit due to transaction
+    public void updateEntry(BibEntry localBibEntry) throws OfflineLockException, SharedEntryNotPresentException, SQLException {
+        connection.setAutoCommit(false); // disable auto commit due to transaction
 
         try {
             Optional<BibEntry> sharedEntryOptional = getSharedEntry(localBibEntry.getSharedID());
@@ -268,22 +272,22 @@ public class DBMSProcessor {
                     .append(escape("SHARED_ID"))
                     .append(" = ?");
 
-                try (PreparedStatement preparedUpdateEntryTypeStatement = dbmsHelper.prepareStatement(updateEntryTypeQuery.toString())) {
+                try (PreparedStatement preparedUpdateEntryTypeStatement = connection.prepareStatement(updateEntryTypeQuery.toString())) {
                     preparedUpdateEntryTypeStatement.setString(1, localBibEntry.getType());
                     preparedUpdateEntryTypeStatement.setInt(2, localBibEntry.getSharedID());
                     preparedUpdateEntryTypeStatement.executeUpdate();
                 }
 
-                dbmsHelper.commit(); // apply all changes in current transaction
+                connection.commit(); // apply all changes in current transaction
 
             } else {
                 throw new OfflineLockException(localBibEntry, sharedBibEntry);
             }
         } catch (SQLException e) {
             LOGGER.error("SQL Error: ", e);
-            dbmsHelper.rollback(); // undo changes made in current transaction
+            connection.rollback(); // undo changes made in current transaction
         } finally {
-            dbmsHelper.setAutoCommit(true); // enable auto commit mode again
+            connection.setAutoCommit(true); // enable auto commit mode again
         }
     }
 
@@ -303,7 +307,8 @@ public class DBMSProcessor {
                 .append(escape("ENTRY_SHARED_ID"))
                 .append(" = ?");
 
-            try (PreparedStatement preparedDeleteFieldStatement = dbmsHelper.prepareStatement(deleteFieldQuery.toString())) {
+            try (PreparedStatement preparedDeleteFieldStatement = connection
+                    .prepareStatement(deleteFieldQuery.toString())) {
                 preparedDeleteFieldStatement.setString(1, nullField);
                 preparedDeleteFieldStatement.setInt(2, localBibEntry.getSharedID());
                 preparedDeleteFieldStatement.executeUpdate();
@@ -332,7 +337,7 @@ public class DBMSProcessor {
                     .append(escape("ENTRY_SHARED_ID"))
                     .append(" = ?");
 
-            try (PreparedStatement preparedSelectFieldStatement = dbmsHelper
+            try (PreparedStatement preparedSelectFieldStatement = connection
                     .prepareStatement(selectFieldQuery.toString())) {
                 preparedSelectFieldStatement.setString(1, fieldName);
                 preparedSelectFieldStatement.setInt(2, localBibEntry.getSharedID());
@@ -350,7 +355,7 @@ public class DBMSProcessor {
                                 .append(escape("ENTRY_SHARED_ID"))
                                 .append(" = ?");
 
-                        try (PreparedStatement preparedUpdateFieldStatement = dbmsHelper
+                        try (PreparedStatement preparedUpdateFieldStatement = connection
                                 .prepareStatement(updateFieldQuery.toString())) {
                             preparedUpdateFieldStatement.setString(1, value);
                             preparedUpdateFieldStatement.setString(2, fieldName);
@@ -369,7 +374,7 @@ public class DBMSProcessor {
                                 .append(escape("VALUE"))
                                 .append(") VALUES(?, ?, ?)");
 
-                        try (PreparedStatement preparedFieldStatement = dbmsHelper
+                        try (PreparedStatement preparedFieldStatement = connection
                                 .prepareStatement(insertFieldQuery.toString())) {
                             preparedFieldStatement.setInt(1, localBibEntry.getSharedID());
                             preparedFieldStatement.setString(2, fieldName);
@@ -394,7 +399,7 @@ public class DBMSProcessor {
                 .append(escape("SHARED_ID"))
                 .append(" = ?");
 
-        try (PreparedStatement preparedStatement = dbmsHelper.prepareStatement(query.toString())) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query.toString())) {
             preparedStatement.setInt(1, bibEntry.getSharedID());
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
@@ -440,7 +445,7 @@ public class DBMSProcessor {
         selectEntryQuery.append(" ORDER BY ");
         selectEntryQuery.append(escape("SHARED_ID"));
 
-        try (ResultSet selectEntryResultSet = dbmsHelper.query(selectEntryQuery.toString())) {
+        try (ResultSet selectEntryResultSet = connection.createStatement().executeQuery(selectEntryQuery.toString())) {
             while (selectEntryResultSet.next()) {
                 BibEntry bibEntry = new BibEntry();
                 // setting the base attributes once
@@ -455,7 +460,7 @@ public class DBMSProcessor {
                     .append(escape("ENTRY_SHARED_ID"))
                     .append(" = ?");
 
-                try (PreparedStatement preparedSelectFieldStatement = dbmsHelper.prepareStatement(selectFieldQuery.toString())) {
+                try (PreparedStatement preparedSelectFieldStatement = connection.prepareStatement(selectFieldQuery.toString())) {
                     preparedSelectFieldStatement.setInt(1, selectEntryResultSet.getInt("SHARED_ID"));
                     try (ResultSet selectFieldResultSet = preparedSelectFieldStatement.executeQuery()) {
                         while (selectFieldResultSet.next()) {
@@ -484,7 +489,7 @@ public class DBMSProcessor {
             .append(" ORDER BY ")
             .append(escape("SHARED_ID"));
 
-        try (ResultSet selectEntryResultSet = dbmsHelper.query(selectEntryQuery.toString())) {
+        try (ResultSet selectEntryResultSet = connection.createStatement().executeQuery(selectEntryQuery.toString())) {
             while (selectEntryResultSet.next()) {
                 sharedIDVersionMapping.put(selectEntryResultSet.getInt("SHARED_ID"), selectEntryResultSet.getInt("VERSION"));
             }
@@ -501,7 +506,7 @@ public class DBMSProcessor {
     public Map<String, String> getSharedMetaData() {
         Map<String, String> data = new HashMap<>();
 
-        try (ResultSet resultSet = dbmsHelper.query("SELECT * FROM " + escape("METADATA"))) {
+        try (ResultSet resultSet = connection.createStatement().executeQuery("SELECT * FROM " + escape("METADATA"))) {
             while(resultSet.next()) {
                 data.put(resultSet.getString("KEY"), resultSet.getString("VALUE"));
             }
@@ -515,9 +520,10 @@ public class DBMSProcessor {
     /**
      * Clears and sets all shared meta data.
      * @param metaData JabRef meta data.
+     * @throws SQLException
      */
-    public void setSharedMetaData(Map<String, String> data) {
-        dbmsHelper.executeUpdate("TRUNCATE TABLE " + escape("METADATA")); // delete data all data from table
+    public void setSharedMetaData(Map<String, String> data) throws SQLException {
+        connection.createStatement().executeUpdate("TRUNCATE TABLE " + escape("METADATA")); // delete data all data from table
 
         for (Map.Entry<String, String> metaEntry : data.entrySet()) {
 
@@ -530,7 +536,7 @@ public class DBMSProcessor {
                 .append(escape("VALUE"))
                 .append(") VALUES(?, ?)");
 
-            try (PreparedStatement preparedStatement = dbmsHelper.prepareStatement(query.toString())) {
+            try (PreparedStatement preparedStatement = connection.prepareStatement(query.toString())) {
                 preparedStatement.setString(1, metaEntry.getKey());
                 preparedStatement.setString(2, metaEntry.getValue());
                 preparedStatement.executeUpdate();
