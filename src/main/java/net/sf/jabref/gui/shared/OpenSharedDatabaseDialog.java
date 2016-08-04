@@ -47,6 +47,7 @@ import net.sf.jabref.gui.JabRefFrame;
 import net.sf.jabref.logic.l10n.Localization;
 import net.sf.jabref.model.database.BibDatabaseMode;
 import net.sf.jabref.model.database.DatabaseLocation;
+import net.sf.jabref.shared.DBMSConnectionProperties;
 import net.sf.jabref.shared.DBMSConnector;
 import net.sf.jabref.shared.DBMSType;
 
@@ -113,22 +114,22 @@ public class OpenSharedDatabaseDialog extends JDialog {
                     BibDatabaseContext bibDatabaseContext = new BibDatabaseContext(new Defaults(selectedMode),
                             DatabaseLocation.SHARED);
 
-                    DBMSType selectedType = (DBMSType) dbmsTypeDropDown.getSelectedItem();
-                    String host = hostField.getText();
-                    int port = Integer.parseInt(portField.getText());
-                    String database = databaseField.getText();
-                    String user = userField.getText();
-                    String password = new String(passwordField.getPassword()); //JPasswordField.getPassword() does not return a String, but a char array.
+                    DBMSConnectionProperties connectionProperties = new DBMSConnectionProperties();
+                    connectionProperties.setType((DBMSType) dbmsTypeDropDown.getSelectedItem());
+                    connectionProperties.setHost(hostField.getText());
+                    connectionProperties.setPort(Integer.parseInt(portField.getText()));
+                    connectionProperties.setDatabase(databaseField.getText());
+                    connectionProperties.setUser(userField.getText());
+                    connectionProperties.setPassword(new String(passwordField.getPassword())); //JPasswordField.getPassword() does not return a String, but a char array.
 
-                    bibDatabaseContext.getDBSynchronizer()
-                            .openSharedDatabase(selectedType, host, port, database, user, password);
+                    bibDatabaseContext.getDBSynchronizer().openSharedDatabase(connectionProperties);
 
                     frame.addTab(bibDatabaseContext, true);
 
                     setGlobalPrefs();
 
                     bibDatabaseContext.getDBSynchronizer().registerListener(new SharedDatabaseUIManager(frame));
-                    frame.output(Localization.lang("Connection_to_%0_server_stablished.", selectedType.toString()));
+                    frame.output(Localization.lang("Connection_to_%0_server_stablished.", connectionProperties.getType().toString()));
                     dispose();
                 } catch (ClassNotFoundException exception) {
                     JOptionPane.showMessageDialog(OpenSharedDatabaseDialog.this, exception.getMessage(), Localization.lang("Driver error"),

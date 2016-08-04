@@ -345,9 +345,17 @@ public class DBMSSynchronizer {
         initializeDatabases();
     }
 
-    public void openSharedDatabase(DBMSType type, String host, int port, String database, String user,
-            String password) throws ClassNotFoundException, SQLException {
-        openSharedDatabase(DBMSConnector.getNewConnection(type, host, port, database, user, password), type, database);
+    public void openSharedDatabase(DBMSConnectionProperties properties) throws ClassNotFoundException, SQLException {
+        openSharedDatabase(
+                DBMSConnector.getNewConnection(
+                        properties.getType(),
+                        properties.getHost(),
+                        properties.getPort(),
+                        properties.getDatabase(),
+                        properties.getUser(),
+                        properties.getPassword()),
+                properties.getType(),
+                properties.getDatabase());
     }
 
     public String getDBName() {
