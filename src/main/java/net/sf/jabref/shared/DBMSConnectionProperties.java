@@ -13,6 +13,20 @@ public class DBMSConnectionProperties {
     private String password;
 
 
+    public DBMSConnectionProperties() {
+        // no data
+    }
+
+    public DBMSConnectionProperties(DBMSType type, String host, int port, String database, String user,
+            String password) {
+        this.type = type;
+        this.host = host;
+        this.port = port;
+        this.database = database;
+        this.user = user;
+        this.password = password;
+    }
+
     public DBMSType getType() {
         return type;
     }

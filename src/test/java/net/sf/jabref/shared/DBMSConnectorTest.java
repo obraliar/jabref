@@ -23,14 +23,13 @@ public class DBMSConnectorTest {
 
     @Test
     public void testGetNewConnection() throws ClassNotFoundException, SQLException {
-        TestConnectionData connectionData = TestConnector.getTestConnectionData(dbmsType);
+        DBMSConnectionProperties properties = TestConnector.getConnectionProperties(dbmsType);
 
-        DBMSConnector.getNewConnection(dbmsType, connectionData.getHost(), connectionData.getDatabase(),
-                connectionData.getUser(), connectionData.getPassord());
+        DBMSConnector.getNewConnection(properties);
     }
 
     @Test(expected = SQLException.class)
     public void testGetNewConnectionFail() throws SQLException, ClassNotFoundException {
-        DBMSConnector.getNewConnection(dbmsType, "XXXX", "XXXX", "XXXX", "XXXX");
+        DBMSConnector.getNewConnection(new DBMSConnectionProperties(dbmsType, "XXXX", 0, "XXXX", "XXXX", "XXXX"));
     }
 }

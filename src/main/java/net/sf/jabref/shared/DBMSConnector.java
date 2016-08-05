@@ -36,24 +36,6 @@ public class DBMSConnector {
 
     /**
      * Determines the suitable driver and retrieves a working SQL Connection in normal case.
-     * A default port is going to be taken.
-     *
-     * @param dbmsType Enum entry of {@link DBMSType} which determines the driver
-     * @param host Hostname, Domain or IP address
-     * @param database An already existent database name.
-     * @param user Username
-     * @param password Password
-     * @return
-     * @throws ClassNotFoundException Thrown if no suitable drivers were found
-     * @throws SQLException Thrown if connection has failed
-     */
-    public static Connection getNewConnection(DBMSType dbmsType, String host, String database, String user, String password)
-            throws ClassNotFoundException, SQLException {
-        return getNewConnection(dbmsType, host, dbmsType.getDefaultPort(), database, user, password);
-    }
-
-    /**
-     * Determines the suitable driver and retrieves a working SQL Connection in normal case.
      *
      * @param dbmsType Enum entry of {@link DBMSType} which determines the driver
      * @param host Hostname, Domain or IP address
@@ -65,7 +47,24 @@ public class DBMSConnector {
      * @throws ClassNotFoundException Thrown if no suitable drivers were found
      * @throws SQLException Thrown if connection has failed
      */
-    public static Connection getNewConnection(DBMSType dbmsType, String host, int port, String database, String user,
+    public static Connection getNewConnection(DBMSConnectionProperties properties)
+            throws ClassNotFoundException, SQLException {
+
+        try {
+            DriverManager.setLoginTimeout(3);
+            return DriverManager.getConnection(
+                    properties.getType().getUrl(properties.getHost(), properties.getPort(), properties.getDatabase()),
+                    properties.getUser(), properties.getPassword());
+        } catch (SQLException e) {
+            // Some systems like PostgreSQL retrieves 0 to every exception.
+            // Therefore a stable error determination is not possible.
+            LOGGER.error("Could not connect to database: " + e.getMessage() + " - Error code: " + e.getErrorCode());
+
+            throw e;
+        }
+    }
+
+    public static Connection getNewConnection_O(DBMSType dbmsType, String host, int port, String database, String user,
             String password) throws ClassNotFoundException, SQLException {
 
         try {
