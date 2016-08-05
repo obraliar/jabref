@@ -54,12 +54,7 @@ public class BibEntry implements Cloneable {
 
     private String id;
 
-    // This id is set by the remote database system (DBS).
-    // It has to be unique on remote DBS for all connected JabRef instances.
-    // The old id above does not satisfy this requirement.
-    private int sharedID;
-
-    private int version; // Needed for version controlling if used on shared database
+    private final SharedBibEntryData sharedBibEntryData;
 
     private String type;
     private Map<String, String> fields = new HashMap<>();
@@ -113,8 +108,7 @@ public class BibEntry implements Cloneable {
 
         this.id = id;
         setType(type);
-        this.sharedID = -1;
-        this.version = 1;
+        this.sharedBibEntryData = new SharedBibEntryData();
     }
 
     /**
@@ -642,20 +636,8 @@ public class BibEntry implements Cloneable {
         return fields;
     }
 
-    public int getSharedID() {
-        return this.sharedID;
-    }
-
-    public void setSharedID(int sharedID) {
-        this.sharedID = sharedID;
-    }
-
-    public int getVersion() {
-        return this.version;
-    }
-
-    public void setVersion(int version) {
-        this.version = version;
+    public SharedBibEntryData getSharedBibEntryData() {
+        return sharedBibEntryData;
     }
 
     @Override

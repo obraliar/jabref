@@ -178,14 +178,15 @@ public class DBMSSynchronizer {
         for (Map.Entry<Integer, Integer> idVersionEntry : idVersionMap.entrySet()) {
             boolean match = false;
             for (BibEntry localEntry : localEntries) {
-                if (idVersionEntry.getKey() == localEntry.getSharedID()) {
+                if (idVersionEntry.getKey() == localEntry.getSharedBibEntryData().getSharedID()) {
                     match = true;
-                    if (idVersionEntry.getValue() > localEntry.getVersion()) {
+                    if (idVersionEntry.getValue() > localEntry.getSharedBibEntryData().getVersion()) {
                         Optional<BibEntry> sharedEntry = dbmsProcessor.getSharedEntry(idVersionEntry.getKey());
                         if (sharedEntry.isPresent()) {
                             // update fields
                             localEntry.setType(sharedEntry.get().getType(), EntryEventSource.SHARED);
-                            localEntry.setVersion(sharedEntry.get().getVersion());
+                            localEntry.getSharedBibEntryData()
+                                    .setVersion(sharedEntry.get().getSharedBibEntryData().getVersion());
                             for (String field : sharedEntry.get().getFieldNames()) {
                                 localEntry.setField(field, sharedEntry.get().getFieldOptional(field), EntryEventSource.SHARED);
                             }
@@ -221,7 +222,7 @@ public class DBMSSynchronizer {
             BibEntry localEntry = localEntries.get(i);
             boolean match = false;
             for (int sharedID : sharedIDs) {
-                if (localEntry.getSharedID() == sharedID) {
+                if (localEntry.getSharedBibEntryData().getSharedID() == sharedID) {
                     match = true;
                     break;
                 }

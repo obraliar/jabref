@@ -52,9 +52,9 @@ public class MergeSharedEntryDialog {
         message.append("<br/><br/>");
         message.append(Localization.lang("You are not working on the newest version of BibEntry."));
         message.append("<br/><br/>");
-        message.append(Localization.lang("Shared version: %0", String.valueOf(sharedBibEntry.getVersion())));
+        message.append(Localization.lang("Shared version: %0", String.valueOf(sharedBibEntry.getSharedBibEntryData().getVersion())));
         message.append("<br/>");
-        message.append(Localization.lang("Local version: %0", String.valueOf(localBibEntry.getVersion())));
+        message.append(Localization.lang("Local version: %0", String.valueOf(localBibEntry.getSharedBibEntryData().getVersion())));
         message.append("<br/><br/>");
         message.append(Localization.lang("Please merge the shared entry with yours and press \"Merge entries\" to resolve this problem."));
         message.append("<br/>");
@@ -101,8 +101,8 @@ public class MergeSharedEntryDialog {
 
     private void mergeEntries() {
         BibEntry mergedBibEntry = mergeEntries.getMergeEntry();
-        mergedBibEntry.setSharedID(sharedBibEntry.getSharedID());
-        mergedBibEntry.setVersion(sharedBibEntry.getVersion());
+        mergedBibEntry.getSharedBibEntryData().setSharedID(sharedBibEntry.getSharedBibEntryData().getSharedID());
+        mergedBibEntry.getSharedBibEntryData().setVersion(sharedBibEntry.getSharedBibEntryData().getVersion());
 
         mergeDialog.dispose(); // dispose before synchronizing to avoid multiple merge windows in case of new conflict.
 

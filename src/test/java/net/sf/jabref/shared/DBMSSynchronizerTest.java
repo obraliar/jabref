@@ -199,7 +199,7 @@ public class DBMSSynchronizerTest {
         bibEntry.setType("book");
         bibEntry.setField("author", "Wirthlin, Michael J" + index);
         bibEntry.setField("title", "The nano processor" + index);
-        bibEntry.setSharedID(index);
+        bibEntry.getSharedBibEntryData().setSharedID(index);
         return bibEntry;
     }
 

@@ -69,7 +69,7 @@ public class DBMSProcessorTest {
         dbmsProcessor.insertEntry(expectedEntry);
 
         BibEntry emptyEntry = new BibEntry();
-        emptyEntry.setSharedID(1);
+        emptyEntry.getSharedBibEntryData().setSharedID(1);
         dbmsProcessor.insertEntry(emptyEntry); // does not insert, due to same sharedID.
 
         Map<String, String> actualFieldMap = new HashMap<>();
@@ -106,7 +106,8 @@ public class DBMSProcessorTest {
 
         dbmsProcessor.updateEntry(expectedEntry);
 
-        Optional<BibEntry> actualEntryOptional = dbmsProcessor.getSharedEntry(expectedEntry.getSharedID());
+        Optional<BibEntry> actualEntryOptional = dbmsProcessor
+                .getSharedEntry(expectedEntry.getSharedBibEntryData().getSharedID());
 
         if (actualEntryOptional.isPresent()) {
             Assert.assertEquals(expectedEntry, actualEntryOptional.get());
@@ -127,7 +128,7 @@ public class DBMSProcessorTest {
 
         dbmsProcessor.insertEntry(bibEntry);
 
-        bibEntry.setVersion(0); // simulate older version
+        bibEntry.getSharedBibEntryData().setVersion(0); // simulate older version
         bibEntry.setField("year", "1993");
 
         dbmsProcessor.updateEntry(bibEntry);
@@ -139,11 +140,12 @@ public class DBMSProcessorTest {
 
         dbmsProcessor.insertEntry(expectedBibEntry);
 
-        expectedBibEntry.setVersion(0); // simulate older version
+        expectedBibEntry.getSharedBibEntryData().setVersion(0); // simulate older version
 
         dbmsProcessor.updateEntry(expectedBibEntry);
 
-        Optional<BibEntry> actualBibEntryOptional = dbmsProcessor.getSharedEntry(expectedBibEntry.getSharedID());
+        Optional<BibEntry> actualBibEntryOptional = dbmsProcessor
+                .getSharedEntry(expectedBibEntry.getSharedBibEntryData().getSharedID());
 
         if (actualBibEntryOptional.isPresent()) {
             Assert.assertEquals(expectedBibEntry, actualBibEntryOptional.get());
@@ -181,7 +183,8 @@ public class DBMSProcessorTest {
 
         dbmsProcessor.insertEntry(expectedBibEntry);
 
-        Optional<BibEntry> actualBibEntryOptional = dbmsProcessor.getSharedEntry(expectedBibEntry.getSharedID());
+        Optional<BibEntry> actualBibEntryOptional = dbmsProcessor
+                .getSharedEntry(expectedBibEntry.getSharedBibEntryData().getSharedID());
 
         if (actualBibEntryOptional.isPresent()) {
             Assert.assertEquals(expectedBibEntry, actualBibEntryOptional.get());
@@ -206,8 +209,8 @@ public class DBMSProcessorTest {
         dbmsProcessor.updateEntry(secondEntry);
 
         Map<Integer, Integer> expectedIDVersionMap = new HashMap<>();
-        expectedIDVersionMap.put(firstEntry.getSharedID(), 1);
-        expectedIDVersionMap.put(secondEntry.getSharedID(), 2);
+        expectedIDVersionMap.put(firstEntry.getSharedBibEntryData().getSharedID(), 1);
+        expectedIDVersionMap.put(secondEntry.getSharedBibEntryData().getSharedID(), 2);
 
         Map<Integer, Integer> actualIDVersionMap = dbmsProcessor.getSharedIDVersionMapping();
 
@@ -255,7 +258,7 @@ public class DBMSProcessorTest {
         bibEntry.setField("author", "Author");
         bibEntry.setField("title", "");
         bibEntry.setField("year", "");
-        bibEntry.setSharedID(1);
+        bibEntry.getSharedBibEntryData().setSharedID(1);
         return bibEntry;
     }
 

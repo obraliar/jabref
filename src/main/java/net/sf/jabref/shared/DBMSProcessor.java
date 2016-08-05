@@ -114,7 +114,7 @@ public abstract class DBMSProcessor {
 
         try {
             // Check if already exists
-            int sharedID = bibEntry.getSharedID();
+            int sharedID = bibEntry.getSharedBibEntryData().getSharedID();
             if (sharedID != -1) {
                 StringBuilder selectQuery = new StringBuilder()
                         .append("SELECT * FROM ")
@@ -150,7 +150,7 @@ public abstract class DBMSProcessor {
 
                 try (ResultSet generatedKeys = preparedEntryStatement.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
-                        bibEntry.setSharedID(generatedKeys.getInt(1)); // set generated ID locally
+                        bibEntry.getSharedBibEntryData().setSharedID(generatedKeys.getInt(1)); // set generated ID locally
                     }
                 }
 
@@ -169,7 +169,7 @@ public abstract class DBMSProcessor {
 
                     try (PreparedStatement preparedFieldStatement = connection.prepareStatement(insertFieldQuery.toString())) {
                         // columnIndex starts with 1
-                        preparedFieldStatement.setInt(1, bibEntry.getSharedID());
+                        preparedFieldStatement.setInt(1, bibEntry.getSharedBibEntryData().getSharedID());
                         preparedFieldStatement.setString(2, fieldName);
                         preparedFieldStatement.setString(3, bibEntry.getFieldOptional(fieldName).get());
                         preparedFieldStatement.executeUpdate();
@@ -191,7 +191,7 @@ public abstract class DBMSProcessor {
         connection.setAutoCommit(false); // disable auto commit due to transaction
 
         try {
-            Optional<BibEntry> sharedEntryOptional = getSharedEntry(localBibEntry.getSharedID());
+            Optional<BibEntry> sharedEntryOptional = getSharedEntry(localBibEntry.getSharedBibEntryData().getSharedID());
 
             if (!sharedEntryOptional.isPresent()) {
                 throw new SharedEntryNotPresentException(localBibEntry);
@@ -203,7 +203,8 @@ public abstract class DBMSProcessor {
             removeSharedFieldsByDifference(localBibEntry, sharedBibEntry);
 
             // update only if local version is higher or the entries are equal
-            if ((localBibEntry.getVersion() >= sharedBibEntry.getVersion()) || localBibEntry.equals(sharedBibEntry)) {
+            if ((localBibEntry.getSharedBibEntryData().getVersion() >= sharedBibEntry.getSharedBibEntryData()
+                    .getVersion()) || localBibEntry.equals(sharedBibEntry)) {
 
                 insertOrUpdateFields(localBibEntry);
 
@@ -223,7 +224,7 @@ public abstract class DBMSProcessor {
 
                 try (PreparedStatement preparedUpdateEntryTypeStatement = connection.prepareStatement(updateEntryTypeQuery.toString())) {
                     preparedUpdateEntryTypeStatement.setString(1, localBibEntry.getType());
-                    preparedUpdateEntryTypeStatement.setInt(2, localBibEntry.getSharedID());
+                    preparedUpdateEntryTypeStatement.setInt(2, localBibEntry.getSharedBibEntryData().getSharedID());
                     preparedUpdateEntryTypeStatement.executeUpdate();
                 }
 
@@ -259,7 +260,7 @@ public abstract class DBMSProcessor {
             try (PreparedStatement preparedDeleteFieldStatement = connection
                     .prepareStatement(deleteFieldQuery.toString())) {
                 preparedDeleteFieldStatement.setString(1, nullField);
-                preparedDeleteFieldStatement.setInt(2, localBibEntry.getSharedID());
+                preparedDeleteFieldStatement.setInt(2, localBibEntry.getSharedBibEntryData().getSharedID());
                 preparedDeleteFieldStatement.executeUpdate();
             }
         }
@@ -289,7 +290,7 @@ public abstract class DBMSProcessor {
             try (PreparedStatement preparedSelectFieldStatement = connection
                     .prepareStatement(selectFieldQuery.toString())) {
                 preparedSelectFieldStatement.setString(1, fieldName);
-                preparedSelectFieldStatement.setInt(2, localBibEntry.getSharedID());
+                preparedSelectFieldStatement.setInt(2, localBibEntry.getSharedBibEntryData().getSharedID());
 
                 try (ResultSet selectFieldResultSet = preparedSelectFieldStatement.executeQuery()) {
                     if (selectFieldResultSet.next()) { // check if field already exists
@@ -308,7 +309,7 @@ public abstract class DBMSProcessor {
                                 .prepareStatement(updateFieldQuery.toString())) {
                             preparedUpdateFieldStatement.setString(1, value);
                             preparedUpdateFieldStatement.setString(2, fieldName);
-                            preparedUpdateFieldStatement.setInt(3, localBibEntry.getSharedID());
+                            preparedUpdateFieldStatement.setInt(3, localBibEntry.getSharedBibEntryData().getSharedID());
                             preparedUpdateFieldStatement.executeUpdate();
                         }
                     } else {
@@ -325,7 +326,7 @@ public abstract class DBMSProcessor {
 
                         try (PreparedStatement preparedFieldStatement = connection
                                 .prepareStatement(insertFieldQuery.toString())) {
-                            preparedFieldStatement.setInt(1, localBibEntry.getSharedID());
+                            preparedFieldStatement.setInt(1, localBibEntry.getSharedBibEntryData().getSharedID());
                             preparedFieldStatement.setString(2, fieldName);
                             preparedFieldStatement.setString(3, value);
                             preparedFieldStatement.executeUpdate();
@@ -349,7 +350,7 @@ public abstract class DBMSProcessor {
                 .append(" = ?");
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query.toString())) {
-            preparedStatement.setInt(1, bibEntry.getSharedID());
+            preparedStatement.setInt(1, bibEntry.getSharedBibEntryData().getSharedID());
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             LOGGER.error("SQL Error: ", e);
@@ -398,9 +399,9 @@ public abstract class DBMSProcessor {
             while (selectEntryResultSet.next()) {
                 BibEntry bibEntry = new BibEntry();
                 // setting the base attributes once
-                bibEntry.setSharedID(selectEntryResultSet.getInt("SHARED_ID"));
+                bibEntry.getSharedBibEntryData().setSharedID(selectEntryResultSet.getInt("SHARED_ID"));
                 bibEntry.setType(selectEntryResultSet.getString("TYPE"));
-                bibEntry.setVersion(selectEntryResultSet.getInt("VERSION"));
+                bibEntry.getSharedBibEntryData().setVersion(selectEntryResultSet.getInt("VERSION"));
 
                 StringBuilder selectFieldQuery = new StringBuilder()
                     .append("SELECT * FROM ")
