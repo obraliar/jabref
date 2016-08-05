@@ -64,7 +64,7 @@ public class SharedDatabaseUIManager {
     public void listen(SharedEntryNotPresentEvent sharedEntryNotPresentEvent) {
         BibEntry bibEntry = sharedEntryNotPresentEvent.getBibEntry();
 
-        String[] options = {Localization.lang("Keep"), Localization.lang("Close")};
+        String[] options = {Localization.lang("Keep"), Localization.lang("Delete")};
 
         int answer = JOptionPane.showOptionDialog(jabRefFrame,
                 Localization.lang("The BibEntry you currently work on has been deleted on the shared side. "

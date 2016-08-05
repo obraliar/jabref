@@ -106,7 +106,7 @@ public class MergeSharedEntryDialog {
 
         mergeDialog.dispose(); // dispose before synchronizing to avoid multiple merge windows in case of new conflict.
 
-        dbmsSynchronizer.synchrnizeSharedEntry(mergedBibEntry);
+        dbmsSynchronizer.synchronizeSharedEntry(mergedBibEntry);
         dbmsSynchronizer.synchronizeLocalDatabase();
     }
 }

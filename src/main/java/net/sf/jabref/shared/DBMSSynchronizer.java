@@ -96,20 +96,9 @@ public class DBMSSynchronizer {
         // In this case DBSynchronizer should not try to update the bibEntry entry again (but it would not harm).
         if (isEventSourceAccepted(event) && checkCurrentConnection()) {
             synchronizeLocalMetaData();
-            try {
-                BibEntry bibEntry = event.getBibEntry();
-                BibDatabaseWriter.applySaveActions(bibEntry, metaData); // perform possibly existing save actions
-                // do not use newValue from the event cause save actions are only applied on the entry
-                //dbmsProcessor.updateField(event.getBibEntry(), event.getFieldName());
-                dbmsProcessor.updateEntry(event.getBibEntry());
-                synchronizeLocalDatabase(); // Pull changes for the case that there were some
-            } catch (OfflineLockException exception) {
-                eventBus.post(new UpdateRefusedEvent(bibDatabaseContext, exception.getLocalBibEntry(), exception.getSharedBibEntry()));
-            } catch (SharedEntryNotPresentException exception) {
-                eventBus.post(new SharedEntryNotPresentEvent(exception.getNonPresentBibEntry()));
-            } catch (SQLException e) {
-                LOGGER.error("SQL Error: ", e);
-            }
+            BibEntry bibEntry = event.getBibEntry();
+            synchronizeSharedEntry(bibEntry);
+            synchronizeLocalDatabase(); // Pull changes for the case that there were some
         }
     }
 
@@ -136,8 +125,8 @@ public class DBMSSynchronizer {
     public void listen(MetaDataChangedEvent event) {
         if (checkCurrentConnection()) {
             synchronizeSharedMetaData(event.getMetaData());
-            applyMetaData();
             synchronizeLocalDatabase();
+            applyMetaData();
         }
     }
 
@@ -236,14 +225,13 @@ public class DBMSSynchronizer {
 
     /**
      * Synchronizes the shared {@link BibEntry} with the local one.
-     * Save actions are applied before updating.
      */
-    public void synchrnizeSharedEntry(BibEntry bibEntry) {
+    public void synchronizeSharedEntry(BibEntry bibEntry) {
         if (!checkCurrentConnection()) {
             return;
         }
         try {
-            BibDatabaseWriter.applySaveActions(bibEntry, metaData);
+            BibDatabaseWriter.applySaveActions(bibEntry, metaData); // perform possibly existing save actions
             dbmsProcessor.updateEntry(bibEntry);
         } catch (OfflineLockException exception) {
             eventBus.post(new UpdateRefusedEvent(bibDatabaseContext, exception.getLocalBibEntry(), exception.getSharedBibEntry()));
@@ -253,7 +241,6 @@ public class DBMSSynchronizer {
             LOGGER.error("SQL Error: ", e);
         }
     }
-
 
     /**
      * Synchronizes all meta data locally.
@@ -292,7 +279,18 @@ public class DBMSSynchronizer {
             return;
         }
         for (BibEntry bibEntry : bibDatabase.getEntries()) {
-            synchrnizeSharedEntry(bibEntry);
+            // synchronize only if changes were present
+            if (!BibDatabaseWriter.applySaveActions(bibEntry, metaData).isEmpty()) {
+                try {
+                    dbmsProcessor.updateEntry(bibEntry);
+                } catch (OfflineLockException exception) {
+                    eventBus.post(new UpdateRefusedEvent(bibDatabaseContext, exception.getLocalBibEntry(), exception.getSharedBibEntry()));
+                } catch (SharedEntryNotPresentException exception) {
+                    eventBus.post(new SharedEntryNotPresentEvent(exception.getNonPresentBibEntry()));
+                } catch (SQLException e) {
+                    LOGGER.error("SQL Error: ", e);
+                }
+            }
         }
     }
 
