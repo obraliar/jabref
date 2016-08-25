@@ -202,8 +202,8 @@ public class OpenSharedDatabaseDialog extends JDialog {
             userField.setText(sharedDatabaseUser.get());
         }
 
-        if (sharedDatabasePassword.isPresent()) {
-            passwordField.setText(new Password(sharedDatabasePassword.get()).decrypt());
+        if (sharedDatabasePassword.isPresent() && sharedDatabaseUser.isPresent()) {
+            passwordField.setText(new Password(sharedDatabasePassword.get(), sharedDatabaseUser.get()).decrypt());
         }
 
         rememberPassword.setSelected(sharedDatabaseRememberPassword);
@@ -320,7 +320,7 @@ public class OpenSharedDatabaseDialog extends JDialog {
         prefs.setUser(userField.getText());
 
         if (rememberPassword.isSelected()) {
-            prefs.setPassword(new Password(new String(passwordField.getPassword())).encrypt());
+            prefs.setPassword(new Password(new String(passwordField.getPassword()), userField.getText()).encrypt());
         } else {
             prefs.clearPassword(); // for the case that the password is already set
         }
