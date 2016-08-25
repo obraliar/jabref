@@ -49,6 +49,7 @@ import net.sf.jabref.model.database.BibDatabase;
 import net.sf.jabref.model.database.BibDatabaseMode;
 import net.sf.jabref.model.entry.BibEntry;
 import net.sf.jabref.preferences.JabRefPreferences;
+import net.sf.jabref.shared.prefs.SharedDatabasePreferences;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -413,6 +414,7 @@ public class ArgumentProcessor {
             try {
                 System.out.println(Localization.lang("Setting all preferences to default values."));
                 Globals.prefs.clear();
+                new SharedDatabasePreferences().clear();
             } catch (BackingStoreException e) {
                 System.err.println(Localization.lang("Unable to clear preferences."));
                 LOGGER.error("Unable to clear preferences", e);
