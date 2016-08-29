@@ -134,7 +134,6 @@ public class SaveDatabaseAction extends AbstractWorker {
 
             if (success) {
                 panel.getUndoManager().markUnchanged();
-                AutoSaveManager.deleteAutoSaveFile(panel);
                 // (Only) after a successful save the following
                 // statement marks that the base is unchanged
                 // since last save:

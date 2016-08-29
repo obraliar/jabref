@@ -239,7 +239,7 @@ public class ArgumentProcessor {
                 boolean bibExtension = aLeftOver.toLowerCase(Locale.ENGLISH).endsWith("bib");
                 ParserResult pr = ParserResult.getNullResult();
                 if (bibExtension) {
-                    pr = OpenDatabase.loadDatabaseOrAutoSave(aLeftOver, false,
+                    pr = OpenDatabase.loadDatabaseOrAutoSave(aLeftOver,
                             Globals.prefs.getImportFormatPreferences());
                 }
 
