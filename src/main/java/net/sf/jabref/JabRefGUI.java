@@ -9,7 +9,6 @@ import java.util.List;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
 import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -20,7 +19,6 @@ import net.sf.jabref.gui.GUIGlobals;
 import net.sf.jabref.gui.JabRefFrame;
 import net.sf.jabref.gui.importer.ParserResultWarningDialog;
 import net.sf.jabref.gui.importer.actions.OpenDatabaseAction;
-import net.sf.jabref.gui.importer.worker.AutosaveStartupPrompter;
 import net.sf.jabref.gui.util.FocusRequester;
 import net.sf.jabref.gui.worker.VersionWorker;
 import net.sf.jabref.logic.importer.OpenDatabase;
@@ -118,15 +116,6 @@ public class JabRefGUI {
                 if (pr.isInvalid()) {
                     failed.add(pr);
                     parserResultIterator.remove();
-                } else if (!pr.isPostponedAutosaveFound()) {
-                    if (pr.toOpenTab()) {
-                        // things to be appended to an opened tab should be done after opening all tabs
-                        // add them to the list
-                        toOpenTab.add(pr);
-                    } else {
-                        JabRefGUI.getMainFrame().addParserResult(pr, first);
-                        first = false;
-                    }
                 } else {
                     parserResultIterator.remove();
                     postponed.add(pr.getFile().get());
@@ -140,11 +129,9 @@ public class JabRefGUI {
             first = false;
         }
 
-        // Start auto save timer:
-        if (Globals.prefs.getBoolean(JabRefPreferences.AUTO_SAVE)) {
-            Globals.startAutoSaveManager(JabRefGUI.getMainFrame());
-        }
-
+        // If we are set to remember the window location, we also remember the maximised
+        // state. This needs to be set after the window has been made visible, so we
+        // do it here:
         if (Globals.prefs.getBoolean(JabRefPreferences.WINDOW_MAXIMISED)) {
             JabRefGUI.getMainFrame().setExtendedState(JFrame.MAXIMIZED_BOTH);
         }
@@ -183,13 +170,6 @@ public class JabRefGUI {
 
         LOGGER.debug("Finished adding panels");
 
-        // If any database loading was postponed due to an autosave, schedule them
-        // for handing now:
-        if (!postponed.isEmpty()) {
-            AutosaveStartupPrompter asp = new AutosaveStartupPrompter(JabRefGUI.getMainFrame(), postponed);
-            SwingUtilities.invokeLater(asp);
-        }
-
         if (!bibDatabases.isEmpty()) {
             new FocusRequester(JabRefGUI.getMainFrame().getCurrentBasePanel().getMainTable());
         }
@@ -210,7 +190,7 @@ public class JabRefGUI {
                 continue;
             }
 
-            ParserResult parsedDatabase = OpenDatabase.loadDatabaseOrAutoSave(fileName, false,
+            ParserResult parsedDatabase = OpenDatabase.loadDatabaseOrAutoSave(fileName,
                     Globals.prefs.getImportFormatPreferences());
 
             if (parsedDatabase.isNullResult()) {

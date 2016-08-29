@@ -1,7 +1,6 @@
 package net.sf.jabref.gui.preftabs;
 
 import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.event.ItemListener;
 
 import javax.swing.BorderFactory;
@@ -12,11 +11,8 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
-import javax.swing.JSpinner;
 import javax.swing.JTextField;
-import javax.swing.SpinnerNumberModel;
 
-import net.sf.jabref.Globals;
 import net.sf.jabref.gui.FileDialog;
 import net.sf.jabref.gui.JabRefFrame;
 import net.sf.jabref.gui.help.HelpAction;
@@ -41,16 +37,12 @@ class FileTab extends JPanel implements PrefsTab {
 
     private final JCheckBox backup;
     private final JCheckBox openLast;
-    private final JCheckBox autoSave;
-    private final JCheckBox promptBeforeUsingAutoSave;
     private final JComboBox<String> newlineSeparator;
     private final JCheckBox reformatFileOnSaveAndExport;
     private final JRadioButton resolveStringsStandard;
     private final JRadioButton resolveStringsAll;
     private final JTextField nonWrappableFields;
     private final JTextField doNotResolveStringsFor;
-    private final JSpinner autoSaveInterval;
-    private boolean origAutoSaveSetting;
 
     private final JTextField fileDir;
     private final JCheckBox bibLocAsPrimaryDir;
@@ -83,9 +75,6 @@ class FileTab extends JPanel implements PrefsTab {
 
         openLast = new JCheckBox(Localization.lang("Open last edited databases at startup"));
         backup = new JCheckBox(Localization.lang("Backup old file when saving"));
-        autoSave = new JCheckBox(Localization.lang("Autosave"));
-        promptBeforeUsingAutoSave = new JCheckBox(Localization.lang("Prompt before recovering a database from an autosave file"));
-        autoSaveInterval = new JSpinner(new SpinnerNumberModel(1, 1, 60, 1));
         resolveStringsAll = new JRadioButton(Localization.lang("Resolve strings for all fields except") + ":");
         resolveStringsStandard = new JRadioButton(Localization.lang("Resolve strings for standard BibTeX fields only"));
         ButtonGroup bg = new ButtonGroup();
@@ -99,11 +88,6 @@ class FileTab extends JPanel implements PrefsTab {
 
         nonWrappableFields = new JTextField(25);
         doNotResolveStringsFor = new JTextField(30);
-
-        autoSave.addChangeListener(e -> {
-            autoSaveInterval.setEnabled(autoSave.isSelected());
-            promptBeforeUsingAutoSave.setEnabled(autoSave.isSelected());
-        });
 
         FormLayout layout = new FormLayout("left:pref, 4dlu, fill:150dlu, 4dlu, fill:pref", ""); // left:pref, 4dlu, fill:pref
         DefaultFormBuilder builder = new DefaultFormBuilder(layout);
@@ -165,21 +149,6 @@ class FileTab extends JPanel implements PrefsTab {
         builder.append(allowFileAutoOpenBrowse);
         builder.nextLine();
 
-        builder.appendSeparator(Localization.lang("Autosave"));
-        builder.append(autoSave, 1);
-        JButton help = new HelpAction(HelpFile.AUTOSAVE).getHelpButton();
-        help.setPreferredSize(new Dimension(24, 24));
-        JPanel hPan = new JPanel();
-        hPan.setLayout(new BorderLayout());
-        hPan.add(help, BorderLayout.EAST);
-        builder.append(hPan);
-        builder.nextLine();
-        builder.append(Localization.lang("Autosave interval (minutes)") + ":");
-        builder.append(autoSaveInterval);
-        builder.nextLine();
-        builder.append(promptBeforeUsingAutoSave);
-        builder.nextLine();
-
         JPanel pan = builder.getPanel();
         pan.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         setLayout(new BorderLayout());
@@ -220,11 +189,6 @@ class FileTab extends JPanel implements PrefsTab {
         resolveStringsStandard.setSelected(!resolveStringsAll.isSelected());
         doNotResolveStringsFor.setText(prefs.get(JabRefPreferences.DO_NOT_RESOLVE_STRINGS_FOR));
         nonWrappableFields.setText(prefs.get(JabRefPreferences.NON_WRAPPABLE_FIELDS));
-
-        autoSave.setSelected(prefs.getBoolean(JabRefPreferences.AUTO_SAVE));
-        promptBeforeUsingAutoSave.setSelected(prefs.getBoolean(JabRefPreferences.PROMPT_BEFORE_USING_AUTOSAVE));
-        autoSaveInterval.setValue(prefs.getInt(JabRefPreferences.AUTO_SAVE_INTERVAL));
-        origAutoSaveSetting = autoSave.isSelected();
     }
 
     @Override
@@ -260,23 +224,11 @@ class FileTab extends JPanel implements PrefsTab {
         prefs.putBoolean(JabRefPreferences.OPEN_LAST_EDITED, openLast.isSelected());
         prefs.putBoolean(JabRefPreferences.RESOLVE_STRINGS_ALL_FIELDS, resolveStringsAll.isSelected());
         prefs.put(JabRefPreferences.DO_NOT_RESOLVE_STRINGS_FOR, doNotResolveStringsFor.getText().trim());
-        prefs.putBoolean(JabRefPreferences.AUTO_SAVE, autoSave.isSelected());
-        prefs.putBoolean(JabRefPreferences.PROMPT_BEFORE_USING_AUTOSAVE, promptBeforeUsingAutoSave.isSelected());
-        prefs.putInt(JabRefPreferences.AUTO_SAVE_INTERVAL, (Integer) autoSaveInterval.getValue());
         doNotResolveStringsFor.setText(prefs.get(JabRefPreferences.DO_NOT_RESOLVE_STRINGS_FOR));
 
         if (!nonWrappableFields.getText().trim().equals(prefs.get(JabRefPreferences.NON_WRAPPABLE_FIELDS))) {
             prefs.put(JabRefPreferences.NON_WRAPPABLE_FIELDS, nonWrappableFields.getText());
         }
-
-        // See if we should start or stop the auto save manager:
-        if (!origAutoSaveSetting && autoSave.isSelected()) {
-            Globals.startAutoSaveManager(frame);
-        }
-        else if (origAutoSaveSetting && !autoSave.isSelected()) {
-            Globals.stopAutoSaveManager();
-        }
-
     }
 
     @Override
