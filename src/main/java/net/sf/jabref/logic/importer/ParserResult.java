@@ -29,7 +29,6 @@ public class ParserResult {
 
     private String errorMessage;
 
-    private boolean postponedAutosaveFound;
     private boolean invalid;
     private boolean toOpenTab;
 
@@ -140,14 +139,6 @@ public class ParserResult {
      */
     public List<String> getDuplicateKeys() {
         return duplicateKeys;
-    }
-
-    public boolean isPostponedAutosaveFound() {
-        return postponedAutosaveFound;
-    }
-
-    public void setPostponedAutosaveFound(boolean postponedAutosaveFound) {
-        this.postponedAutosaveFound = postponedAutosaveFound;
     }
 
     public boolean isInvalid() {

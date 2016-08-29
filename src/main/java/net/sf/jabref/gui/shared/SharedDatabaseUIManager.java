@@ -96,7 +96,7 @@ public class SharedDatabaseUIManager {
      * @param dbmsConnectionProperties Connection data
      * @param raiseTab If <code>true</code> the new tab gets selected.
      */
-    private void openNewSharedDatabaseTab(DBMSConnectionProperties dbmsConnectionProperties, boolean raiseTab)
+    private BasePanel openNewSharedDatabaseTab(DBMSConnectionProperties dbmsConnectionProperties, boolean raiseTab)
             throws SQLException, DatabaseNotSupportedException {
         JabRefFrame frame = JabRefGUI.getMainFrame();
         BibDatabaseMode selectedMode = Globals.prefs.getDefaultBibDatabaseMode();
@@ -105,9 +105,9 @@ public class SharedDatabaseUIManager {
 
         dbmsSynchronizer = bibDatabaseContext.getDBMSSynchronizer();
         dbmsSynchronizer.openSharedDatabase(dbmsConnectionProperties);
-        frame.addTab(bibDatabaseContext, raiseTab);
         dbmsSynchronizer.registerListener(this);
         frame.output(Localization.lang("Connection_to_%0_server_established.", dbmsConnectionProperties.getType().toString()));
+        return frame.addTab(bibDatabaseContext, raiseTab);
     }
 
     /**
@@ -115,9 +115,9 @@ public class SharedDatabaseUIManager {
      *
      * @param dbmsConnectionProperties Connection data
      */
-    public void openNewSharedDatabaseTab(DBMSConnectionProperties dbmsConnectionProperties)
+    public BasePanel openNewSharedDatabaseTab(DBMSConnectionProperties dbmsConnectionProperties)
             throws SQLException, DatabaseNotSupportedException {
-        openNewSharedDatabaseTab(dbmsConnectionProperties, true);
+        return openNewSharedDatabaseTab(dbmsConnectionProperties, true);
     }
 
     /**

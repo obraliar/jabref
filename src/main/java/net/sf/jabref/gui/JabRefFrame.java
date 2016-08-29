@@ -60,6 +60,7 @@ import javax.swing.WindowConstants;
 
 import net.sf.jabref.Globals;
 import net.sf.jabref.JabRefExecutorService;
+import net.sf.jabref.autosave.AutoSaver;
 import net.sf.jabref.gui.actions.Actions;
 import net.sf.jabref.gui.actions.AutoLinkFilesAction;
 import net.sf.jabref.gui.actions.ErrorConsoleAction;
@@ -76,7 +77,6 @@ import net.sf.jabref.gui.actions.SearchForUpdateAction;
 import net.sf.jabref.gui.actions.SortTabsAction;
 import net.sf.jabref.gui.bibtexkeypattern.BibtexKeyPatternDialog;
 import net.sf.jabref.gui.dbproperties.DatabasePropertiesDialog;
-import net.sf.jabref.gui.exporter.AutoSaveManager;
 import net.sf.jabref.gui.exporter.ExportAction;
 import net.sf.jabref.gui.exporter.ExportCustomizationDialog;
 import net.sf.jabref.gui.exporter.SaveAllAction;
@@ -807,19 +807,12 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
         prefs.customImports.store();
         CustomEntryTypesManager.saveCustomEntryTypes(prefs);
 
-        // Clear autosave files:
-        // TODO: Is this really needed since clearAutoSave() is called in stopAutoSaveManager() a few rows below?
-        Globals.getAutoSaveManager().ifPresent(manager -> manager.clearAutoSaves());
-
         prefs.flush();
 
         // dispose all windows, even if they are not displayed anymore
         for (Window window : Window.getWindows()) {
             window.dispose();
         }
-
-        // shutdown any timers that are may be active
-        Globals.stopAutoSaveManager();
     }
 
     /**
@@ -879,7 +872,7 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
                     context.getDBMSSynchronizer().closeSharedDatabase();
                     context.clearDBMSSynchronizer();
                 }
-
+                AutoSaver.shutdown(context);
                 context.getDatabaseFile().map(File::getAbsolutePath).ifPresent(filenames::add);
             }
         }
@@ -2225,6 +2218,7 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
         } else {
             removeTab(panel);
         }
+        AutoSaver.shutdown(context);
     }
 
     // Ask if the user really wants to close, if the base has not been saved
@@ -2257,7 +2251,6 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
 
     private void removeTab(BasePanel panel) {
         panel.cleanUp();
-        AutoSaveManager.deleteAutoSaveFile(panel);
         tabbedPane.remove(panel);
         if (tabbedPane.getTabCount() > 0) {
             markActiveBasePanel();

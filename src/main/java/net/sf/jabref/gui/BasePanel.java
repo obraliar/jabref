@@ -236,6 +236,7 @@ public class BasePanel extends JPanel implements ClipboardOwner, FileUpdateListe
         this.bibDatabaseContext.getDatabase().registerListener(new GroupTreeListener());
 
         Optional<File> file = bibDatabaseContext.getDatabaseFile();
+
         if (file.isPresent()) {
             // Register so we get notifications about outside changes to the file.
             try {

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Map;
+import java.util.Objects;
 
 import net.sf.jabref.logic.bibtex.BibEntryWriter;
 import net.sf.jabref.logic.bibtex.LatexFieldFormatter;
@@ -23,6 +24,7 @@ public class BibtexDatabaseWriter<E extends SaveSession> extends BibDatabaseWrit
     private static final String COMMENT_PREFIX = "@Comment";
     private static final String PREAMBLE_PREFIX = "@Preamble";
 
+    public static final String DATABASE_ID_PREFIX = "DBID:";
 
     public BibtexDatabaseWriter(SaveSessionFactory<E> saveSessionFactory) {
         super(saveSessionFactory);
@@ -137,6 +139,14 @@ public class BibtexDatabaseWriter<E extends SaveSession> extends BibDatabaseWrit
             getWriter().write("% ");
             getWriter().write(SavePreferences.ENCODING_PREFIX + encoding);
             getWriter().write(OS.NEWLINE);
+
+            String databaseID = bibDatabaseContext.getDatabase().getDatabaseID();
+            if (Objects.nonNull(databaseID)) {
+                getWriter().write("% ");
+                getWriter().write(DATABASE_ID_PREFIX + " " + databaseID);
+                getWriter().write(OS.NEWLINE);
+            }
+
         } catch (IOException e) {
             throw new SaveException(e);
         }

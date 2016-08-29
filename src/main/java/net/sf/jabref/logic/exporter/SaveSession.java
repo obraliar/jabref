@@ -16,6 +16,7 @@ public abstract class SaveSession {
     private final List<FieldChange> undoableFieldChanges = new ArrayList<>();
     protected boolean backup;
 
+
     protected SaveSession(Charset encoding, boolean backup, VerifyingWriter writer) {
         this.encoding = Objects.requireNonNull(encoding);
         this.backup = backup;

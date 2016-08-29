@@ -19,6 +19,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import net.sf.jabref.logic.bibtex.FieldContentParser;
+import net.sf.jabref.logic.exporter.BibtexDatabaseWriter;
 import net.sf.jabref.logic.exporter.SavePreferences;
 import net.sf.jabref.logic.importer.ImportFormatPreferences;
 import net.sf.jabref.logic.importer.Parser;
@@ -85,6 +86,7 @@ public class BibtexParser implements Parser {
      * @throws IOException
      * @deprecated inline this method
      */
+    @Deprecated
     public static ParserResult parse(Reader in, ImportFormatPreferences importFormatPreferences) throws IOException {
         return new BibtexParser(importFormatPreferences).parse(in);
     }
@@ -161,6 +163,8 @@ public class BibtexParser implements Parser {
         // Bibtex related contents.
         initializeParserResult();
 
+        parseDatabaseID();
+
         skipWhitespace();
 
         try {
@@ -174,6 +178,30 @@ public class BibtexParser implements Parser {
         database = new BibDatabase();
         entryTypes = new HashMap<>(); // To store custom entry types parsed.
         parserResult = new ParserResult(database, null, entryTypes);
+    }
+
+    private void parseDatabaseID() throws IOException {
+
+        while (!eof) {
+            skipWhitespace();
+            char c = (char) read();
+
+            if (c == '%') {
+                skipWhitespace();
+                String label = parseTextToken().trim();
+
+                if (label.equals(BibtexDatabaseWriter.DATABASE_ID_PREFIX)) {
+                    skipWhitespace();
+                    database.setDatabaseID(parseTextToken().trim());
+                    break;
+                } else {
+                    continue;
+                }
+            } else if (c == '@') {
+                unread(c);
+                break;
+            }
+        }
     }
 
     private ParserResult parseFileContent() throws IOException {

@@ -85,9 +85,6 @@
             <entry key="autoDoubleBraces" value="false"/>
             <entry key="resolveStringsAllFields" value="false"/>
             <entry key="doNotResolveStringsFor" value="url"/>
-            <entry key="autoSave" value="true"/>
-            <entry key="promptBeforeUsingAutosave" value="true"/>
-            <entry key="autoSaveInterval" value="5"/>
             <entry key="valueDelimiters" value="1"/>
             <entry key="includeEmptyFields" value="false"/>
             <entry key="writeFieldCamelCase" value="true"/>

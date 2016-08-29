@@ -13,10 +13,12 @@ import javax.swing.SwingUtilities;
 
 import net.sf.jabref.Globals;
 import net.sf.jabref.JabRefExecutorService;
+import net.sf.jabref.autosave.AutoSaver;
 import net.sf.jabref.collab.ChangeScanner;
 import net.sf.jabref.gui.BasePanel;
 import net.sf.jabref.gui.FileDialog;
 import net.sf.jabref.gui.JabRefFrame;
+import net.sf.jabref.gui.autosave.AutoSaveUIManager;
 import net.sf.jabref.gui.worker.AbstractWorker;
 import net.sf.jabref.gui.worker.CallBack;
 import net.sf.jabref.gui.worker.Worker;
@@ -134,7 +136,6 @@ public class SaveDatabaseAction extends AbstractWorker {
 
             if (success) {
                 panel.getUndoManager().markUnchanged();
-                AutoSaveManager.deleteAutoSaveFile(panel);
                 // (Only) after a successful save the following
                 // statement marks that the base is unchanged
                 // since last save:
@@ -313,12 +314,23 @@ public class SaveDatabaseAction extends AbstractWorker {
             return;
         }
         // Register so we get notifications about outside changes to the file.
+
         try {
             panel.setFileMonitorHandle(Globals.getFileUpdateMonitor().addUpdateListener(panel,
                     panel.getBibDatabaseContext().getDatabaseFile().orElse(null)));
         } catch (IOException ex) {
             LOGGER.error("Problem registering file change notifications", ex);
         }
+
+        // TODO local but but only local is enabled
+        boolean autoSaveEnabled = Globals.prefs.getBoolean(JabRefPreferences.LOCAL_AUTO_SAVE)
+                || Globals.prefs.getBoolean(JabRefPreferences.SHARED_AUTO_SAVE);
+
+        if (autoSaveEnabled) {
+            // activate a new AutoSaver if enabled
+            new AutoSaver(panel.getBibDatabaseContext()).registerListener(new AutoSaveUIManager(panel));
+        }
+
         frame.getFileHistory().newFile(panel.getBibDatabaseContext().getDatabaseFile().get().getPath());
         frame.updateEnabledState();
     }

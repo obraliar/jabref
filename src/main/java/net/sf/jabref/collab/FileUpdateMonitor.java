@@ -19,7 +19,7 @@ import org.apache.commons.logging.LogFactory;
 public class FileUpdateMonitor implements Runnable {
     private static final Log LOGGER = LogFactory.getLog(FileUpdateMonitor.class);
 
-    private static final int WAIT = 4000;
+    private static final int WAIT = 60000;
 
     private int numberOfUpdateListener;
     private final Map<String, Entry> entries = new HashMap<>();
