@@ -5,7 +5,7 @@ import net.sf.jabref.MetaData;
 /**
  * {@link MetaDataChangedEvent} is fired when a tuple of meta data has been put or removed.
  */
-public class MetaDataChangedEvent {
+public class MetaDataChangedEvent extends BibDatabaseContextChangedEvent {
 
     private final MetaData metaData;
 

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import net.sf.jabref.logic.autosave.Autosaver;
 import net.sf.jabref.model.database.BibDatabase;
 import net.sf.jabref.model.database.BibDatabaseMode;
 import net.sf.jabref.model.database.BibDatabaseModeDetection;
@@ -26,6 +27,7 @@ public class BibDatabaseContext {
     /** The file where this database was last saved to. */
     private File file;
     private DBMSSynchronizer dbmsSynchronizer;
+    private Autosaver autosaver;
     private DatabaseLocation location;
 
     public BibDatabaseContext() {
@@ -57,8 +59,11 @@ public class BibDatabaseContext {
 
     public BibDatabaseContext(BibDatabase database, MetaData metaData, File file, Defaults defaults) {
         this(database, metaData, defaults);
-
         this.setDatabaseFile(file);
+
+        if (location == DatabaseLocation.LOCAL) {
+            convertToLocalDatabase();
+        }
     }
 
     public BibDatabaseContext(BibDatabase database, MetaData metaData, File file) {
@@ -201,6 +206,11 @@ public class BibDatabaseContext {
 
     public void convertToSharedDatabase(String keywordSeparator) {
 
+        if (this.location == DatabaseLocation.LOCAL) {
+            this.database.unregisterListener(autosaver);
+            this.metaData.unregisterListener(autosaver);
+        }
+
         this.dbmsSynchronizer = new DBMSSynchronizer(this, keywordSeparator);
         this.database.registerListener(dbmsSynchronizer);
         this.metaData.registerListener(dbmsSynchronizer);
@@ -210,10 +220,14 @@ public class BibDatabaseContext {
 
     public void convertToLocalDatabase() {
 
-        if ((this.location == DatabaseLocation.SHARED)) {
+        if (this.location == DatabaseLocation.SHARED) {
             this.database.unregisterListener(dbmsSynchronizer);
             this.metaData.unregisterListener(dbmsSynchronizer);
         }
+
+        this.autosaver = new Autosaver(file, this);
+        this.database.registerListener(autosaver);
+        this.metaData.registerListener(autosaver);
 
         this.location = DatabaseLocation.LOCAL;
     }

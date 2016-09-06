@@ -2,7 +2,7 @@ package net.sf.jabref.event;
 
 import net.sf.jabref.MetaData;
 
-public class GroupUpdatedEvent {
+public class GroupUpdatedEvent extends BibDatabaseContextChangedEvent {
 
     private final MetaData metaData;
 
