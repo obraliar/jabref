@@ -126,8 +126,46 @@ public abstract class DBMSProcessor {
      * @param bibEntry {@link BibEntry} to be inserted
      */
     public void insertEntry(BibEntry bibEntry) {
+        if (checkForBibEntryExistence(bibEntry)) {
+            return;
+        }
+        insertIntoEntryTable(bibEntry);
+        insertIntoFieldTable(bibEntry);
+    }
 
+    /**
+     * Inserts the given bibEntry into ENTRY table.
+     *
+     * @param bibEntry {@link BibEntry} to be inserted
+     */
+    protected void insertIntoEntryTable(BibEntry bibEntry) {
+        // Inserting into ENTRY table
+        StringBuilder insertIntoEntryQuery = new StringBuilder().append("INSERT INTO ").append(escape("ENTRY"))
+                .append("(").append(escape("TYPE")).append(") VALUES(?)");
 
+        // This is the only method to get generated keys which is accepted by MySQL, PostgreSQL and Oracle.
+        try (PreparedStatement preparedEntryStatement = connection.prepareStatement(insertIntoEntryQuery.toString(),
+                new String[] {"SHARED_ID"})) {
+
+            preparedEntryStatement.setString(1, bibEntry.getType());
+            preparedEntryStatement.executeUpdate();
+
+            try (ResultSet generatedKeys = preparedEntryStatement.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    bibEntry.getSharedBibEntryData().setSharedID(generatedKeys.getInt(1)); // set generated ID locally
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.error("SQL Error: ", e);
+        }
+    }
+
+    /**
+     * Checks whether the given bibEntry already exists on shared database.
+     * @param bibEntry {@link BibEntry} to be checked
+     * @return <code>true</code> if existent, else <code>false</code>
+     */
+    private boolean checkForBibEntryExistence(BibEntry bibEntry) {
         try {
             // Check if already exists
             int sharedID = bibEntry.getSharedBibEntryData().getSharedID();
@@ -143,53 +181,43 @@ public abstract class DBMSProcessor {
                     preparedSelectStatement.setInt(1, sharedID);
                     try (ResultSet resultSet = preparedSelectStatement.executeQuery()) {
                         if (resultSet.next()) {
-                            return;
+                            return true;
                         }
                     }
                 }
             }
+        } catch (SQLException e) {
+            LOGGER.error("SQL Error: ", e);
+        }
+        return false;
+    }
 
-            // Inserting into ENTRY table
-            StringBuilder insertIntoEntryQuery = new StringBuilder()
-                .append("INSERT INTO ")
-                .append(escape("ENTRY"))
-                .append("(")
-                .append(escape("TYPE"))
-                .append(") VALUES(?)");
+    /**
+     * Inserts the given bibEntry into FIELD table.
+     *
+     * @param bibEntry {@link BibEntry} to be inserted
+     */
+    private void insertIntoFieldTable(BibEntry bibEntry) {
+        try {
+            // Inserting into FIELD table
+            for (String fieldName : bibEntry.getFieldNames()) {
+                StringBuilder insertFieldQuery = new StringBuilder()
+                    .append("INSERT INTO ")
+                    .append(escape("FIELD"))
+                    .append("(")
+                    .append(escape("ENTRY_SHARED_ID"))
+                    .append(", ")
+                    .append(escape("NAME"))
+                    .append(", ")
+                    .append(escape("VALUE"))
+                    .append(") VALUES(?, ?, ?)");
 
-            // This is the only method to get generated keys which is accepted by MySQL, PostgreSQL and Oracle.
-            try (PreparedStatement preparedEntryStatement = connection.prepareStatement(insertIntoEntryQuery.toString(),
-                    new String[] {"SHARED_ID"})) {
-
-                preparedEntryStatement.setString(1, bibEntry.getType());
-                preparedEntryStatement.executeUpdate();
-
-                try (ResultSet generatedKeys = preparedEntryStatement.getGeneratedKeys()) {
-                    if (generatedKeys.next()) {
-                        bibEntry.getSharedBibEntryData().setSharedID(generatedKeys.getInt(1)); // set generated ID locally
-                    }
-                }
-
-                // Inserting into FIELD table
-                for (String fieldName : bibEntry.getFieldNames()) {
-                    StringBuilder insertFieldQuery = new StringBuilder()
-                        .append("INSERT INTO ")
-                        .append(escape("FIELD"))
-                        .append("(")
-                        .append(escape("ENTRY_SHARED_ID"))
-                        .append(", ")
-                        .append(escape("NAME"))
-                        .append(", ")
-                        .append(escape("VALUE"))
-                        .append(") VALUES(?, ?, ?)");
-
-                    try (PreparedStatement preparedFieldStatement = connection.prepareStatement(insertFieldQuery.toString())) {
-                        // columnIndex starts with 1
-                        preparedFieldStatement.setInt(1, bibEntry.getSharedBibEntryData().getSharedID());
-                        preparedFieldStatement.setString(2, fieldName);
-                        preparedFieldStatement.setString(3, bibEntry.getField(fieldName).get());
-                        preparedFieldStatement.executeUpdate();
-                    }
+                try (PreparedStatement preparedFieldStatement = connection.prepareStatement(insertFieldQuery.toString())) {
+                    // columnIndex starts with 1
+                    preparedFieldStatement.setInt(1, bibEntry.getSharedBibEntryData().getSharedID());
+                    preparedFieldStatement.setString(2, fieldName);
+                    preparedFieldStatement.setString(3, bibEntry.getField(fieldName).get());
+                    preparedFieldStatement.executeUpdate();
                 }
             }
         } catch (SQLException e) {
