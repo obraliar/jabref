@@ -111,9 +111,6 @@ public class OpenSharedDatabaseDialog extends JDialog {
             frame.output(Localization.lang("Connection_to_%0_server_established.", connectionProperties.getType().toString()));
             dispose();
             return; // setLoadingConnectButtonText(false) should not be reached regularly.
-        } catch (ClassNotFoundException exception) {
-            JOptionPane.showMessageDialog(OpenSharedDatabaseDialog.this, exception.getMessage(),
-                    Localization.lang("Driver error"), JOptionPane.ERROR_MESSAGE);
         } catch (SQLException exception) {
             JOptionPane.showMessageDialog(OpenSharedDatabaseDialog.this, exception.getMessage(),
                     Localization.lang("Connection error"), JOptionPane.ERROR_MESSAGE);

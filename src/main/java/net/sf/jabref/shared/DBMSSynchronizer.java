@@ -20,6 +20,7 @@ import net.sf.jabref.model.event.EntryEvent;
 import net.sf.jabref.model.event.EntryRemovedEvent;
 import net.sf.jabref.model.event.FieldChangedEvent;
 import net.sf.jabref.shared.event.ConnectionLostEvent;
+import net.sf.jabref.shared.event.LiveUpdateEvent;
 import net.sf.jabref.shared.event.SharedEntryNotPresentEvent;
 import net.sf.jabref.shared.event.UpdateRefusedEvent;
 import net.sf.jabref.shared.exception.DatabaseNotSupportedException;
@@ -121,6 +122,30 @@ public class DBMSSynchronizer {
         }
     }
 
+    //TODO Use BibDatabaseContextChangedEvent
+    @Subscribe
+    public void listen(EntryEvent event) {
+        if (isEventSourceAccepted(event)) {
+            dbmsProcessor.notifyClients();
+            System.out.println("NOTIFY!");
+        }
+    }
+
+    public void postEvent(Object object) {
+        eventBus.post(object);
+    }
+
+    /**
+     * Listening method. Updates the local database on {@link LiveUpdateEvent} occurrence.
+     *
+     * @param {qlink LiveUpdateEvent}
+     */
+    @Subscribe
+    public void listen(LiveUpdateEvent event) {
+        System.out.println("LIVE UPDATE!");
+        pullChanges();
+    }
+
     /**
      * Sets the table structure of shared database if needed and pulls all shared entries
      * to the new local database.
@@ -143,6 +168,8 @@ public class DBMSSynchronizer {
 
         synchronizeLocalMetaData();
         synchronizeLocalDatabase();
+        dbmsProcessor.sync = this;
+        dbmsProcessor.listenForNotification(eventBus);
     }
 
     /**
@@ -342,8 +369,16 @@ public class DBMSSynchronizer {
         initializeDatabases();
     }
 
-    public void openSharedDatabase(DBMSConnectionProperties properties) throws ClassNotFoundException, SQLException, DatabaseNotSupportedException {
-        openSharedDatabase(DBMSConnector.getNewConnection(properties), properties.getType(), properties.getDatabase());
+    public void openSharedDatabase(DBMSConnection dbmsConnection) throws DatabaseNotSupportedException, SQLException {
+        this.dbmsType = dbmsConnection.getProperties().getType();
+        this.dbName = dbmsConnection.getProperties().getDatabase();
+        this.currentConnection = dbmsConnection.getConnection();
+        this.dbmsProcessor = DBMSProcessor.getProcessorInstance(this.currentConnection, this.dbmsType);
+        initializeDatabases();
+    }
+
+    public void openSharedDatabase(DBMSConnectionProperties properties) throws SQLException, DatabaseNotSupportedException {
+        openSharedDatabase(new DBMSConnection(properties));
     }
 
     private boolean isPresentLocalBibEntry(BibEntry bibEntry) {

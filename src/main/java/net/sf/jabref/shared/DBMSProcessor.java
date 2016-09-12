@@ -19,6 +19,7 @@ import net.sf.jabref.model.entry.BibEntry;
 import net.sf.jabref.shared.exception.OfflineLockException;
 import net.sf.jabref.shared.exception.SharedEntryNotPresentException;
 
+import com.google.common.eventbus.EventBus;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -30,6 +31,8 @@ public abstract class DBMSProcessor {
     protected static final Log LOGGER = LogFactory.getLog(DBMSProcessor.class);
 
     protected final Connection connection;
+
+    public DBMSSynchronizer sync;
 
     /**
      * @param connection Working SQL connection
@@ -119,6 +122,11 @@ public abstract class DBMSProcessor {
      */
     public abstract String escape(String expression);
 
+    //TODO listening for live update
+    public abstract void listenForNotification(EventBus eventBus);
+
+    //TODO notifies all clients connectet to this db
+    public abstract void notifyClients();
 
     /**
      * Inserts the given bibEntry into shared database.
@@ -555,5 +563,20 @@ public abstract class DBMSProcessor {
         }
         return null; // can never happen except new types were added without updating this method.
     }
+
+    /**
+     *  Returns a new instance of the abstract type {@link DBMSProcessor}
+     */
+    /*public static DBMSProcessor getProcessorInstance(DBMSConnection connection) {
+        switch (connection.getProperties().getType()) {
+        case MYSQL:
+            return new MySQLProcessor(connection);
+        case POSTGRESQL:
+            return new PostgreSQLProcessor(connection);
+        case ORACLE:
+            return new OracleProcessor(connection);
+        }
+        return null; // can never happen except new types were added without updating this method.
+    }*/
 
 }

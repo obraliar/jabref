@@ -9,7 +9,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import net.sf.jabref.model.entry.BibEntry;
-
+import com.google.common.eventbus.EventBus;
+import com.impossibl.postgres.api.jdbc.PGConnection;
+import com.impossibl.postgres.api.jdbc.PGNotificationListener;
+import com.impossibl.postgres.jdbc.PGDataSource;
 import com.impossibl.postgres.jdbc.ThreadedHousekeeper;
 
 /**
@@ -70,6 +73,61 @@ public class PostgreSQLProcessor extends DBMSProcessor {
                     bibEntry.getSharedBibEntryData().setSharedID(generatedKeys.getInt(1)); // set generated ID locally
                 }
             }
+        } catch (SQLException e) {
+            LOGGER.error("SQL Error: ", e);
+        }
+    }
+
+
+
+
+    private final PGNotificationListener listener = new PGNotificationListener() {
+
+        @Override
+        public void notification(int processId, String channelName, String payload) {
+            System.out.println(">>> " + payload);
+            //sync.postEvent(new LiveUpdateEvent());
+            sync.pullChanges();
+        }
+    };
+
+
+    @Override
+    public void listenForNotification(EventBus eventBus) {
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                PGDataSource dataSource = new PGDataSource();
+                dataSource.setHost("localhost");
+                dataSource.setPort(5432);
+                dataSource.setDatabase("jabref8");
+                dataSource.setUser("postgres");
+                dataSource.setPassword("");
+
+
+
+                try (PGConnection connection = (PGConnection) dataSource.getConnection()) {
+                    Statement statement = connection.createStatement();
+                    statement.execute("LISTEN message1");
+                    statement.close();
+                    connection.addNotificationListener(listener);
+                    System.out.println("BEGIn WAIT");
+                    while (true) {
+                        Thread.sleep(200);
+                    }
+                } catch (Exception e) {
+                    System.err.println(e);
+                }
+            }
+        }).start();
+
+    }
+
+    @Override
+    public void notifyClients() {
+        try {
+            connection.createStatement().execute("NOTIFY message1");
         } catch (SQLException e) {
             LOGGER.error("SQL Error: ", e);
         }

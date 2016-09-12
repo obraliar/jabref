@@ -2,6 +2,7 @@ package net.sf.jabref.shared;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import com.google.common.eventbus.EventBus;
 
 /**
  * Processes all incoming or outgoing bib data to MySQL Database and manages its structure.
@@ -45,5 +46,15 @@ public class MySQLProcessor extends DBMSProcessor {
     @Override
     public String escape(String expression) {
         return "`" + expression + "`";
+    }
+
+    @Override
+    public void listenForNotification(EventBus eventBus) {
+        // not supported by this database system
+    }
+
+    @Override
+    public void notifyClients() {
+        // not supported by this database system
     }
 }
