@@ -649,7 +649,7 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
             } else {
                 String content = "";
                 SearchQuery currentSearchQuery = currentBasePanel.getCurrentSearchQuery();
-                if (currentSearchQuery != null && !currentSearchQuery.getQuery().trim().isEmpty()) {
+                if ((currentSearchQuery != null) && !currentSearchQuery.getQuery().trim().isEmpty()) {
                     content = currentSearchQuery.getQuery();
                 }
                 globalSearchBar.setSearchTerm(content, true);
@@ -708,7 +708,7 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
                     .orElse(GUIGlobals.UNTITLED_TITLE);
                 setTitle(FRAME_TITLE + " - " + databaseFile + changeFlag + modeInfo);
         } else if (panel.getBibDatabaseContext().getLocation() == DatabaseLocation.SHARED) {
-            setTitle(FRAME_TITLE + " - " + panel.getBibDatabaseContext().getDBSynchronizer().getDBName() + " ["
+            setTitle(FRAME_TITLE + " - " + panel.getBibDatabaseContext().getDBMSSynchronizer().getDBName() + " ["
                     + Localization.lang("shared") + "]" + modeInfo);
         }
     }
@@ -2136,10 +2136,16 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
             return;
         }
 
-        if (panel.isModified() && (panel.getBibDatabaseContext().getLocation() == DatabaseLocation.LOCAL)) {
+        BibDatabaseContext context = panel.getBibDatabaseContext();
+
+        if (panel.isModified() && (context.getLocation() == DatabaseLocation.LOCAL)) {
             if (confirmClose(panel)) {
                 removeTab(panel);
             }
+        } else if (context.getLocation() == DatabaseLocation.SHARED) {
+            context.getDBMSSynchronizer().closeSharedDatabase();
+            context.unsetDBMSSynchronizer();
+            removeTab(panel);
         } else {
             removeTab(panel);
         }
