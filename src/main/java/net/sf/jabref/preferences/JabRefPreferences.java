@@ -988,7 +988,7 @@ public class JabRefPreferences {
         put(key, convertListToString(value));
     }
 
-    private static String convertListToString(List<String> value) {
+    public static String convertListToString(List<String> value) {
         return value.stream().map(val -> ModelStringUtil.quote(val, ";", '\\')).collect(Collectors.joining(";"));
     }
 

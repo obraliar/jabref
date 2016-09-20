@@ -65,6 +65,9 @@ public class SaveDatabaseAction extends AbstractWorker {
         success = false;
         canceled = false;
         fileLockedError = false;
+
+        System.out.println(panel.getBibDatabaseContext().getDatabaseFile().isPresent());
+
         if (panel.getBibDatabaseContext().getDatabaseFile().isPresent()) {
             // Check for external modifications: if true, save not performed so do not tell the user a save is underway but return instead.
             if (checkExternalModification()) {
@@ -73,7 +76,10 @@ public class SaveDatabaseAction extends AbstractWorker {
 
             panel.frame().output(Localization.lang("Saving database") + "...");
             panel.setSaving(true);
-        } else {
+        }
+
+
+        else {
             saveAs();
         }
     }
@@ -287,6 +293,7 @@ public class SaveDatabaseAction extends AbstractWorker {
      * still runs synchronously using Spin (the method returns only after completing the operation).
      */
     public void saveAs() throws Throwable {
+
         File file = null;
         while (file == null) {
             // configure file dialog

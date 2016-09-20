@@ -1,5 +1,8 @@
 package net.sf.jabref.shared;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Keeps all essential data for establishing a new connection to a DBMS using {@link DBMSConnector}.
  */
@@ -73,6 +76,14 @@ public class DBMSConnectionProperties {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public List<String> getPropertiesAsStringList() {
+        return Arrays.asList(type.toString(), host, String.valueOf(port), database, user, password);
+    }
+
+    public void setFromStringList(List<String> propertyList) {
+
     }
 
 }

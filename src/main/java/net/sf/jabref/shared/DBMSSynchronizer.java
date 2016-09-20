@@ -2,11 +2,13 @@ package net.sf.jabref.shared;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import net.sf.jabref.Globals;
 import net.sf.jabref.logic.exporter.BibDatabaseWriter;
 import net.sf.jabref.logic.exporter.MetaDataSerializer;
 import net.sf.jabref.logic.importer.util.MetaDataParser;
@@ -82,6 +84,9 @@ public class DBMSSynchronizer {
      */
     @Subscribe
     public void listen(FieldChangedEvent event) {
+
+        System.out.println(">>" + Globals.prefs.convertListToString(Arrays.asList("a", null, "b")));
+
         // While synchronizing the local database (see synchronizeLocalDatabase() below), some EntryEvents may be posted.
         // In this case DBSynchronizer should not try to update the bibEntry entry again (but it would not harm).
         if (isPresentLocalBibEntry(event.getBibEntry()) && isEventSourceAccepted(event) && checkCurrentConnection()) {

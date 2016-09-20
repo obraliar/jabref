@@ -649,7 +649,7 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
             } else {
                 String content = "";
                 SearchQuery currentSearchQuery = currentBasePanel.getCurrentSearchQuery();
-                if (currentSearchQuery != null && !currentSearchQuery.getQuery().trim().isEmpty()) {
+                if ((currentSearchQuery != null) && !currentSearchQuery.getQuery().trim().isEmpty()) {
                     content = currentSearchQuery.getQuery();
                 }
                 globalSearchBar.setSearchTerm(content, true);
@@ -832,7 +832,7 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
         if (tabbedPane.getTabCount() > 0) {
             for (int i = 0; i < tabbedPane.getTabCount(); i++) {
                 BibDatabaseContext context = getBasePanelAt(i).getBibDatabaseContext();
-
+                System.out.println("::: " + getBasePanelAt(i).isModified() + " " + getBasePanelAt(i).getBibDatabaseContext().getLocation().toString());
                 if (getBasePanelAt(i).isModified() && (context.getLocation() == DatabaseLocation.LOCAL)) {
                     tabbedPane.setSelectedIndex(i);
                     String filename = context.getDatabaseFile().map(File::getAbsolutePath).orElse(GUIGlobals.UNTITLED_TITLE);
@@ -865,6 +865,32 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
                     context.convertToLocalDatabase();
                     context.getDBMSSynchronizer().closeSharedDatabase();
                     context.clearDBMSSynchronizer();
+                }
+
+                if (getBasePanelAt(i).isModified()
+                        && (context.getLocation() == DatabaseLocation.SHARED)
+                        && context.getDatabaseFile().isPresent()) {
+                    System.out.println("SAVING!!!....");
+                    //TODO
+                    // The user wants to save.
+                    try {
+                        //getCurrentBasePanel().runCommand("save");
+                        SaveDatabaseAction saveAction = new SaveDatabaseAction(getCurrentBasePanel());
+                        saveAction.runCommand();
+                        System.out.println("-----");
+                        if (saveAction.isCanceled() || !saveAction.isSuccess()) {
+                            // The action was either canceled or unsuccessful.
+                            // Break!
+                            output(Localization.lang("Unable to save database"));
+                            System.out.println("SAVE ERROR 1");
+                        }
+                    } catch (Throwable ex) {
+                        // Something prevented the file
+                        // from being saved. Break!!!
+                        close = false;
+                        System.out.println("SAVE ERROR 2");
+                        break;
+                    }
                 }
 
                 context.getDatabaseFile().map(File::getAbsolutePath).ifPresent(filenames::add);
@@ -1568,7 +1594,7 @@ public class JabRefFrame extends JFrame implements OutputPrinter {
             boolean saved = current.getBibDatabaseContext().getDatabaseFile().isPresent();
             setEnabled(openAndSavedDatabasesOnlyActions, saved);
 
-            boolean isShared = current.getBibDatabaseContext().getLocation() == DatabaseLocation.SHARED;
+            boolean isShared = false; //current.getBibDatabaseContext().getLocation() == DatabaseLocation.SHARED;
             setEnabled(sharedDatabaseOnlyActions, isShared);
             setEnabled(noSharedDatabaseActions, !isShared);
         }
