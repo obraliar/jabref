@@ -116,13 +116,13 @@ public class JabRefGUI {
                 if (pr.isInvalid()) {
                     failed.add(pr);
                     parserResultIterator.remove();
-                } else if (Objects.nonNull(pr.getDatabase().getDatabaseID())) {
+                } else if (Objects.nonNull(pr.getDatabase().getSharedDatabaseID())) {
                     try {
                         new SharedDatabaseUIManager(mainFrame).openSharedDatabaseFromParserResult(pr);
                     } catch (SQLException | DatabaseNotSupportedException | InvalidDBMSConnectionPropertiesException |
                             NotASharedDatabaseException e) {
                         pr.getDatabaseContext().setDatabaseFile(null); // do not open the original file
-                        pr.getDatabase().setDatabaseID(null);
+                        pr.getDatabase().setSharedDatabaseID(null);
 
                         LOGGER.error("Connection error", e);
                         JOptionPane.showMessageDialog(mainFrame,

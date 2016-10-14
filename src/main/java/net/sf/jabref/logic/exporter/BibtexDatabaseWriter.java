@@ -146,13 +146,13 @@ public class BibtexDatabaseWriter<E extends SaveSession> extends BibDatabaseWrit
     }
 
     @Override
-    protected void writeDatabaseID(String databaseID) throws SaveException {
+    protected void writeDatabaseID(String sharedDatabaseID) throws SaveException {
         try {
             StringBuilder stringBuilder = new StringBuilder()
                     .append("% ")
                     .append(DATABASE_ID_PREFIX)
                     .append(" ")
-                    .append(databaseID)
+                    .append(sharedDatabaseID)
                     .append(OS.NEWLINE);
             getWriter().write(stringBuilder.toString());
         } catch (IOException e) {

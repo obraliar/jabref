@@ -217,13 +217,13 @@ public class OpenDatabaseAction extends MnemonicAwareAction {
                         Localization.lang("Error"), JOptionPane.ERROR_MESSAGE);
             }
 
-            if (Objects.nonNull(result.getDatabase().getDatabaseID())) {
+            if (Objects.nonNull(result.getDatabase().getSharedDatabaseID())) {
                 try {
                     new SharedDatabaseUIManager(frame).openSharedDatabaseFromParserResult(result);
                 } catch (SQLException | DatabaseNotSupportedException | InvalidDBMSConnectionPropertiesException |
                         NotASharedDatabaseException e) {
                     result.getDatabaseContext().setDatabaseFile(null); // do not open the original file
-                    result.getDatabase().setDatabaseID(null);
+                    result.getDatabase().setSharedDatabaseID(null);
                     LOGGER.error("Connection error", e);
                     JOptionPane.showMessageDialog(frame,
                             e.getMessage() + "\n\n" + Localization.lang("A local copy will be opened."),

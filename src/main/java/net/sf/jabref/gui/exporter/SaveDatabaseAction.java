@@ -320,7 +320,7 @@ public class SaveDatabaseAction extends AbstractWorker {
         if (context.getLocation() == DatabaseLocation.SHARED) {
             // Save all properties dependent on the ID. This makes it possible to restore them.
             DBMSConnectionProperties properties = context.getDBMSSynchronizer().getDBProcessor().getDBMSConnectionProperties();
-            new SharedDatabasePreferences(context.getDatabase().generateAndSetDatabaseID()).putAllDBMSConnectionProperties(properties);
+            new SharedDatabasePreferences(context.getDatabase().generateSharedDatabaseID()).putAllDBMSConnectionProperties(properties);
         }
 
         context.setDatabaseFile(file);

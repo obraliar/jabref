@@ -158,10 +158,10 @@ public abstract class BibDatabaseWriter<E extends SaveSession> {
 
         session = saveSessionFactory.createSaveSession(preferences.getEncodingOrDefault(), preferences.getMakeBackup());
 
-        Optional<String> databaseIDOptional = bibDatabaseContext.getDatabase().getDatabaseID();
+        Optional<String> sharedDatabaseIDOptional = bibDatabaseContext.getDatabase().getSharedDatabaseID();
 
-        if (databaseIDOptional.isPresent()) {
-            writeDatabaseID(databaseIDOptional.get());
+        if (sharedDatabaseIDOptional.isPresent()) {
+            writeDatabaseID(sharedDatabaseIDOptional.get());
         }
 
         // Map to collect entry type definitions that we must save along with entries using them.
@@ -243,7 +243,7 @@ public abstract class BibDatabaseWriter<E extends SaveSession> {
 
     protected abstract void writePreamble(String preamble) throws SaveException;
 
-    protected abstract void writeDatabaseID(String databaseID) throws SaveException;
+    protected abstract void writeDatabaseID(String sharedDatabaseID) throws SaveException;
 
     /**
      * Write all strings in alphabetical order, modified to produce a safe (for

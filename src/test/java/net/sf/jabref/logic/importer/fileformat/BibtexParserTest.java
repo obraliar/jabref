@@ -1418,7 +1418,7 @@ public class BibtexParserTest {
 
         ParserResult parserResult = parser.parse(new StringReader(sharedDatabaseFileContent.toString()));
 
-        String actualDatabaseID = parserResult.getDatabase().getDatabaseID().get();
+        String actualDatabaseID = parserResult.getDatabase().getSharedDatabaseID().get();
 
         assertEquals(expectedDatabaseID, actualDatabaseID);
     }

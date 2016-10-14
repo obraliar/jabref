@@ -65,7 +65,7 @@ public class BibDatabase {
 
     private final EventBus eventBus = new EventBus();
 
-    private String databaseID;
+    private String sharedDatabaseID;
 
 
     public BibDatabase() {
@@ -588,25 +588,25 @@ public class BibDatabase {
         return entry.getField(FieldName.CROSSREF).flatMap(this::getEntryByKey);
     }
 
-    public Optional<String> getDatabaseID() {
-        return Optional.ofNullable(this.databaseID);
+    public Optional<String> getSharedDatabaseID() {
+        return Optional.ofNullable(this.sharedDatabaseID);
     }
 
     /**
-     * @param databaseID use null to unset the id
+     * @param sharedDatabaseID use null to unset the id
      */
-    public void setDatabaseID(String databaseID) {
-        this.databaseID = databaseID;
+    public void setSharedDatabaseID(String sharedDatabaseID) {
+        this.sharedDatabaseID = sharedDatabaseID;
     }
 
     /**
      * Generates and sets a random ID which is globally unique.
      *
-     * @return The generated databaseID
+     * @return The generated sharedDatabaseID
      */
-    public String generateAndSetDatabaseID() {
-        this.databaseID = new BigInteger(128, new SecureRandom()).toString(32);
-        return this.databaseID;
+    public String generateSharedDatabaseID() {
+        this.sharedDatabaseID = new BigInteger(128, new SecureRandom()).toString(32);
+        return this.sharedDatabaseID;
     }
 
     public DuplicationChecker getDuplicationChecker() {

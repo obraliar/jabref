@@ -118,21 +118,21 @@ public class SharedDatabaseUIManager {
             throws SQLException, DatabaseNotSupportedException, InvalidDBMSConnectionPropertiesException,
             NotASharedDatabaseException {
 
-        Optional<String> databaseIDOptional = parserResult.getDatabase().getDatabaseID();
+        Optional<String> sharedDatabaseIDOptional = parserResult.getDatabase().getSharedDatabaseID();
 
-        if (!databaseIDOptional.isPresent()) {
+        if (!sharedDatabaseIDOptional.isPresent()) {
             throw new NotASharedDatabaseException();
         }
 
-        String databaseID = databaseIDOptional.get();
-        DBMSConnectionProperties dbmsConnectionProperties = new DBMSConnectionProperties(new SharedDatabasePreferences(databaseID));
+        String sharedDatabaseID = sharedDatabaseIDOptional.get();
+        DBMSConnectionProperties dbmsConnectionProperties = new DBMSConnectionProperties(new SharedDatabasePreferences(sharedDatabaseID));
 
         JabRefFrame frame = JabRefGUI.getMainFrame();
         BibDatabaseMode selectedMode = Globals.prefs.getDefaultBibDatabaseMode();
         BibDatabaseContext bibDatabaseContext = new BibDatabaseContext(new Defaults(selectedMode), DatabaseLocation.SHARED,
                 Globals.prefs.getKeywordDelimiter(), Globals.prefs.getKeyPattern());
 
-        bibDatabaseContext.getDatabase().setDatabaseID(databaseID);
+        bibDatabaseContext.getDatabase().setSharedDatabaseID(sharedDatabaseID);
         bibDatabaseContext.setDatabaseFile(parserResult.getDatabaseContext().getDatabaseFile().orElse(null));
 
         dbmsSynchronizer = bibDatabaseContext.getDBMSSynchronizer();
