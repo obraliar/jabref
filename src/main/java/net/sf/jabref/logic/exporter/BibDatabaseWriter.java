@@ -158,7 +158,11 @@ public abstract class BibDatabaseWriter<E extends SaveSession> {
 
         session = saveSessionFactory.createSaveSession(preferences.getEncodingOrDefault(), preferences.getMakeBackup());
 
-        writeDatabaseID(bibDatabaseContext.getDatabase().getDatabaseID());
+        Optional<String> databaseIDOptional = bibDatabaseContext.getDatabase().getDatabaseID();
+
+        if (databaseIDOptional.isPresent()) {
+            writeDatabaseID(databaseIDOptional.get());
+        }
 
         // Map to collect entry type definitions that we must save along with entries using them.
         Map<String, EntryType> typesToWrite = new TreeMap<>();

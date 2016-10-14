@@ -586,8 +586,8 @@ public class BibDatabase {
         return entry.getField(FieldName.CROSSREF).flatMap(this::getEntryByKey);
     }
 
-    public String getDatabaseID() {
-        return this.databaseID;
+    public Optional<String> getDatabaseID() {
+        return Optional.ofNullable(this.databaseID);
     }
 
     /**

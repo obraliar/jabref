@@ -40,6 +40,7 @@ import net.sf.jabref.model.strings.StringUtil;
 import net.sf.jabref.preferences.JabRefPreferences;
 import net.sf.jabref.shared.exception.DatabaseNotSupportedException;
 import net.sf.jabref.shared.exception.InvalidDBMSConnectionPropertiesException;
+import net.sf.jabref.shared.exception.NotASharedDatabaseException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -219,7 +220,8 @@ public class OpenDatabaseAction extends MnemonicAwareAction {
             if (Objects.nonNull(result.getDatabase().getDatabaseID())) {
                 try {
                     new SharedDatabaseUIManager(frame).openSharedDatabaseFromParserResult(result);
-                } catch (SQLException | DatabaseNotSupportedException | InvalidDBMSConnectionPropertiesException e) {
+                } catch (SQLException | DatabaseNotSupportedException | InvalidDBMSConnectionPropertiesException |
+                        NotASharedDatabaseException e) {
                     result.getDatabaseContext().setDatabaseFile(null); // do not open the original file
                     result.getDatabase().setDatabaseID(null);
                     LOGGER.error("Connection error", e);

@@ -34,6 +34,7 @@ import net.sf.jabref.logic.util.Version;
 import net.sf.jabref.preferences.JabRefPreferences;
 import net.sf.jabref.shared.exception.DatabaseNotSupportedException;
 import net.sf.jabref.shared.exception.InvalidDBMSConnectionPropertiesException;
+import net.sf.jabref.shared.exception.NotASharedDatabaseException;
 
 import com.jgoodies.looks.plastic.Plastic3DLookAndFeel;
 import com.jgoodies.looks.plastic.theme.SkyBluer;
@@ -118,7 +119,8 @@ public class JabRefGUI {
                 } else if (Objects.nonNull(pr.getDatabase().getDatabaseID())) {
                     try {
                         new SharedDatabaseUIManager(mainFrame).openSharedDatabaseFromParserResult(pr);
-                    } catch (SQLException | DatabaseNotSupportedException | InvalidDBMSConnectionPropertiesException e) {
+                    } catch (SQLException | DatabaseNotSupportedException | InvalidDBMSConnectionPropertiesException |
+                            NotASharedDatabaseException e) {
                         pr.getDatabaseContext().setDatabaseFile(null); // do not open the original file
                         pr.getDatabase().setDatabaseID(null);
 
