@@ -318,13 +318,9 @@ public class SaveDatabaseAction extends AbstractWorker {
         BibDatabaseContext context = panel.getBibDatabaseContext();
 
         if (context.getLocation() == DatabaseLocation.SHARED) {
-            // Generate an ID when saving a shared database
-            String databaseID = new BigInteger(128, new SecureRandom()).toString(32);
-            context.getDatabase().setDatabaseID(databaseID);
-            DBMSProcessor dbmsProcessor = context.getDBMSSynchronizer().getDBProcessor();
-            DBMSConnectionProperties properties = dbmsProcessor.getDBMSConnectionProperties();
             // Save all properties dependent on the ID. This makes it possible to restore them.
-            new SharedDatabasePreferences(databaseID).putAllDBMSConnectionProperties(properties);
+            DBMSConnectionProperties properties = context.getDBMSSynchronizer().getDBProcessor().getDBMSConnectionProperties();
+            new SharedDatabasePreferences(context.getDatabase().generateAndSetDatabaseID()).putAllDBMSConnectionProperties(properties);
         }
 
         context.setDatabaseFile(file);

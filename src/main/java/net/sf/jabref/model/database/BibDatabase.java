@@ -1,5 +1,7 @@
 package net.sf.jabref.model.database;
 
+import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -595,6 +597,16 @@ public class BibDatabase {
      */
     public void setDatabaseID(String databaseID) {
         this.databaseID = databaseID;
+    }
+
+    /**
+     * Generates and sets a random ID which is globally unique.
+     *
+     * @return The generated databaseID
+     */
+    public String generateAndSetDatabaseID() {
+        this.databaseID = new BigInteger(128, new SecureRandom()).toString(32);
+        return this.databaseID;
     }
 
     public DuplicationChecker getDuplicationChecker() {
