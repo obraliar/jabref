@@ -222,8 +222,8 @@ public class OpenDatabaseAction extends MnemonicAwareAction {
                     new SharedDatabaseUIManager(frame).openSharedDatabaseFromParserResult(result);
                 } catch (SQLException | DatabaseNotSupportedException | InvalidDBMSConnectionPropertiesException |
                         NotASharedDatabaseException e) {
-                    result.getDatabaseContext().setDatabaseFile(null); // do not open the original file
-                    result.getDatabase().setSharedDatabaseID(null);
+                    result.getDatabaseContext().clearDatabaseFile(); // do not open the original file
+                    result.getDatabase().clearSharedDatabaseID();
                     LOGGER.error("Connection error", e);
                     JOptionPane.showMessageDialog(frame,
                             e.getMessage() + "\n\n" + Localization.lang("A local copy will be opened."),

@@ -599,6 +599,10 @@ public class BibDatabase {
         this.sharedDatabaseID = sharedDatabaseID;
     }
 
+    public void clearSharedDatabaseID() {
+        this.sharedDatabaseID = null;
+    }
+
     /**
      * Generates and sets a random ID which is globally unique.
      *
