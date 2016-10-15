@@ -328,7 +328,6 @@ public class SaveDatabaseAction extends AbstractWorker {
         runCommand();
         // If the operation failed, revert the file field and return:
         if (!success) {
-            context.setDatabaseFile(context.getDatabaseFile().orElse(null));
             return;
         }
         // Register so we get notifications about outside changes to the file.
