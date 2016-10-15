@@ -32,6 +32,8 @@ import org.apache.commons.logging.LogFactory;
 /**
  * Backups the given bib database file from {@link BibDatabaseContext} on every {@link BibDatabaseContextChangedEvent}.
  * An intelligent {@link ExecutorService} with a {@link BlockingQueue} prevents a high load while making backups and rejects all redundant backup tasks.
+ *
+ * This class does not manage the .bak file which is created when opening a database.
  */
 public class BackupManager {
 
@@ -72,8 +74,13 @@ public class BackupManager {
         }
     };
 
+
     @Subscribe
     public synchronized void listen(@SuppressWarnings("unused") BibDatabaseContextChangedEvent event) {
+        startBackupTask();
+    }
+
+    private void startBackupTask() {
         try {
             executor.submit(backupTask);
         } catch (RejectedExecutionException e) {
@@ -112,6 +119,7 @@ public class BackupManager {
         if (originalFile.isPresent()) {
             backupManager.originalPath = originalFile.get().toPath();
             backupManager.backupPath = Paths.get(backupManager.originalPath.toString() + BACKUP_FILENAME_ENDING);
+            backupManager.startBackupTask();
             bibDatabaseContext.getDatabase().registerListener(backupManager);
             bibDatabaseContext.getMetaData().registerListener(backupManager);
             runningInstances.add(backupManager);
