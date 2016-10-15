@@ -24,7 +24,7 @@ import net.sf.jabref.gui.FileDialog;
 import net.sf.jabref.gui.IconTheme;
 import net.sf.jabref.gui.JabRefFrame;
 import net.sf.jabref.gui.actions.MnemonicAwareAction;
-import net.sf.jabref.gui.autosave.BackupUIManager;
+import net.sf.jabref.gui.autosaveandbackup.BackupUIManager;
 import net.sf.jabref.gui.importer.ParserResultWarningDialog;
 import net.sf.jabref.gui.keyboard.KeyBinding;
 import net.sf.jabref.gui.shared.SharedDatabaseUIManager;
