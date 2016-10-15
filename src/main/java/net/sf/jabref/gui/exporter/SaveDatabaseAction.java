@@ -2,11 +2,9 @@ package net.sf.jabref.gui.exporter;
 
 import java.io.File;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 import java.nio.file.Path;
-import java.security.SecureRandom;
 import java.util.Optional;
 
 import javax.swing.JOptionPane;
@@ -41,7 +39,6 @@ import net.sf.jabref.model.database.event.ChangePropagation;
 import net.sf.jabref.model.entry.BibEntry;
 import net.sf.jabref.preferences.JabRefPreferences;
 import net.sf.jabref.shared.DBMSConnectionProperties;
-import net.sf.jabref.shared.DBMSProcessor;
 import net.sf.jabref.shared.prefs.SharedDatabasePreferences;
 
 import com.jgoodies.forms.builder.FormBuilder;
